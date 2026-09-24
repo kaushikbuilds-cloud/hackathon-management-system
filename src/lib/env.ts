@@ -7,18 +7,38 @@ function required(name: string, value: string | undefined): string {
   return value;
 }
 
-/** Public config (also exposed to the browser via NEXT_PUBLIC_*). */
+/**
+ * Supabase URL and public key. Accepts both the new key names
+ * (publishable / secret, "sb_publishable_…" / "sb_secret_…") and the legacy
+ * anon / service_role JWT names.
+ */
+export function supabaseUrl(): string | undefined {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+}
+
+export function supabasePublicKey(): string | undefined {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_PUBLISHABLE_KEY
+  );
+}
+
+/** Public config (the publishable/anon key is safe to expose; RLS protects data). */
 export function publicEnv() {
   return {
-    supabaseUrl: required("NEXT_PUBLIC_SUPABASE_URL", process.env.NEXT_PUBLIC_SUPABASE_URL),
-    supabaseAnonKey: required("NEXT_PUBLIC_SUPABASE_ANON_KEY", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    supabaseUrl: required("NEXT_PUBLIC_SUPABASE_URL (or SUPABASE_URL)", supabaseUrl()),
+    supabaseAnonKey: required("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (or NEXT_PUBLIC_SUPABASE_ANON_KEY)", supabasePublicKey()),
   };
 }
 
 /** Server-only secrets. Never import from client components. */
 export function serverEnv() {
   return {
-    serviceRoleKey: required("SUPABASE_SERVICE_ROLE_KEY", process.env.SUPABASE_SERVICE_ROLE_KEY),
+    serviceRoleKey: required(
+      "SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)",
+      process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
+    ),
   };
 }
 

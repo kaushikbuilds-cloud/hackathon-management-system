@@ -154,7 +154,7 @@ npm run dev                          # http://localhost:3000
 
 **Using a hosted Supabase project instead:**
 
-1. Run `supabase link --project-ref <ref>`, then `supabase db push` to apply the migrations.
+1. Run `supabase link --project-ref <ref>`, then `supabase db push` to apply the migrations. Without the CLI, run `npm run db:bundle` and paste `supabase/dist/setup.sql` into the dashboard's SQL editor.
 2. Run `supabase/seed.sql` from the SQL editor, or insert one row into `hackathons` for a clean start.
 3. Configure Auth as described in [Deployment](#deployment-vercel--supabase).
 
@@ -165,8 +165,8 @@ npm run dev                          # http://localhost:3000
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | ✔ | Supabase API URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✔ | Public anon key (safe in the browser; RLS protects the data) |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✔ | **Server-only.** Bypasses RLS. Never expose it or prefix it with `NEXT_PUBLIC_`. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ✔ | Publishable key `sb_publishable_…` (safe in the browser; RLS protects the data). Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` also works. |
+| `SUPABASE_SECRET_KEY` | ✔ | **Server-only** secret key `sb_secret_…`. Bypasses RLS. Never expose it or prefix it with `NEXT_PUBLIC_`. Legacy `SUPABASE_SERVICE_ROLE_KEY` also works. |
 | `NEXT_PUBLIC_APP_URL` | ✔ in prod | Public base URL. It is encoded in the QR codes on cards and used in email links. |
 | `TEMP_PASSWORD_TTL_HOURS` | – | Temporary password lifetime (default 72) |
 | `SIGNED_URL_TTL_SECONDS` | – | Signed download URL lifetime (default 300) |

@@ -1,13 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabasePublicKey, supabaseUrl } from "@/lib/env";
 
 const PROTECTED_PREFIXES = ["/staff", "/portal", "/change-password", "/verify"];
 
 /** Refreshes the Supabase session cookie and redirects anonymous users away from protected areas. */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = supabaseUrl();
+  const key = supabasePublicKey();
   if (!url || !key) return response;
 
   const supabase = createServerClient(url, key, {

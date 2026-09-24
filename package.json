@@ -13,7 +13,8 @@
     "test:all": "vitest run",
     "test:e2e": "playwright test",
     "seed:users": "tsx --env-file=.env.local scripts/seed-users.ts",
-    "pdf:sample": "tsx scripts/sample-pdf.ts"
+    "pdf:sample": "tsx scripts/sample-pdf.ts",
+    "db:bundle": "node scripts/bundle-sql.mjs"
   },
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
