@@ -66,7 +66,7 @@ export default async function AttendancePage(props: PageProps<"/staff/attendance
           <CardTitle description="Find a participant by name, Participant ID, email or team.">Manual check-in</CardTitle>
           <form className="flex gap-2" role="search">
             <label htmlFor="att-q" className="sr-only">Search participants</label>
-            <input id="att-q" name="q" defaultValue={param(sp, "q")} className={inputClass} placeholder="e.g. PRT-2026-0012 or Diya" />
+            <input id="att-q" name="q" defaultValue={param(sp, "q")} className={inputClass} placeholder="Name, Participant ID, email or team" />
             <button className={buttonClass("primary")} type="submit">Search</button>
           </form>
           <div className="mt-4">

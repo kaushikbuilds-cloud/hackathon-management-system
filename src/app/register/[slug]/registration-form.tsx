@@ -143,7 +143,7 @@ function FormBody({
                 <TextField label="Full name" name={name("full_name")} required maxLength={100} defaultValue={row.initial.full_name} error={e("full_name")} autoComplete="name" />
                 <TextField label="Email" name={name("email")} type="email" required maxLength={254} defaultValue={row.initial.email} error={e("email")} autoComplete="email" />
                 {fieldConfig.phone.enabled && (
-                  <TextField label="Phone number" name={name("phone")} type="tel" required={fieldConfig.phone.required} maxLength={20} defaultValue={row.initial.phone} error={e("phone")} autoComplete="tel" placeholder="+91 98765 43210" />
+                  <TextField label="Phone number" name={name("phone")} type="tel" required={fieldConfig.phone.required} maxLength={20} defaultValue={row.initial.phone} error={e("phone")} autoComplete="tel" placeholder="+91 90000 00000" />
                 )}
                 {fieldConfig.department.enabled && (
                   <TextField label="Department" name={name("department")} required={fieldConfig.department.required} maxLength={100} defaultValue={row.initial.department} error={e("department")} />
