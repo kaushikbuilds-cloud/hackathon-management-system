@@ -259,6 +259,7 @@ Other handy commands:
 4. **Vercel**
    - Import the repo and set the environment variables above. `NEXT_PUBLIC_APP_URL` must be the production URL **before you print cards**, because it is encoded in every QR code.
    - The PDF routes run on the Node.js runtime (`maxDuration` 60 s). Fonts are bundled via `outputFileTracingIncludes`.
+   - Environment variables are read when a deployment is built. After adding or changing them, deploy a **new** build (push a commit, or Redeploy from the dashboard). Redeploying an older deployment through the API reuses that deployment's old environment.
 5. **Smoke test**: `GET /api/health`, sign in, generate one team PDF and scan it with the attendance scanner.
 
 ---
