@@ -385,3 +385,27 @@ create table public.rate_limits (
   window_start  timestamptz not null,
   hits          integer not null
 );
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security on from the start (policies are added in the RLS
+-- migration; until then only the service role can access these tables).
+-- ---------------------------------------------------------------------------
+alter table public.hackathons               enable row level security;
+alter table public.registration_forms       enable row level security;
+alter table public.registration_submissions enable row level security;
+alter table public.teams                    enable row level security;
+alter table public.participants             enable row level security;
+alter table public.profiles                 enable row level security;
+alter table public.official_permissions     enable row level security;
+alter table public.credential_events        enable row level security;
+alter table public.id_card_templates        enable row level security;
+alter table public.id_card_jobs             enable row level security;
+alter table public.attendance               enable row level security;
+alter table public.support_requests         enable row level security;
+alter table public.support_messages         enable row level security;
+alter table public.support_status_history   enable row level security;
+alter table public.notifications            enable row level security;
+alter table public.announcements            enable row level security;
+alter table public.event_schedule           enable row level security;
+alter table public.audit_logs               enable row level security;
+alter table public.rate_limits              enable row level security;
