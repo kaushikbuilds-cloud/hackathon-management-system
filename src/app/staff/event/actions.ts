@@ -1,0 +1,87 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { dbErrorMessage, str } from "@/lib/actions";
+import { requireAdmin } from "@/lib/auth";
+import { fromLocalInput, isValidTimeZone } from "@/lib/format";
+import { BUCKETS, uploadObject, validateUpload } from "@/lib/storage";
+import { createClient } from "@/lib/supabase/server";
+
+export type EventFormState = { ok?: boolean; message?: string; error?: string; fieldErrors?: Record<string, string> };
+
+const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex colour like #3b82f6");
+const optionalEmail = z.union([z.literal(""), z.string().email("Invalid email").max(254)]);
+
+const schema = z
+  .object({
+    name: z.string().min(2, "Name is required").max(120),
+    tagline: z.string().max(200),
+    description: z.string().max(5000),
+    organizer_name: z.string().max(150),
+    venue: z.string().max(200),
+    timezone: z.string().refine(isValidTimeZone, "Unknown time zone (use an IANA name like Asia/Kolkata)"),
+    contact_email: optionalEmail,
+    contact_phone: z.string().max(30),
+    support_instructions: z.string().max(2000),
+    primary_color: hex,
+    accent_color: hex,
+    min_team_size: z.coerce.number().int().min(1).max(20),
+    max_team_size: z.coerce.number().int().min(1).max(20),
+    id_year: z.coerce.number().int().min(2000).max(2999),
+  })
+  .refine((d) => d.max_team_size >= d.min_team_size, { path: ["max_team_size"], message: "Must be ≥ minimum size" });
+
+export async function saveEvent(_prev: EventFormState, formData: FormData): Promise<EventFormState> {
+  await requireAdmin();
+  const raw = Object.fromEntries(
+    ["name", "tagline", "description", "organizer_name", "venue", "timezone", "contact_email", "contact_phone", "support_instructions", "primary_color", "accent_color", "min_team_size", "max_team_size", "id_year"].map((k) => [k, str(formData, k, 5000)]),
+  );
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) {
+    const fieldErrors: Record<string, string> = {};
+    for (const i of parsed.error.issues) fieldErrors[String(i.path[0])] ??= i.message;
+    return { error: "Please fix the highlighted fields.", fieldErrors };
+  }
+  const d = parsed.data;
+  const tz = d.timezone;
+  const dates = {
+    starts_at: fromLocalInput(str(formData, "starts_at"), tz),
+    ends_at: fromLocalInput(str(formData, "ends_at"), tz),
+    registration_opens_at: fromLocalInput(str(formData, "registration_opens_at"), tz),
+    registration_closes_at: fromLocalInput(str(formData, "registration_closes_at"), tz),
+  };
+  if (dates.starts_at && dates.ends_at && dates.ends_at < dates.starts_at) return { error: "The event must end after it starts.", fieldErrors: { ends_at: "End must be after start" } };
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase.from("hackathons").select("id, id_year").limit(1).maybeSingle<{ id: string; id_year: number }>();
+  if (!existing) return { error: "No hackathon row exists. Run the database seed or insert one (see README)." };
+  const { count: teamCount } = await supabase.from("teams").select("id", { count: "exact", head: true });
+  if ((teamCount ?? 0) > 0 && d.id_year !== existing.id_year) {
+    return { error: "The ID year cannot change after teams have registered (IDs are immutable).", fieldErrors: { id_year: "Locked" } };
+  }
+
+  const update: Record<string, unknown> = {
+    ...d,
+    tagline: d.tagline || null, description: d.description || null, organizer_name: d.organizer_name || null, venue: d.venue || null,
+    contact_email: d.contact_email || null, contact_phone: d.contact_phone || null, support_instructions: d.support_instructions || null,
+    ...dates,
+  };
+
+  for (const [field, column] of [["logo", "logo_path"], ["organizer_logo", "organizer_logo_path"]] as const) {
+    const file = formData.get(field);
+    if (file instanceof File && file.size > 0) {
+      const check = await validateUpload(file, ["image/png", "image/jpeg"], 2 * 1024 * 1024);
+      if (!check.ok) return { error: check.error, fieldErrors: { [field]: check.error } };
+      const path = `${field}-${Date.now()}.${check.extension}`;
+      await uploadObject(BUCKETS.branding, path, check.bytes, check.contentType);
+      update[column] = path;
+    }
+    if (formData.get(`remove_${field}`) === "on") update[column] = null;
+  }
+
+  const { error } = await supabase.from("hackathons").update(update).eq("id", existing.id);
+  if (error) return { error: dbErrorMessage(error) };
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Event settings saved. Generated ID card PDFs were marked outdated if card details changed." };
+}
