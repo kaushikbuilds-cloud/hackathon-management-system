@@ -54,7 +54,7 @@ export default async function FoodOrdersPage(props: PageProps<"/staff/food">) {
       <PageHeader
         title="Food Orders"
         description="Orders appear here the moment a participant places them. Move each one along as you prepare and hand it over."
-        actions={<><AutoRefresh seconds={10} /><LinkButton href="/staff/food/meals" variant="secondary">Meal tracking</LinkButton><LinkButton href="/staff/food/menu" variant="secondary">Shops &amp; menus</LinkButton></>}
+        actions={<><AutoRefresh seconds={10} /><LinkButton href="/staff/food/menu" variant="secondary">Shops &amp; menus</LinkButton></>}
       />
       <Flash notice={sp.notice} error={sp.error} />
 

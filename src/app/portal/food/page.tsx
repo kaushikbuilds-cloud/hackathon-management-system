@@ -7,7 +7,7 @@ import { FOOD_STATUS_LABEL, FOOD_STATUS_TONE, OPEN_FOOD_STATUSES, orderLabel } f
 import { formatRupees } from "@/lib/domain/fees";
 import { formatDateTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
-import type { FoodItem, FoodOrder, FoodOrderLine, FoodShop, Meal } from "@/lib/types";
+import type { FoodItem, FoodOrder, FoodOrderLine, FoodShop } from "@/lib/types";
 import { cancelFoodOrder, placeFoodOrder } from "./actions";
 import { OrderForm } from "./order-form";
 
@@ -29,11 +29,6 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
     supabase.rpc("my_team_roster"),
   ]);
   const team = (roster ?? []) as RosterRow[];
-  const [{ data: meals }, { data: servings }] = await Promise.all([
-    supabase.from("meals").select("*").order("serves_at", { ascending: true, nullsFirst: false }).order("created_at").returns<Meal[]>(),
-    supabase.from("meal_servings").select("meal_id, participant_id").returns<{ meal_id: string; participant_id: string }[]>(),
-  ]);
-  const had = new Set((servings ?? []).map((s) => `${s.meal_id}:${s.participant_id}`));
   const names = new Map(team.map((m) => [m.id, m.full_name]));
   // The shared team login picks a member for each order; per-member accounts order for themselves.
   const members = session.isTeamAccount ? team.map((m) => ({ id: m.id, name: m.full_name })) : null;
@@ -54,32 +49,6 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
           <h2 id="open-orders" className="mb-3 text-lg font-bold text-ink">Your open orders</h2>
           <div className="grid gap-4 md:grid-cols-2">
             {open.map((o) => <OrderSummary key={o.id} order={o} tz={hackathon?.timezone} forName={names.get(o.participant_id)} />)}
-          </div>
-        </section>
-      )}
-
-      {meals && meals.length > 0 && team.length > 0 && (
-        <section aria-labelledby="meals-heading" className="mb-8">
-          <h2 id="meals-heading" className="mb-1 text-lg font-bold text-ink">Meals</h2>
-          <p className="mb-3 text-sm text-ink-soft">Show your ID card at the meal counter. Each member gets one serving per meal.</p>
-          <div className="overflow-x-auto rounded-md border-2 border-line bg-surface">
-            <table className="w-full text-left text-sm">
-              <caption className="sr-only">Meals served to your team</caption>
-              <thead><tr className="border-b-2 border-line bg-paper-2">
-                <th scope="col" className="px-3 py-2 font-bold">Meal</th>
-                {team.map((m) => <th key={m.id} scope="col" className="px-3 py-2 font-bold">{m.full_name}</th>)}
-              </tr></thead>
-              <tbody className="divide-y-2 divide-line-soft">
-                {meals.map((meal) => (
-                  <tr key={meal.id}>
-                    <th scope="row" className="px-3 py-2 font-bold">{meal.name}{meal.is_open && <Badge tone="green" className="ml-2">Serving now</Badge>}</th>
-                    {team.map((m) => had.has(`${meal.id}:${m.id}`)
-                      ? <td key={m.id} className="px-3 py-2 font-bold text-ok">✓ Had it</td>
-                      : <td key={m.id} className="px-3 py-2 text-muted">Not yet</td>)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         </section>
       )}

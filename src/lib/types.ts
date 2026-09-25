@@ -319,21 +319,3 @@ export type Faq = {
   created_at: string;
   updated_at: string;
 };
-
-export type Meal = {
-  id: string;
-  hackathon_id: string;
-  name: string;
-  serves_at: string | null;
-  is_open: boolean;
-  created_at: string;
-};
-
-export type MealServeResult = {
-  state: "served" | "already" | "closed" | "invalid" | "rejected";
-  message?: string;
-  served_at?: string;
-  meal?: string;
-  served?: number;
-  participant?: { full_name: string; participant_code: string; team_name: string; team_code: string };
-};
