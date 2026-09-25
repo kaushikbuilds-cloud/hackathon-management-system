@@ -262,3 +262,45 @@ export type Notification = {
   read_at: string | null;
   created_at: string;
 };
+
+export type FoodShop = {
+  id: string;
+  hackathon_id: string;
+  name: string;
+  description: string | null;
+  location: string | null;
+  is_free: boolean;
+  is_open: boolean;
+  created_at: string;
+};
+
+export type FoodItem = {
+  id: string;
+  hackathon_id: string;
+  shop_id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  is_veg: boolean;
+  is_available: boolean;
+  limit_per_person: number | null;
+  sort_order: number;
+};
+
+export type FoodOrderStatus = "placed" | "preparing" | "ready" | "collected" | "cancelled";
+
+export type FoodOrder = {
+  id: string;
+  hackathon_id: string;
+  shop_id: string;
+  participant_id: string;
+  order_no: number;
+  status: FoodOrderStatus;
+  is_free: boolean;
+  total: number;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FoodOrderLine = { name: string; price: number; qty: number };

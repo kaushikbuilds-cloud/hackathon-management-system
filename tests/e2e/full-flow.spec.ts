@@ -225,7 +225,7 @@ test("core pages have no serious accessibility violations @responsive", async ({
 
 test("staff pages are accessible and responsive @responsive", async ({ page }) => {
   await signIn(page, creds.admin.email, creds.admin.password);
-  for (const path of ["/staff", "/staff/teams", "/staff/attendance", "/staff/attendance/manual", "/staff/support", "/staff/settings"]) {
+  for (const path of ["/staff", "/staff/teams", "/staff/attendance", "/staff/attendance/manual", "/staff/support", "/staff/food", "/staff/food/menu", "/staff/settings"]) {
     await page.goto(path);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
     const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");

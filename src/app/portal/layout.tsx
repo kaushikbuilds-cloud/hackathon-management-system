@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: { default: "Team Portal", template: "
 const NAV: NavItem[] = [
   { href: "/portal", label: "Dashboard", icon: "dashboard" },
   { href: "/portal/schedule", label: "Announcements & Schedule", icon: "calendar" },
+  { href: "/portal/food", label: "Food", icon: "food" },
   { href: "/portal/support", label: "Help & Support", icon: "help" },
   { href: "/portal/profile", label: "Profile & Security", icon: "user" },
 ];

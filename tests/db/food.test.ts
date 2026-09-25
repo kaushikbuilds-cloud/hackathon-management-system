@@ -1,0 +1,140 @@
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type pg from "pg";
+import { as, createTestDatabase, createUser, payload, pgErrorCode, register } from "./helpers";
+
+const enabled = Boolean(process.env.TEST_DATABASE_URL);
+
+type OrderResult = { ok: boolean; code?: string; message?: string; order_id?: string; order_no?: number; total?: string };
+
+describe.skipIf(!enabled)("food ordering (database)", () => {
+  let db: Awaited<ReturnType<typeof createTestDatabase>>;
+  let pool: pg.Pool;
+  let hA: string;
+  let freeShop: string;
+  let paidShop: string;
+  let lunch: string;
+  let chai: string;
+  let samosa: string;
+  const u: Record<string, string> = {};
+
+  const order = (userId: string, shop: string, items: { item_id: string; qty: number }[], note: string | null = null) =>
+    as(pool, userId, async (c) => (await c.query("select place_food_order($1, $2, $3) as r", [shop, JSON.stringify(items), note])).rows[0].r as OrderResult);
+
+  beforeAll(async () => {
+    db = await createTestDatabase();
+    pool = db.pool;
+    hA = (await pool.query("select id from hackathons")).rows[0].id;
+    await register(pool, payload("Hungry Coders", ["f1@food.dev", "f2@food.dev"]));
+    const [p1, p2] = (await pool.query("select id from participants where email in ('f1@food.dev', 'f2@food.dev') order by email")).rows.map((r) => r.id);
+    u.p1 = await createUser(pool, "participant", { participant_id: p1 });
+    u.p2 = await createUser(pool, "participant", { participant_id: p2 });
+    u.admin = await createUser(pool, "admin");
+    u.counter = await createUser(pool, "official", {}, ["manage_food"]);
+    u.gate = await createUser(pool, "official");
+
+    await as(pool, u.admin, async (c) => {
+      freeShop = (await c.query("insert into food_shops (hackathon_id, name, is_free, is_open) values ($1, 'Main Hall Meals', true, true) returning id", [hA])).rows[0].id;
+      paidShop = (await c.query("insert into food_shops (hackathon_id, name, is_open) values ($1, 'Snack Stall', true) returning id", [hA])).rows[0].id;
+      lunch = (await c.query("insert into food_items (hackathon_id, shop_id, name, price, limit_per_person) values ($1, $2, 'Lunch', 50, 1) returning id", [hA, freeShop])).rows[0].id;
+      chai = (await c.query("insert into food_items (hackathon_id, shop_id, name, price) values ($1, $2, 'Chai', 15) returning id", [hA, paidShop])).rows[0].id;
+      samosa = (await c.query("insert into food_items (hackathon_id, shop_id, name, price, is_available) values ($1, $2, 'Samosa', 20, false) returning id", [hA, paidShop])).rows[0].id;
+    });
+  });
+  afterAll(async () => db?.drop());
+
+  it("gives admins the food permission by default, and officials only when granted", async () => {
+    const has = (id: string) => as(pool, id, async (c) => (await c.query("select has_permission('manage_food') as ok")).rows[0].ok as boolean);
+    expect(await has(u.admin)).toBe(true);
+    expect(await has(u.counter)).toBe(true);
+    expect(await has(u.gate)).toBe(false);
+  });
+
+  it("free shops charge nothing and enforce the per-person limit", async () => {
+    const first = await order(u.p1, freeShop, [{ item_id: lunch, qty: 1 }]);
+    expect(first).toMatchObject({ ok: true });
+    expect(Number(first.total)).toBe(0);
+    const second = await order(u.p1, freeShop, [{ item_id: lunch, qty: 1 }]);
+    expect(second).toMatchObject({ ok: false, code: "limit_reached" });
+    // Duplicate lines are added together before the limit check.
+    expect(await order(u.p2, freeShop, [{ item_id: lunch, qty: 1 }, { item_id: lunch, qty: 1 }])).toMatchObject({ ok: false, code: "limit_reached" });
+  });
+
+  it("paid shops total the order from the database price, not the client", async () => {
+    const r = await order(u.p2, paidShop, [{ item_id: chai, qty: 3 }], "less sugar");
+    expect(r.ok).toBe(true);
+    expect(Number(r.total)).toBe(45);
+    const { rows } = await pool.query("select name, price, qty from food_order_items where order_id = $1", [r.order_id]);
+    expect(rows).toEqual([{ name: "Chai", price: "15.00", qty: 3 }]);
+  });
+
+  it("refuses unavailable items, closed shops, items from another shop and bad quantities", async () => {
+    expect(await order(u.p2, paidShop, [{ item_id: samosa, qty: 1 }])).toMatchObject({ ok: false, code: "item_unavailable" });
+    expect(await order(u.p2, paidShop, [{ item_id: lunch, qty: 1 }])).toMatchObject({ ok: false, code: "item_unavailable" });
+    expect(await order(u.p2, paidShop, [{ item_id: chai, qty: 21 }])).toMatchObject({ ok: false, code: "bad_qty" });
+    expect(await order(u.p2, paidShop, [])).toMatchObject({ ok: false, code: "empty" });
+    await pool.query("update food_shops set is_open = false where id = $1", [paidShop]);
+    expect(await order(u.p2, paidShop, [{ item_id: chai, qty: 1 }])).toMatchObject({ ok: false, code: "shop_closed" });
+    await pool.query("update food_shops set is_open = true where id = $1", [paidShop]);
+  });
+
+  it("staff cannot place orders; participants cannot edit menus or orders directly", async () => {
+    expect(await order(u.admin, paidShop, [{ item_id: chai, qty: 1 }])).toMatchObject({ ok: false, code: "not_authorized" });
+    await as(pool, u.p1, async (c) => {
+      expect((await c.query("update food_items set price = 0 where id = $1", [chai])).rowCount).toBe(0);
+      expect((await c.query("update food_shops set is_open = false")).rowCount).toBe(0);
+    });
+    expect(await pgErrorCode(as(pool, u.p1, (c) => c.query("update food_orders set status = 'collected'")))).toBe("42501");
+    expect(await pgErrorCode(as(pool, u.p1, (c) => c.query(
+      "insert into food_shops (hackathon_id, name) values ($1, 'Fake')", [hA])))).toBe("42501");
+  });
+
+  it("participants see only their own orders; counter staff see all of them", async () => {
+    const mine = await as(pool, u.p1, async (c) => (await c.query("select participant_id from food_orders")).rows);
+    expect(mine.length).toBeGreaterThan(0);
+    const p1 = (await pool.query("select participant_id from profiles where id = $1", [u.p1])).rows[0].participant_id;
+    expect(mine.every((r) => r.participant_id === p1)).toBe(true);
+    const all = await as(pool, u.counter, async (c) => (await c.query("select 1 from food_orders")).rowCount);
+    expect(all).toBe((await pool.query("select 1 from food_orders")).rowCount);
+    expect(await as(pool, u.gate, async (c) => (await c.query("select 1 from food_orders")).rowCount)).toBe(0);
+  });
+
+  it("moves orders through the counter workflow and lets participants cancel only new orders", async () => {
+    const r = await order(u.p2, paidShop, [{ item_id: chai, qty: 1 }]);
+    const set = (id: string, s: string) => as(pool, id, async (c) => (await c.query("select set_food_order_status($1, $2) as ok", [r.order_id, s])).rows[0].ok as boolean);
+    expect(await pgErrorCode(set(u.gate, "preparing"))).toBe("42501");
+    expect(await set(u.counter, "collected")).toBe(false); // must be ready first
+    expect(await set(u.counter, "preparing")).toBe(true);
+    const cancel = () => as(pool, u.p2, async (c) => (await c.query("select cancel_food_order($1) as ok", [r.order_id])).rows[0].ok as boolean);
+    expect(await cancel()).toBe(false); // already being prepared
+    expect(await set(u.counter, "ready")).toBe(true);
+    expect(await set(u.counter, "collected")).toBe(true);
+    expect(await set(u.counter, "cancelled")).toBe(false);
+    const other = await order(u.p2, paidShop, [{ item_id: chai, qty: 1 }]);
+    expect(await as(pool, u.p1, async (c) => (await c.query("select cancel_food_order($1) as ok", [other.order_id])).rows[0].ok)).toBe(false);
+    expect(await as(pool, u.p2, async (c) => (await c.query("select cancel_food_order($1) as ok", [other.order_id])).rows[0].ok)).toBe(true);
+  });
+
+  it("limits open orders to three and numbers orders per hackathon", async () => {
+    const p1 = (await pool.query("select participant_id from profiles where id = $1", [u.p1])).rows[0].participant_id;
+    const open = async () => Number((await pool.query(
+      "select count(*) from food_orders where participant_id = $1 and status in ('placed', 'preparing', 'ready')", [p1])).rows[0].count);
+    while ((await open()) < 3) expect((await order(u.p1, paidShop, [{ item_id: chai, qty: 1 }])).ok).toBe(true);
+    expect(await order(u.p1, paidShop, [{ item_id: chai, qty: 1 }])).toMatchObject({ ok: false, code: "too_many_open" });
+    expect(await open()).toBe(3);
+    const { rows } = await pool.query("select order_no from food_orders where hackathon_id = $1 order by order_no", [hA]);
+    expect(rows.map((x) => x.order_no)).toEqual(rows.map((_, i) => i + 1));
+  });
+
+  it("keeps each hackathon's shops private", async () => {
+    const hB = (await pool.query("insert into hackathons (name) values ('Other Food Hack') returning id")).rows[0].id;
+    const adminB = await createUser(pool, "admin");
+    await pool.query("update profiles set hackathon_id = $1 where id = $2", [hB, adminB]);
+    await as(pool, adminB, async (c) => {
+      expect((await c.query("select 1 from food_shops")).rowCount).toBe(0);
+      expect((await c.query("select 1 from food_orders")).rowCount).toBe(0);
+      expect((await c.query("update food_items set price = 1")).rowCount).toBe(0);
+    });
+    expect(await pgErrorCode(as(pool, adminB, (c) => c.query(
+      "insert into food_items (hackathon_id, shop_id, name) values ($1, $2, 'Sneaky')", [hB, paidShop])))).toBe("42501");
+  });
+});

@@ -70,3 +70,21 @@ describe("upload sniffing", () => {
     expect(sniffContentType(new Uint8Array([0x4d, 0x5a, 0x00, 0x90]))).toBeNull(); // Windows executable
   });
 });
+
+describe("food cart parsing", () => {
+  it("keeps only known items with positive whole quantities, capped at 20", async () => {
+    const { cartFromForm } = await import("@/lib/domain/food");
+    const a = "11111111-1111-4111-8111-111111111111";
+    const b = "22222222-2222-4222-8222-222222222222";
+    const fd = new FormData();
+    fd.set(`qty_${a}`, "2");
+    fd.set(`qty_${b}`, "99");
+    fd.set("qty_33333333-3333-4333-8333-333333333333", "1");
+    fd.set("qty_bad", "x");
+    fd.set("note", "hi");
+    expect(cartFromForm(fd, new Set([a, b]))).toEqual([{ item_id: a, qty: 2 }, { item_id: b, qty: 20 }]);
+    const zero = new FormData();
+    zero.set(`qty_${a}`, "0");
+    expect(cartFromForm(zero, new Set([a]))).toEqual([]);
+  });
+});

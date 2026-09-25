@@ -19,6 +19,7 @@ export const PERMISSIONS = [
   { key: "publish_announcements", label: "Announcements & schedule", description: "Create, publish and archive announcements and schedule items.", grantableTo: ["admin"], defaultFor: ["admin"] },
   { key: "manage_all_support", label: "All support requests", description: "See, assign and handle every support request.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
   { key: "view_reports", label: "Reports & exports", description: "Dashboard statistics and CSV exports.", grantableTo: ["admin"], defaultFor: ["admin"] },
+  { key: "manage_food", label: "Food orders", description: "Manage food shops and menus, and handle orders at the counter.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
 ] as const satisfies readonly { key: string; label: string; description: string; grantableTo: readonly AppRole[]; defaultFor: readonly AppRole[] }[];
 
 export type Permission = (typeof PERMISSIONS)[number]["key"];
