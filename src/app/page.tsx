@@ -57,7 +57,7 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="relative hidden lg:block" aria-hidden="true">
-          <div className="rotate-2 rounded-lg border-2 border-line bg-surface p-5 shadow-brutal-lg">
+          <div className="rotate-2 rounded-lg border-2 border-line bg-surface p-5 pb-20 shadow-brutal-lg">
             <p className="font-heading text-sm font-bold tracking-wide uppercase">Teams · live</p>
             <ul className="mt-3 divide-y-2 divide-line-soft text-sm">
               {[["Code Warriors", "TEAM-2026-0015", "bg-ok-tint", "Approved"], ["Byte Brigade", "TEAM-2026-0016", "bg-warn-tint", "Pending"], ["Pixel Pioneers", "TEAM-2026-0017", "bg-ok-tint", "Approved"]].map(([t, id, c, s]) => (
@@ -68,7 +68,7 @@ export default async function HomePage() {
               ))}
             </ul>
           </div>
-          <div className="absolute -right-4 -bottom-12 -rotate-3 rounded-lg border-2 border-line bg-sky px-4 py-3 shadow-brutal">
+          <div className="absolute right-6 -bottom-6 -rotate-3 rounded-lg border-2 border-line bg-sky px-4 py-3 shadow-brutal">
             <p className="text-xs font-bold uppercase">Checked in</p>
             <p className="font-heading text-3xl font-bold">412<span className="text-base">/486</span></p>
           </div>
