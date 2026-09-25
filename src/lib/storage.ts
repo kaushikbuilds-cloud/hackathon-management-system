@@ -8,6 +8,7 @@ export const BUCKETS = {
   idCards: "id-cards",
   attachments: "support-attachments",
   paymentProofs: "payment-proofs",
+  exports: "exports",
 } as const;
 
 type AllowedType = "image/png" | "image/jpeg" | "application/pdf" | "text/plain";

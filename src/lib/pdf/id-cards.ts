@@ -90,7 +90,7 @@ export function validateCardInput(input: Pick<CardInput, "event" | "team" | "mem
 type FontBytes = { regular: Uint8Array; semibold: Uint8Array; bold: Uint8Array };
 let fontCache: Promise<FontBytes> | null = null;
 
-function loadFontBytes(): Promise<FontBytes> {
+export function loadFontBytes(): Promise<FontBytes> {
   if (!fontCache) {
     const dir = path.join(process.cwd(), "assets", "fonts");
     fontCache = Promise.all([
@@ -108,12 +108,12 @@ function loadFontBytes(): Promise<FontBytes> {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-function hexToRgb(hex: string): RGB {
+export function hexToRgb(hex: string): RGB {
   const n = parseInt(hex.slice(1), 16);
   return rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
 }
 
-function mix(a: RGB, b: RGB, t: number): RGB {
+export function mix(a: RGB, b: RGB, t: number): RGB {
   return rgb(a.red + (b.red - a.red) * t, a.green + (b.green - a.green) * t, a.blue + (b.blue - a.blue) * t);
 }
 
@@ -121,7 +121,7 @@ const WHITE = rgb(1, 1, 1);
 const INK = rgb(0.07, 0.09, 0.16);
 
 /** Replaces characters the font cannot render so output never has missing glyphs. */
-function safeText(font: PDFFont, text: string): string {
+export function safeText(font: PDFFont, text: string): string {
   const supported = new Set(font.getCharacterSet());
   return Array.from(text.normalize("NFC"))
     .map((ch) => (supported.has(ch.codePointAt(0)!) ? ch : ch.trim() === "" ? " " : "?"))
@@ -200,7 +200,7 @@ export function formatEventDates(startsAt?: string | null, endsAt?: string | nul
   return `${fmt(startsAt, { day: "numeric", month: "short" })} – ${e}`;
 }
 
-async function embedImage(doc: PDFDocument, bytes?: Uint8Array | null): Promise<PDFImage | null> {
+export async function embedImage(doc: PDFDocument, bytes?: Uint8Array | null): Promise<PDFImage | null> {
   if (!bytes || bytes.length < 8) return null;
   try {
     if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return await doc.embedPng(bytes);

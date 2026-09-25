@@ -66,9 +66,9 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     return { error: "Your temporary password has expired. Ask the organisers to issue a new one.", email };
   }
   if (profile.role === "vendor") {
-    const { data: h } = await service.from("hackathons").select("ends_at").eq("id", profile.hackathon_id ?? "").maybeSingle<{ ends_at: string | null }>();
+    const { data: h } = await service.from("hackathons").select("ends_at, status").eq("id", profile.hackathon_id ?? "").maybeSingle<{ ends_at: string | null; status: string }>();
     const ends = shopLoginEndsAt(h?.ends_at);
-    if (!profile.shop_id || (ends && ends.getTime() < Date.now())) {
+    if (!profile.shop_id || h?.status === "completed" || (ends && ends.getTime() < Date.now())) {
       await supabase.auth.signOut();
       return { error: "This shop login has closed because the hackathon is over. Contact the organisers if you still need access.", email };
     }

@@ -132,7 +132,7 @@ export async function requireVendor(): Promise<Session & { shopId: string; hacka
   if (session.profile.role !== "vendor") redirect(homePathFor(session.profile.role));
   if (!session.profile.shop_id || !session.hackathonId) redirect("/login?error=no_shop");
   // Shop logins close a day after the hackathon ends.
-  const { data: h } = await (await createClient()).from("hackathons").select("ends_at").eq("id", session.hackathonId).maybeSingle<{ ends_at: string | null }>();
-  if (h?.ends_at && Date.parse(h.ends_at) + 24 * 3600_000 < requestTime()) redirect("/auth/signout?reason=shop_ended");
+  const { data: h } = await (await createClient()).from("hackathons").select("ends_at, status").eq("id", session.hackathonId).maybeSingle<{ ends_at: string | null; status: string }>();
+  if (h?.status === "completed" || (h?.ends_at && Date.parse(h.ends_at) + 24 * 3600_000 < requestTime())) redirect("/auth/signout?reason=shop_ended");
   return { ...session, shopId: session.profile.shop_id, hackathonId: session.hackathonId };
 }

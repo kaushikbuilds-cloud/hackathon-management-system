@@ -25,6 +25,9 @@ export type Hackathon = {
   id_year: number;
   /** Starts every Team / Participant ID of this hackathon, e.g. SAMPLE1 → SAMPLE1-T0001. */
   code_prefix: string;
+  /** Set when the Admin ended the hackathon. */
+  ended_at?: string | null;
+  ended_by?: string | null;
   registration_opens_at: string | null;
   registration_closes_at: string | null;
   min_team_size: number;

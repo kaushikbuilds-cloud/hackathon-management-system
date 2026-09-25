@@ -30,6 +30,8 @@ export function staffNav(session: Session): NavItem[] {
     { href: "/staff/faq", label: "FAQ", icon: "help", show: ev(can(session, "publish_announcements")) },
     { href: "/staff/support", label: official ? "Assigned Help Desk" : "Support Requests", icon: "help", show: inEvent },
     { href: "/staff/reports", label: "Reports & Export", icon: "chart", show: ev(can(session, "view_reports")) },
+    { href: "/staff/certificates", label: "Certificates", icon: "idcard", show: ev(can(session, "manage_event")) },
+    { href: "/staff/end", label: "End Hackathon", icon: "trophy", show: ev(can(session, "manage_event")) },
     { href: "/staff/audit", label: "Audit Logs", icon: "audit", show: sa },
     { href: "/staff/system", label: "System Settings", icon: "server", show: sa },
     { href: "/staff/settings", label: "Profile & Security", icon: "user", show: true },
