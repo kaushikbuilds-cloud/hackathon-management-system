@@ -4,7 +4,8 @@ import { appUrl } from "@/lib/env";
 import { audit } from "@/lib/audit";
 import type { Session } from "@/lib/auth";
 import { teamPdfFileName } from "@/lib/domain/normalize";
-import { resolveTemplateConfig, type TemplateConfig } from "@/lib/domain/template";
+import { pageCount, resolveTemplateConfig, type TemplateConfig } from "@/lib/domain/template";
+import { activationInfoFor } from "@/lib/activation";
 import { CardValidationError, generateTeamIdCardsPdf, validateCardInput, type CardInput, type CardValidation } from "@/lib/pdf/id-cards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { BUCKETS, downloadObject, signedUrl, uploadObject } from "@/lib/storage";
@@ -57,9 +58,13 @@ function toCardMember(p: Participant) {
   };
 }
 
-async function buildCardInput(ctx: TeamCardContext): Promise<CardInput> {
-  const withPhotos = ctx.templateConfig.showPhoto;
-  const photos = await Promise.all(ctx.members.map((m) => (withPhotos ? downloadObject(BUCKETS.photos, m.photo_path) : null)));
+/**
+ * `activation`: print one-time account activation codes. Only for staff who
+ * may print cards; never for portal downloads (a Team Leader must not receive
+ * teammates' codes).
+ */
+async function buildCardInput(ctx: TeamCardContext, opts: { activation: boolean }): Promise<CardInput> {
+  const activation = opts.activation ? await activationInfoFor(ctx.members.map((m) => m.id)) : null;
   return {
     event: {
       name: ctx.hackathon.name,
@@ -72,7 +77,11 @@ async function buildCardInput(ctx: TeamCardContext): Promise<CardInput> {
       logo: await downloadObject(BUCKETS.branding, ctx.hackathon.logo_path),
     },
     team: { name: ctx.team.name, teamCode: ctx.team.team_code },
-    members: ctx.members.map((m, i) => ({ ...toCardMember(m), photo: photos[i] })),
+    members: ctx.members.map((m) => ({
+      ...toCardMember(m),
+      activated: activation?.get(m.id)?.activated ?? false,
+      activationCode: activation?.get(m.id)?.code ?? null,
+    })),
     template: ctx.templateConfig,
     templateVersion: ctx.template?.version ?? 0,
     verifyBaseUrl: appUrl(),
@@ -80,9 +89,9 @@ async function buildCardInput(ctx: TeamCardContext): Promise<CardInput> {
 }
 
 /** Renders the PDF in memory (preview; nothing is stored). */
-export async function renderTeamPdf(ctx: TeamCardContext) {
+export async function renderTeamPdf(ctx: TeamCardContext, opts: { activation: boolean }) {
   if (ctx.validation.errors.length) throw new CardValidationError(ctx.validation.errors);
-  return generateTeamIdCardsPdf(await buildCardInput(ctx));
+  return generateTeamIdCardsPdf(await buildCardInput(ctx, opts));
 }
 
 export type GenerationResult =
@@ -113,9 +122,10 @@ export async function generateAndStoreTeamPdf(session: Session, ctx: TeamCardCon
   if (jobError || !job) return { ok: false, job: null, error: "Could not create the generation record. Please retry." };
 
   try {
-    const pdf = await renderTeamPdf(ctx);
-    if (pdf.pageCount !== ctx.members.length) {
-      throw new Error(`Page count mismatch: expected ${ctx.members.length}, got ${pdf.pageCount}`);
+    const pdf = await renderTeamPdf(ctx, { activation: true });
+    const expected = pageCount(ctx.templateConfig, ctx.members.length);
+    if (pdf.pageCount !== expected) {
+      throw new Error(`Page count mismatch: expected ${expected}, got ${pdf.pageCount}`);
     }
     const filePath = `teams/${ctx.team.id}/${job.id}/${ctx.fileName}`;
     await uploadObject(BUCKETS.idCards, filePath, pdf.bytes, "application/pdf");

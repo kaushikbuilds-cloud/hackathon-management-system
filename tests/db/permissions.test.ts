@@ -142,4 +142,11 @@ describe.skipIf(!enabled)("roles & permissions v2 (database)", () => {
     expect(JSON.stringify(stats)).not.toContain("@");
     expect(await pgErrorCode(as(pool, u.official, (c) => c.query("select dashboard_stats()")))).toBe("42501");
   });
+  it("activation codes are invisible to every signed-in role and anonymous visitors", async () => {
+    await pool.query("insert into participant_activation_codes (participant_id, code) values ($1, 'X7K9M2Q4') on conflict do nothing", [leaderId]);
+    for (const who of [u.superAdmin, u.admin, u.official, null]) {
+      expect(await pgErrorCode(as(pool, who, (c) => c.query("select * from participant_activation_codes")))).toBe("42501");
+    }
+    expect(await pgErrorCode(pool.query("insert into participant_activation_codes (participant_id, code) values ($1, 'bad0code')", [leaderId]))).toBe("23514");
+  });
 });

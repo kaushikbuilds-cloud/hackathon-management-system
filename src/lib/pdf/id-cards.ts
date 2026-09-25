@@ -31,6 +31,10 @@ export type CardMember = {
   qrToken: string;
   qrRevoked?: boolean;
   photo?: Uint8Array | null;
+  /** One-time code printed on the card to activate the portal account. */
+  activationCode?: string | null;
+  /** The participant already has a portal account (no code printed). */
+  activated?: boolean;
 };
 
 export type CardInput = {
@@ -112,7 +116,6 @@ function mix(a: RGB, b: RGB, t: number): RGB {
 
 const WHITE = rgb(1, 1, 1);
 const INK = rgb(0.07, 0.09, 0.16);
-const MUTED = rgb(0.38, 0.42, 0.5);
 
 /** Replaces characters the font cannot render so output never has missing glyphs. */
 function safeText(font: PDFFont, text: string): string {
@@ -162,9 +165,15 @@ function wrap(font: PDFFont, text: string, size: number, maxWidth: number, maxLi
   return lines.slice(0, maxLines).map((l) => ellipsize(font, l, size, maxWidth));
 }
 
-function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase() || "?";
+/** Largest size in [min, max] at which text wraps into maxLines without truncation (truncated at min). */
+function fitWrap(font: PDFFont, text: string, maxSize: number, minSize: number, maxWidth: number, maxLines: number) {
+  for (let size = maxSize; size > minSize; size -= 0.25) {
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.some((w) => font.widthOfTextAtSize(w, size) > maxWidth)) continue;
+    const lines = wrap(font, text, size, maxWidth, maxLines + 1);
+    if (lines.length <= maxLines) return { size, lines };
+  }
+  return { size: minSize, lines: wrap(font, text, minSize, maxWidth, maxLines) };
 }
 
 export function formatEventDates(startsAt?: string | null, endsAt?: string | null, timeZone?: string | null): string {
@@ -244,6 +253,38 @@ class CardCanvas {
     const ih = img.height * scale;
     this.page.drawImage(img, { x: this.X(x + (w - iw) / 2), y: this.Y(y + (h + ih) / 2), width: iw * this.s, height: ih * this.s });
   }
+  /** Rounded rectangle; widths are in base units. */
+  round(x: number, y: number, w: number, h: number, r: number, opts: { fill?: RGB; border?: RGB; borderWidth?: number; opacity?: number }) {
+    r = Math.min(r, w / 2, h / 2);
+    const d = `M ${r} 0 H ${w - r} Q ${w} 0 ${w} ${r} V ${h - r} Q ${w} ${h} ${w - r} ${h} H ${r} Q 0 ${h} 0 ${h - r} V ${r} Q 0 0 ${r} 0 Z`;
+    this.page.drawSvgPath(d, {
+      x: this.X(x), y: this.Y(y), scale: this.s, color: opts.fill, opacity: opts.opacity,
+      borderColor: opts.border, borderWidth: opts.border ? (opts.borderWidth ?? 0.5) : undefined, borderOpacity: opts.opacity,
+    });
+  }
+  path(d: string, x: number, y: number, opts: { fill?: RGB; border?: RGB; borderWidth?: number; opacity?: number }) {
+    this.page.drawSvgPath(d, {
+      x: this.X(x), y: this.Y(y), scale: this.s, color: opts.fill, opacity: opts.opacity,
+      borderColor: opts.border, borderWidth: opts.border ? (opts.borderWidth ?? 0.5) : undefined, borderOpacity: opts.opacity,
+    });
+  }
+  circle(cx: number, cy: number, r: number, color: RGB, opacity = 1) {
+    this.page.drawEllipse({ x: this.X(cx), y: this.Y(cy), xScale: r * this.s, yScale: r * this.s, color, opacity });
+  }
+  line(x1: number, y1: number, x2: number, y2: number, color: RGB, width = 0.4, opacity = 1) {
+    this.page.drawLine({ start: { x: this.X(x1), y: this.Y(y1) }, end: { x: this.X(x2), y: this.Y(y2) }, thickness: width * this.s, color, opacity });
+  }
+  /** Text with extra space between letters (for small uppercase labels). */
+  spaced(t: string, x: number, baseline: number, font: PDFFont, size: number, color: RGB, spacing: number) {
+    let cx = x;
+    for (const ch of t) {
+      this.text(ch, cx, baseline, font, size, color);
+      cx += font.widthOfTextAtSize(ch, size) + spacing;
+    }
+  }
+  spacedWidth(t: string, font: PDFFont, size: number, spacing: number) {
+    return font.widthOfTextAtSize(t, size) + Math.max(0, t.length - 1) * spacing;
+  }
   qr(matrix: { size: number; get: (r: number, c: number) => number }, x: number, y: number, size: number, dark: RGB) {
     const quiet = 2;
     const cell = size / (matrix.size + quiet * 2);
@@ -322,138 +363,228 @@ async function drawCard(
   const W = card.width / s;
   const H = card.height / s;
   const c = new CardCanvas(page, ox, oy, s, W, H);
-  const { fonts, header, accent } = shared;
+  const { fonts, header: bg, accent } = shared;
   const f = (font: PDFFont, t: string) => safeText(font, t);
-  const pad = 8;
+  const pad = 9;
   const cx = W / 2;
+  const light = luminance(bg) > 0.55;
+  const fg = light ? INK : WHITE;
+  const soft = mix(fg, bg, 0.35);
+  const faint = mix(fg, bg, 0.75);
+  const accent2 = mix(accent, WHITE, 0.35);
 
-  // Background
-  c.rect(0, 0, W, H, WHITE);
+  // Background with soft accent glows and a thin inner frame.
+  c.rect(0, 0, W, H, bg);
+  // Glows are drawn as shapes clipped to the card edge so tiled cards never overlap.
+  c.path(`M ${W - 50} 0 A 50 50 0 0 0 ${W} 50 L ${W} 0 Z`, 0, 0, { fill: accent, opacity: 0.28 });
+  c.path(`M 0 ${H - 84} A 42 42 0 0 1 0 ${H} Z`, 0, 0, { fill: accent, opacity: 0.16 });
+  c.path(`M ${W} ${H - 92} A 30 30 0 0 0 ${W} ${H - 32} Z`, 0, 0, { fill: accent2, opacity: 0.1 });
+  c.round(3, 3, W - 6, H - 6, 7, { border: accent, borderWidth: 0.35, opacity: 0.45 });
 
-  // Header band: logo + event name + organiser/tagline
-  const headerH = 44;
-  c.rect(0, 0, W, headerH, header);
-  c.rect(0, headerH, W, 2.5, accent);
-  let textX = pad;
-  if (shared.logo) {
-    c.image(shared.logo, pad, 10, 24, 24);
-    textX = pad + 24 + 6;
+  // Lanyard slot.
+  c.round(cx - 17, 7, 34, 6.5, 3.25, { fill: mix(bg, WHITE, 0.08), border: soft, borderWidth: 0.5, opacity: 0.9 });
+
+  // Header: logo, event name + tagline | dates + venue.
+  const top = 20;
+  const logoS = 25;
+  if (shared.logo) c.image(shared.logo, pad, top, logoS, logoS);
+  else drawHexLogo(c, pad, top, logoS, accent);
+  const divX = W * 0.66;
+  const titleX = pad + logoS + 5;
+  const titleW = divX - titleX - 4;
+  const title = fitWrap(fonts.bold, f(fonts.bold, event.name.toUpperCase()), 8.6, 4.6, titleW, 2);
+  const titleLines = title.lines;
+  let ty = top + (titleLines.length > 1 ? 4 + title.size * 0.8 : 8 + title.size * 0.5);
+  titleLines.forEach((line, i) => {
+    c.text(line, titleX, ty, fonts.bold, title.size, i === titleLines.length - 1 && titleLines.length > 1 ? accent2 : fg);
+    ty += title.size * 1.12;
+  });
+  ty += 1.5;
+  const tagline = f(fonts.semibold, (event.tagline || "").toUpperCase());
+  if (tagline) {
+    let size = 3.6;
+    while (size > 2.6 && c.spacedWidth(tagline, fonts.semibold, size, 0.8) > titleW) size -= 0.2;
+    c.spaced(ellipsize(fonts.semibold, tagline, size, titleW), titleX, ty - 1.5, fonts.semibold, size, soft, 0.8);
   }
-  const titleWidth = W - textX - pad;
-  const title = fitOneLine(fonts.bold, f(fonts.bold, event.name), 10, 6.5, titleWidth);
-  const sub = f(fonts.regular, event.organizerName || event.tagline || "");
-  if (sub) {
-    c.text(title.text, textX, 21, fonts.bold, title.size, WHITE);
-    const subFit = fitOneLine(fonts.regular, sub, 5.8, 4.5, titleWidth);
-    c.text(subFit.text, textX, 30.5, fonts.regular, subFit.size, mix(WHITE, header, 0.3));
-  } else {
-    c.text(title.text, textX, 25.5, fonts.bold, title.size, WHITE);
+  c.line(divX, top - 1, divX, top + logoS + 3, faint, 0.4);
+  const infoX = divX + 5;
+  const infoW = W - pad - infoX + 2;
+  let iy = top + 4;
+  const infoRow = (icon: "cal" | "pin", text: string) => {
+    const lines = wrap(fonts.semibold, f(fonts.semibold, text), 4.1, infoW - 6, 2);
+    drawIcon(c, icon, infoX, iy - 3.2, 4, fg);
+    lines.forEach((l, k) => c.text(l, infoX + 6, iy + k * 5, fonts.semibold, 4.1, fg));
+    iy += lines.length * 5 + 3.5;
+  };
+  if (template.showEventDate && shared.dates) infoRow("cal", shared.dates);
+  if (template.showVenue && event.venue?.trim()) infoRow("pin", event.venue.trim());
+
+  // Footer: "Organized by" (or custom footer text).
+  const footerH = 20;
+  const footerTop = H - footerH - 3;
+  c.line(pad, footerTop, W - pad, footerTop, faint, 0.4);
+  const orgLine = f(fonts.semibold, (template.footerText || event.organizerName || "").toUpperCase());
+  if (orgLine) {
+    const lbl = "ORGANIZED BY";
+    const showLabel = !template.footerText;
+    if (showLabel) c.spaced(lbl, cx - c.spacedWidth(lbl, fonts.regular, 3.3, 0.9) / 2, footerTop + 7.5, fonts.regular, 3.3, soft, 0.9);
+    let size = 4.2;
+    while (size > 3 && c.spacedWidth(orgLine, fonts.semibold, size, 0.6) > W - pad * 2) size -= 0.2;
+    const shown = ellipsize(fonts.semibold, orgLine, size, W - pad * 2);
+    c.spaced(shown, cx - c.spacedWidth(shown, fonts.semibold, size, 0.6) / 2, footerTop + (showLabel ? 14 : 11), fonts.semibold, size, fg, 0.6);
   }
 
-  // Bottom: footer band (dates / venue / footer text)
-  const footerLines = [
-    template.showEventDate ? shared.dates : "",
-    template.showVenue ? event.venue ?? "" : "",
-  ].filter(Boolean).join("  •  ");
-  const footerText = template.footerText;
-  const footerH = footerText && footerLines ? 20 : 14;
-  const footerTop = H - footerH;
-  c.rect(0, footerTop, W, footerH, header);
-  if (footerLines) {
-    const fl = fitOneLine(fonts.semibold, f(fonts.semibold, footerLines), 5.4, 4.2, W - pad * 2);
-    c.centered(fl.text, cx, footerTop + (footerText ? 8.2 : 8.8), fonts.semibold, fl.size, WHITE);
-  }
-  if (footerText) {
-    const ft = fitOneLine(fonts.regular, f(fonts.regular, footerText), 4.8, 4, W - pad * 2);
-    c.centered(ft.text, cx, footerTop + (footerLines ? 15.6 : 8.8), fonts.regular, ft.size, mix(WHITE, header, 0.35));
-  }
-
-  // Lower section: participant/team details (left) + QR (right)
-  const qrSize = 50;
-  const lowerTop = footerTop - 6 - qrSize;
-  const qrX = W - pad - qrSize;
+  // Lower block (bottom-aligned above the footer): QR + Participant ID | Team ID + activation.
+  const gap = 5;
+  const colW = (W - pad * 2 - gap) / 2;
+  const qrBox = Math.min(colW, 58);
+  const pidBoxH = 11;
+  const lowerBottom = footerTop - 5;
+  const pidBoxTop = lowerBottom - pidBoxH;
+  const pidLabelY = pidBoxTop - 2.5;
+  const qrTop = pidLabelY - 6 - (qrBox + 7);
+  const qx = pad + (colW - qrBox) / 2;
+  c.round(qx, qrTop, qrBox, qrBox + 7, 4, { fill: WHITE });
   const matrix = QRCode.create(`${input.verifyBaseUrl.replace(/\/$/, "")}/verify/${member.qrToken}`, { errorCorrectionLevel: "M" }).modules;
-  c.qr(matrix, qrX, lowerTop, qrSize, INK);
-  c.outline(qrX, lowerTop, qrSize, qrSize, mix(WHITE, INK, 0.15), 0.4);
+  const qrSize = qrBox - 4;
+  c.qr(matrix, qx + 2, qrTop + 2, qrSize, INK);
+  c.centered("Scan for verification", qx + qrBox / 2, qrTop + qrBox + 4, fonts.semibold, 3.6, INK);
+  c.text("Participant ID", pad, pidLabelY, fonts.regular, 3.8, soft);
+  c.round(pad, pidBoxTop, colW, pidBoxH, 3, { fill: mix(bg, accent, 0.12), border: accent, borderWidth: 0.5 });
+  const pid = fitOneLine(fonts.bold, member.participantCode, 6.6, 4.2, colW - 6);
+  c.text(pid.text, pad + 3.5, pidBoxTop + 7.6, fonts.bold, pid.size, fg);
 
-  const leftW = qrX - pad - 5;
-  let y = lowerTop + 5;
-  c.text("PARTICIPANT ID", pad, y, fonts.semibold, 4.4, MUTED);
-  y += 8.6;
-  const pid = fitOneLine(fonts.bold, member.participantCode, 8, 5.5, leftW);
-  c.text(pid.text, pad, y, fonts.bold, pid.size, INK);
-  y += 9.5;
-  c.text("TEAM", pad, y, fonts.semibold, 4.4, MUTED);
-  y += 7.6;
-  const teamLines = wrap(fonts.bold, f(fonts.bold, team.name), 6.6, leftW, 2);
-  for (const line of teamLines) {
-    c.text(line, pad, y, fonts.bold, 6.6, INK);
-    y += 7.4;
-  }
-  const tc = fitOneLine(fonts.semibold, team.teamCode, 5.6, 4.5, leftW);
-  c.text(tc.text, pad, y, fonts.semibold, tc.size, accent);
-
-  // Upper section: photo, name, role, college/department (flows top-down and
-  // shrinks the photo if space is short).
-  const infoParts = [
-    template.showDepartment ? member.department : null,
-    member.academicYear ? member.academicYear : null,
-  ].filter((v): v is string => Boolean(v?.trim()));
-  const college = template.showCollege ? member.college?.trim() ?? "" : "";
-  const nameLines = wrap(fonts.bold, f(fonts.bold, member.fullName), 10.5, W - pad * 2, 2);
-  const textBlockH =
-    nameLines.length * 12 + 12 + (college ? 7.5 : 0) + (infoParts.length ? 7.5 : 0);
-  const available = lowerTop - 8 - (headerH + 2.5 + 7);
-  let photoH = template.showPhoto ? Math.min(52, Math.max(0, available - textBlockH - 6)) : 0;
-  if (photoH < 24) photoH = 0;
-  y = headerH + 2.5 + 7;
-  if (photoH > 0) {
-    const photoW = photoH * 0.85;
-    const px = cx - photoW / 2;
-    const photo = await embedImage(page.doc, member.photo);
-    c.rect(px, y, photoW, photoH, mix(WHITE, accent, 0.12), { border: accent, borderWidth: 0.8 });
-    if (photo) {
-      c.image(photo, px + 1, y + 1, photoW - 2, photoH - 2);
-    } else {
-      const ini = f(fonts.bold, initials(member.fullName));
-      c.centered(ini, cx, y + photoH / 2 + 5, fonts.bold, 14, accent);
-    }
-    y += photoH + 6;
-  }
-  for (const line of nameLines) {
-    y += 10;
-    c.centered(line, cx, y, fonts.bold, 10.5, INK);
-    y += 2;
-  }
-  // Role pill
-  const roleLabel = member.role === "leader" ? "TEAM LEADER" : "MEMBER";
-  const pillW = fonts.bold.widthOfTextAtSize(roleLabel, 5.2) + 10;
-  const pillTop = y + 3;
-  if (member.role === "leader") {
-    c.rect(cx - pillW / 2, pillTop, pillW, 8, accent);
-    c.centered(roleLabel, cx, pillTop + 5.9, fonts.bold, 5.2, WHITE);
+  const px = pad + colW + gap;
+  const panelTop = qrTop;
+  c.round(px, panelTop, colW, lowerBottom - panelTop, 5, { fill: mix(bg, accent, 0.1), border: accent2, borderWidth: 0.45, opacity: 0.95 });
+  const inX = px + 3.5;
+  const inW = colW - 7;
+  let py = panelTop + 8;
+  const valueBox = (label: string, value: string, icon: "user" | "lock") => {
+    drawIcon(c, icon, inX, py - 3.3, 3.6, fg);
+    c.text(label, inX + 5.5, py, fonts.bold, 3.6, fg);
+    py += 2.5;
+    c.round(inX, py, inW, 10.5, 3, { fill: accent });
+    const v = fitOneLine(fonts.bold, value, 6.2, 3.8, inW - 5);
+    c.text(v.text, inX + 2.8, py + 7.3, fonts.bold, v.size, WHITE);
+    py += 10.5 + 7;
+  };
+  valueBox("TEAM ID", team.teamCode, "user");
+  const host = input.verifyBaseUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  let note: [string, string, string];
+  if (member.activated) {
+    note = ["Account active. Sign in at", host, "with your email or Participant ID."];
+  } else if (member.activationCode) {
+    valueBox("ACTIVATION CODE", member.activationCode, "lock");
+    note = ["Activate your account at", `${host}/activate`, "with your Participant ID and this one-time code, then set your password."];
   } else {
-    c.rect(cx - pillW / 2, pillTop, pillW, 8, WHITE, { border: accent, borderWidth: 0.6 });
-    c.centered(roleLabel, cx, pillTop + 5.9, fonts.bold, 5.2, accent);
+    note = ["Participant portal:", host, ""];
   }
-  y = pillTop + 8;
-  if (college) {
-    y += 7.5;
-    const cl = fitOneLine(fonts.semibold, f(fonts.semibold, college), 5.8, 4.4, W - pad * 2);
-    c.centered(cl.text, cx, y, fonts.semibold, cl.size, INK);
-  }
-  if (infoParts.length) {
-    y += 7.5;
-    const il = fitOneLine(fonts.regular, f(fonts.regular, infoParts.join(" · ")), 5.4, 4.2, W - pad * 2);
-    c.centered(il.text, cx, y, fonts.regular, il.size, MUTED);
-  }
-  if (template.additionalInfo && y + 12 < lowerTop - 2) {
-    const ai = fitOneLine(fonts.regular, f(fonts.regular, template.additionalInfo), 5, 4, W - pad * 2);
-    c.centered(ai.text, cx, lowerTop - 4, fonts.regular, ai.size, MUTED);
-  }
+  let ny = py - 2;
+  for (const l of wrap(fonts.regular, note[0], 3.5, inW, 2)) { c.text(l, inX, ny, fonts.regular, 3.5, soft); ny += 4.4; }
+  const url = fitOneLine(fonts.semibold, note[1], 3.8, 2.4, inW);
+  c.text(url.text, inX, ny, fonts.semibold, url.size, fg);
+  ny += 4.6;
+  for (const l of wrap(fonts.regular, note[2], 3.5, inW, 3)) { c.text(l, inX, ny, fonts.regular, 3.5, soft); ny += 4.4; }
 
-  // Thin border so cards are easy to cut out.
+  // Upper block: role pill, name, team, details — flows down from the header.
+  let y = top + logoS + 10;
+  c.line(pad, y - 4, W - pad, y - 4, faint, 0.4);
+  const roleLabel = member.role === "leader" ? "TEAM LEADER" : "PARTICIPANT";
+  const pillW = fonts.bold.widthOfTextAtSize(roleLabel, 4.6) + 9;
+  c.round(pad, y, pillW, 8, 2.5, { fill: accent });
+  c.text(roleLabel, pad + 4.5, y + 5.7, fonts.bold, 4.6, WHITE);
+  y += 8;
+  const name = fitWrap(fonts.bold, f(fonts.bold, member.fullName.toUpperCase()), 12, 7, W - pad * 2, 2);
+  for (const line of name.lines) {
+    y += name.size * 1.05;
+    c.text(line, pad, y, fonts.bold, name.size, fg);
+  }
+  y += 9;
+  const tm = fitOneLine(fonts.bold, f(fonts.bold, `Team ${team.name}`), 7.6, 5, W - pad * 2);
+  c.text(tm.text, pad, y, fonts.bold, tm.size, accent2);
+  const rows: { icon: "cap" | "book" | "people"; text: string }[] = [];
+  if (template.showCollege && member.college?.trim()) rows.push({ icon: "cap", text: member.college.trim() });
+  const dept = [template.showDepartment ? member.department?.trim() : "", member.academicYear?.trim()].filter(Boolean).join(" · ");
+  if (dept) rows.push({ icon: "book", text: dept });
+  rows.push({ icon: "people", text: member.role === "leader" ? "Team Leader" : "Team Member" });
+  const rowH = 7.8;
+  y += 3;
+  for (const row of rows) {
+    if (y + rowH > qrTop - 4) break;
+    y += rowH;
+    drawIcon(c, row.icon, pad, y - 3.6, 4.2, fg);
+    const t = fitOneLine(fonts.regular, f(fonts.regular, row.text), 5, 3.8, W - pad * 2 - 8);
+    c.text(t.text, pad + 8, y, fonts.regular, t.size, fg);
+  }
+  if (template.additionalInfo && y + 7 < qrTop - 4) {
+    const ai = fitOneLine(fonts.regular, f(fonts.regular, template.additionalInfo), 4, 3.4, W - pad * 2);
+    c.text(ai.text, pad, qrTop - 4, fonts.regular, ai.size, soft);
+  }
+  c.line(pad, qrTop - 2.5, W - pad, qrTop - 2.5, faint, 0.3, 0.6);
+
+  // Thin cut border.
   c.outline(0, 0, W, H, mix(WHITE, INK, 0.2), 0.3);
+}
+
+function luminance(c: RGB): number {
+  return 0.2126 * c.red + 0.7152 * c.green + 0.0722 * c.blue;
+}
+
+/** Default logo when the event has none: a hexagon "network" mark. */
+function drawHexLogo(c: CardCanvas, x: number, y: number, size: number, color: RGB) {
+  const r = size / 2;
+  const pts = Array.from({ length: 6 }, (_, i) => {
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    return [r + r * 0.95 * Math.cos(a), r + r * 0.95 * Math.sin(a)] as const;
+  });
+  const inner = pts.map(([px, py]) => [r + (px - r) * 0.55, r + (py - r) * 0.55] as const);
+  c.path(`M ${pts.map(([a, b]) => `${a} ${b}`).join(" L ")} Z`, x, y, { border: color, borderWidth: 1.6 });
+  c.path(`M ${inner.map(([a, b]) => `${a} ${b}`).join(" L ")} Z`, x, y, { border: color, borderWidth: 0.9 });
+  for (const [a, b] of inner) {
+    c.line(x + r, y + r, x + a, y + b, color, 0.7);
+    c.circle(x + a, y + b, 1.5, color);
+  }
+  c.circle(x + r, y + r, 2.3, color);
+}
+
+/** Minimal line icons drawn with primitives (no icon font needed). */
+function drawIcon(c: CardCanvas, icon: "cal" | "pin" | "cap" | "book" | "people" | "user" | "lock", x: number, y: number, s: number, color: RGB) {
+  const w = 0.45;
+  switch (icon) {
+    case "cal":
+      c.round(x, y + s * 0.15, s, s * 0.85, s * 0.15, { border: color, borderWidth: w });
+      c.line(x, y + s * 0.42, x + s, y + s * 0.42, color, w);
+      c.line(x + s * 0.3, y, x + s * 0.3, y + s * 0.28, color, w);
+      c.line(x + s * 0.7, y, x + s * 0.7, y + s * 0.28, color, w);
+      break;
+    case "pin":
+      c.path(`M ${s / 2} ${s} L ${s * 0.12} ${s * 0.45} A ${s * 0.4} ${s * 0.4} 0 1 1 ${s * 0.88} ${s * 0.45} Z`, x, y, { fill: color });
+      c.circle(x + s / 2, y + s * 0.38, s * 0.15, WHITE);
+      break;
+    case "cap":
+      c.path(`M 0 ${s * 0.4} L ${s / 2} ${s * 0.15} L ${s} ${s * 0.4} L ${s / 2} ${s * 0.65} Z`, x, y, { fill: color });
+      c.path(`M ${s * 0.22} ${s * 0.55} V ${s * 0.85} Q ${s / 2} ${s} ${s * 0.78} ${s * 0.85} V ${s * 0.55}`, x, y, { border: color, borderWidth: w });
+      break;
+    case "book":
+      c.path(`M ${s / 2} ${s * 0.25} Q ${s * 0.25} ${s * 0.1} 0 ${s * 0.2} V ${s * 0.9} Q ${s * 0.25} ${s * 0.8} ${s / 2} ${s * 0.95} Z`, x, y, { border: color, borderWidth: w });
+      c.path(`M ${s / 2} ${s * 0.25} Q ${s * 0.75} ${s * 0.1} ${s} ${s * 0.2} V ${s * 0.9} Q ${s * 0.75} ${s * 0.8} ${s / 2} ${s * 0.95} Z`, x, y, { border: color, borderWidth: w });
+      break;
+    case "people":
+      c.circle(x + s * 0.5, y + s * 0.3, s * 0.17, color);
+      c.path(`M ${s * 0.22} ${s * 0.9} Q ${s * 0.5} ${s * 0.35} ${s * 0.78} ${s * 0.9} Z`, x, y, { fill: color });
+      c.circle(x + s * 0.15, y + s * 0.42, s * 0.12, color);
+      c.circle(x + s * 0.85, y + s * 0.42, s * 0.12, color);
+      break;
+    case "user":
+      c.circle(x + s / 2, y + s * 0.3, s * 0.22, color);
+      c.path(`M ${s * 0.1} ${s} Q ${s / 2} ${s * 0.35} ${s * 0.9} ${s} Z`, x, y, { fill: color });
+      break;
+    case "lock":
+      c.round(x + s * 0.12, y + s * 0.45, s * 0.76, s * 0.55, s * 0.08, { fill: color });
+      c.path(`M ${s * 0.28} ${s * 0.45} V ${s * 0.3} A ${s * 0.22} ${s * 0.22} 0 0 1 ${s * 0.72} ${s * 0.3} V ${s * 0.45}`, x, y, { border: color, borderWidth: w * 1.3 });
+      break;
+  }
 }
 
 // ---------------------------------------------------------------------------

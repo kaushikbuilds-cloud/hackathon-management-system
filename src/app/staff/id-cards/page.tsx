@@ -78,18 +78,17 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
                 <SelectField label="Card size" name="cardSize" defaultValue={config.cardSize} options={Object.entries(CARD_SIZES).map(([v, s]) => ({ value: v, label: `${s.label} — ${sheetGrid(v as CardSize).perPage} per A4` }))} />
                 <SelectField label="Page layout" name="pageLayout" defaultValue={config.pageLayout} options={Object.entries(PAGE_LAYOUTS).map(([value, label]) => ({ value, label }))} />
                 <div className="grid grid-cols-2 gap-3">
-                  <TextField label="Header colour" name="headerColor" type="color" defaultValue={config.headerColor} />
+                  <TextField label="Background colour" name="headerColor" type="color" defaultValue={config.headerColor} />
                   <TextField label="Accent colour" name="accentColor" type="color" defaultValue={config.accentColor} />
                 </div>
                 <fieldset className="space-y-2">
                   <legend className="text-sm font-medium text-slate-200">Show on card</legend>
-                  <Checkbox name="showPhoto" label="Photo (initials when no photo)" defaultChecked={config.showPhoto} />
                   <Checkbox name="showCollege" label="College" defaultChecked={config.showCollege} />
                   <Checkbox name="showDepartment" label="Department & year" defaultChecked={config.showDepartment} />
                   <Checkbox name="showEventDate" label="Event date" defaultChecked={config.showEventDate} />
                   <Checkbox name="showVenue" label="Venue" defaultChecked={config.showVenue} />
                 </fieldset>
-                <TextField label="Footer text" name="footerText" defaultValue={config.footerText} maxLength={80} />
+                <TextField label="Footer text" name="footerText" defaultValue={config.footerText} maxLength={80} hint="Replaces &quot;Organized by …&quot; at the bottom of the card." />
                 <TextField label="Additional info line" name="additionalInfo" defaultValue={config.additionalInfo} maxLength={120} hint="Optional, e.g. Wi-Fi SSID or help desk location. Never put passwords here." />
                 <SubmitButton pendingText="Publishing…">Publish new version</SubmitButton>
               </form>

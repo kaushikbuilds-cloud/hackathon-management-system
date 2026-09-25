@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     if (ctx.validation.errors.some((e) => e.field === "members")) ctx.validation.errors = ctx.validation.errors.filter((e) => e.field !== "members");
   }
   if (ctx.validation.errors.length) return NextResponse.json({ error: "Your card is not ready yet. Contact the organisers." }, { status: 409 });
-  const pdf = await renderTeamPdf(ctx);
+  const pdf = await renderTeamPdf(ctx, { activation: false });
   const name = scope === "me" ? `${ctx.members[0].participant_code}_ID_Card.pdf` : ctx.fileName;
   return new NextResponse(Buffer.from(pdf.bytes), {
     headers: { "Content-Type": "application/pdf", "Content-Disposition": contentDisposition("attachment", name), "Cache-Control": "private, no-store" },

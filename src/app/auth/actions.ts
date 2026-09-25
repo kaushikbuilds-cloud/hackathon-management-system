@@ -5,6 +5,7 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { homePathFor, getSession } from "@/lib/auth";
 import { recordCredentialEvent } from "@/lib/accounts";
+import { emailForParticipantCode } from "@/lib/activation";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { appUrl } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
@@ -26,9 +27,13 @@ const loginSchema = z.object({
 });
 
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
-  const parsed = loginSchema.safeParse({ email: formData.get("email"), password: formData.get("password") });
-  const email = String(formData.get("email") ?? "").slice(0, 254);
-  if (!parsed.success) return { error: "Enter a valid email and password.", email };
+  const email = String(formData.get("email") ?? "").trim().slice(0, 254);
+  // Participants may sign in with the Participant ID printed on their card.
+  const loginEmail = email.includes("@") ? email : (await emailForParticipantCode(email)) ?? email;
+  const parsed = loginSchema.safeParse({ email: loginEmail, password: formData.get("password") });
+  if (!parsed.success) {
+    return { error: email.includes("@") ? "Enter a valid email and password." : "Invalid Participant ID or password.", email };
+  }
 
   const ip = await clientIp();
   if (!(await rateLimit("login", `${ip}|${parsed.data.email}`))) {
@@ -39,7 +44,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error || !data.user) {
     await audit(null, "auth.sign_in_failed", { type: "auth" }, { email_hash: hashKey(parsed.data.email), reason: error?.code ?? "unknown" });
-    return { error: "Invalid email or password.", email };
+    return { error: email.includes("@") ? "Invalid email or password." : "Invalid Participant ID or password.", email };
   }
 
   const service = createServiceClient(data.user.id);

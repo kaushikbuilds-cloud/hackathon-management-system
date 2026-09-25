@@ -6,6 +6,7 @@ export const LIMITS = {
   registration: { limit: 10, windowSeconds: 3600 },
   login: { limit: 10, windowSeconds: 900 },
   passwordReset: { limit: 5, windowSeconds: 3600 },
+  activation: { limit: 8, windowSeconds: 900 },
   supportCreate: { limit: 20, windowSeconds: 3600 },
 } as const;
 

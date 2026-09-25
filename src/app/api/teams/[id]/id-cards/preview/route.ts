@@ -16,7 +16,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/teams/[id]/
   if (!context) return NextResponse.json({ error: "Team not found" }, { status: 404 });
   if (context.validation.errors.length) return NextResponse.json({ error: "Validation failed", issues: context.validation.errors }, { status: 422 });
   try {
-    const pdf = await renderTeamPdf(context);
+    const pdf = await renderTeamPdf(context, { activation: true });
     return new NextResponse(Buffer.from(pdf.bytes), {
       headers: {
         "Content-Type": "application/pdf",
