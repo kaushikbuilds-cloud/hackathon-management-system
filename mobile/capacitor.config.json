@@ -1,0 +1,19 @@
+{
+  "appId": "app.hackathonbase.staff",
+  "appName": "HackathonBase",
+  "webDir": "www",
+  "appendUserAgent": "HackathonBaseApp/1",
+  "server": {
+    "url": "https://hackathonbase.vercel.app",
+    "errorPath": "offline.html",
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#F4F1E8", "showSpinner": false },
+    "StatusBar": { "overlaysWebView": false, "style": "LIGHT", "backgroundColor": "#F4F1E8" }
+  }
+}

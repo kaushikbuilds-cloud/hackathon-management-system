@@ -6,6 +6,7 @@ import { formatRupees } from "@/lib/domain/fees";
 import { suggestShopPassword } from "@/lib/domain/password";
 import { getHackathon } from "@/lib/data/event";
 import { formatDateTime } from "@/lib/format";
+import { APP_DOWNLOAD_URL } from "@/lib/native-app";
 import { shopLoginEndsAt } from "@/lib/shops";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { FoodItem, FoodShop } from "@/lib/types";
@@ -60,7 +61,7 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
                   Shop login: <span className="font-mono">{shop.code ?? "—"}</span>{" "}
                   <Badge tone={loginFor.get(shop.id) ? "green" : "neutral"}>{loginFor.get(shop.id) ? "Created" : "Not created yet"}</Badge>
                 </p>
-                <p className="mb-2 text-xs text-ink-soft">The shop signs in with this Shop ID and the password you set to accept or reject its orders and edit its own menu and prices. {loginEnds ? `The login works until ${formatDateTime(loginEnds.toISOString(), tz)} (a day after the hackathon ends).` : "The login works until a day after the hackathon ends (set the end date in Event Setup)."}</p>
+                <p className="mb-2 text-xs text-ink-soft">The shop signs in with this Shop ID and the password you set to accept or reject its orders and edit its own menu and prices. {loginEnds ? `The login works until ${formatDateTime(loginEnds.toISOString(), tz)} (a day after the hackathon ends).` : "The login works until a day after the hackathon ends (set the end date in Event Setup)."} Shops can use the website or the <a href={APP_DOWNLOAD_URL} className="font-bold text-brand underline">Android app</a>.</p>
                 <ShopLoginForm shopId={shop.id} hasLogin={Boolean(loginFor.get(shop.id))} suggestion={suggestShopPassword(shop.name)} />
               </div>
               <details className="mb-4">

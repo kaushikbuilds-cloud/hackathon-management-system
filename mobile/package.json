@@ -1,0 +1,19 @@
+{
+  "name": "hackathonbase-app",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Android app for food shops and attendance takers: opens HackathonBase full-screen with a native QR scanner.",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^8.2.1",
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2"
+  }
+}

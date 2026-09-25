@@ -3,6 +3,8 @@ import Link from "next/link";
 import { EmptyState, LinkButton, PageHeader, Stat } from "@/components/ui";
 import { can, requirePermission } from "@/lib/auth";
 import { param, type SearchParams } from "@/lib/data/query";
+import { headers } from "next/headers";
+import { APP_DOWNLOAD_URL, APP_USER_AGENT } from "@/lib/native-app";
 import { createClient } from "@/lib/supabase/server";
 import { QrScanner } from "./scanner";
 
@@ -19,6 +21,7 @@ export default async function AttendancePage(props: PageProps<"/staff/attendance
       : supabase.from("attendance").select("id", { count: "exact", head: true }).eq("recorded_by", session.userId).eq("status", "present"),
     can(session, "view_reports") ? supabase.rpc("dashboard_stats") : Promise.resolve({ data: null }),
   ]);
+  const inApp = (await headers()).get("user-agent")?.includes(APP_USER_AGENT);
   const total = (stats.data as { participants?: number } | null)?.participants;
 
   return (
@@ -30,6 +33,7 @@ export default async function AttendancePage(props: PageProps<"/staff/attendance
           {can(session, "manual_checkin") && <LinkButton href="/staff/attendance/manual" variant="secondary">Manual check-in</LinkButton>}
           <LinkButton href="/staff/attendance/history" variant="secondary">Attendance history</LinkButton>
           {seeAll && <LinkButton href="/api/reports/attendance" variant="secondary" prefetch={false}>Export CSV</LinkButton>}
+          {!inApp && <a href={APP_DOWNLOAD_URL} className="self-center text-sm font-bold text-brand underline">Faster on phones: Android app</a>}
         </>}
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
