@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { createInvitation } from "@/lib/invitations";
+import { activationInfoFor } from "@/lib/activation";
 import { clientIp } from "@/lib/request";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -15,7 +15,13 @@ export type RegisterState = {
   message?: string;
   fieldErrors?: Record<string, string>;
   values?: RegistrationDraft;
-  result?: { team_code: string; team_name: string; participant_codes: string[]; activation_url?: string };
+  result?: {
+    team_code: string;
+    team_name: string;
+    participant_codes: string[];
+    /** Portal login details for every member: Participant ID + one-time activation code. */
+    logins: { full_name: string; participant_code: string; role: "leader" | "member"; activation_code: string | null }[];
+  };
   /** Changes on every response so the client form remounts with the submitted values. */
   nonce?: string;
 };
@@ -55,6 +61,21 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
 
   const payload = parsed.data;
   const service = createServiceClient();
+
+  // Phone numbers must be unique across all teams (the database enforces it too).
+  const phoneKeys = payload.members.map((m) => phoneKey(m.phone)).filter((k): k is string => Boolean(k));
+  if (phoneKeys.length) {
+    const { data: taken } = await service.from("participants").select("phone_key").in("phone_key", phoneKeys).limit(1);
+    if (taken?.length) {
+      const i = payload.members.findIndex((m) => phoneKey(m.phone) === taken[0].phone_key);
+      return {
+        nonce: randomUUID(), status: "error", values,
+        fieldErrors: { [`members.${i}.phone`]: "This phone number is already registered in another team." },
+        message: "One of the member phone numbers is already registered in another team.",
+      };
+    }
+  }
+
   const { data, error } = await service.rpc("register_team", {
     p_form_slug: slug,
     p_payload: payload,
@@ -71,19 +92,25 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
     return { nonce: randomUUID(), status: "error", values, fieldErrors, message: result.message };
   }
 
-  // The submitter is the Team Leader: give them a single-use activation link.
-  // Other members receive theirs from the organisers.
-  let activationUrl: string | undefined;
-  if (!result.replayed) {
-    const { data: leader } = await service.from("participants").select("id, email, full_name").eq("team_id", result.team_id).eq("role", "leader").single<{ id: string; email: string; full_name: string }>();
-    if (leader) {
-      activationUrl = (await createInvitation(null, { role: "participant", email: leader.email, participantId: leader.id, fullName: leader.full_name })).url;
-    }
-  }
+  // Every member gets portal login details straight away: their Participant ID
+  // and a one-time activation code (the same code is printed on the ID card).
+  const { data: members } = await service
+    .from("participants").select("id, full_name, participant_code, role").eq("team_id", result.team_id)
+    .order("role").order("participant_code")
+    .returns<{ id: string; full_name: string; participant_code: string; role: "leader" | "member" }[]>();
+  const info = await activationInfoFor((members ?? []).map((m) => m.id));
+  const logins = (members ?? []).map((m) => ({
+    full_name: m.full_name, participant_code: m.participant_code, role: m.role, activation_code: info.get(m.id)?.code ?? null,
+  }));
 
   return {
     status: "success",
-    result: { team_code: result.team_code, team_name: result.team_name, participant_codes: result.participant_codes, activation_url: activationUrl },
+    result: { team_code: result.team_code, team_name: result.team_name, participant_codes: result.participant_codes, logins },
   };
 }
 
+/** Last 10 digits, so "+91 98765 43210" and "9876543210" count as the same number. Mirrors participants.phone_key. */
+function phoneKey(phone: string | undefined | null): string | null {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  return digits ? digits.slice(-10) : null;
+}

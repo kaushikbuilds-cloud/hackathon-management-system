@@ -32,28 +32,42 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
           <Alert tone="green" title="Registration received!">
             Team <strong>{state.result.team_name}</strong> is registered. Keep these identifiers for your records.
           </Alert>
-          <dl className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-navy-700 bg-navy-850 p-4">
-              <dt className="text-xs uppercase tracking-wide text-slate-400">Team ID</dt>
-              <dd className="mt-1 font-mono text-xl font-bold text-white">{state.result.team_code}</dd>
+          <div className="rounded-xl border border-navy-700 bg-navy-850 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Team ID</p>
+            <p className="mt-1 font-mono text-xl font-bold text-white">{state.result.team_code}</p>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-violet-500/30 bg-violet-500/10">
+            <table className="w-full text-left text-sm" aria-label="Portal login details">
+              <caption className="px-4 pt-4 text-left">
+                <span className="block font-semibold text-white">Student portal login for every member</span>
+                <span className="mt-1 block text-slate-300">
+                  Each member activates their own account once with their Participant ID and activation code, then signs in with their email or Participant ID.
+                  Save or screenshot this now — the codes are also printed on the ID cards.
+                </span>
+              </caption>
+              <thead>
+                <tr className="text-xs uppercase tracking-wide text-slate-400">
+                  <th scope="col" className="px-4 py-2 font-medium">Member</th>
+                  <th scope="col" className="px-4 py-2 font-medium">Participant ID</th>
+                  <th scope="col" className="px-4 py-2 font-medium">Activation code</th>
+                </tr>
+              </thead>
+              <tbody>
+                {state.result.logins.map((m) => (
+                  <tr key={m.participant_code} className="border-t border-violet-500/20">
+                    <td className="px-4 py-2 text-slate-100">{m.full_name}{m.role === "leader" && <span className="ml-2 text-xs text-violet-300">Leader</span>}</td>
+                    <td className="px-4 py-2 font-mono text-slate-100">{m.participant_code}</td>
+                    <td className="px-4 py-2 font-mono text-lg font-bold tracking-wider text-white">{m.activation_code ?? "Ask the organisers"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex flex-wrap gap-2 p-4">
+              <a href="/activate" className="inline-flex rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white">Activate an account</a>
+              <button type="button" onClick={() => window.print()} className="inline-flex rounded-lg border border-navy-600 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-navy-800">Print / save as PDF</button>
             </div>
-            <div className="rounded-xl border border-navy-700 bg-navy-850 p-4">
-              <dt className="text-xs uppercase tracking-wide text-slate-400">Participant IDs</dt>
-              <dd className="mt-1 space-y-0.5 font-mono text-sm text-slate-100">
-                {state.result.participant_codes.map((c) => <div key={c}>{c}</div>)}
-              </dd>
-            </div>
-          </dl>
-          {state.result.activation_url ? (
-            <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4">
-              <p className="font-semibold text-white">Team Leader: activate your Team Portal account</p>
-              <p className="mt-1 text-sm text-slate-300">This personal link works once and expires in 7 days. Open it now to set your password.</p>
-              <a href={state.result.activation_url} className="mt-3 inline-flex rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white">Activate my account</a>
-            </div>
-          ) : null}
-          <p className="text-sm text-slate-400">
-            Other members receive their activation links from the organisers. ID cards are handed out at check-in.
-          </p>
+          </div>
+          <p className="text-sm text-slate-400">Codes work once. If a code is lost, the organisers can issue a new activation link.</p>
         </div>
       </Card>
     );

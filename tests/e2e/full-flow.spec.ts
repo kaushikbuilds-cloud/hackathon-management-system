@@ -12,15 +12,18 @@ const leader = { name: "Priya Raman", email: `priya.${run}@e2e.test` };
 const member = { name: "Dev Malhotra", email: `dev.${run}@e2e.test` };
 let teamCode = "";
 let teamUrl = "";
-let activationLink = "";
+let leaderPid = "";
+let leaderCode = "";
+// Phone numbers must be unique across teams, so each run uses its own.
+const phoneBase = String(Date.now()).slice(-8);
 
 test.skip(!creds.admin.password || !creds.official.password, "Set E2E_ADMIN_PASSWORD and E2E_OFFICIAL_PASSWORD (see README).");
 
-async function fillMember(page: import("@playwright/test").Page, index: number, m: { name: string; email: string }) {
+async function fillMember(page: import("@playwright/test").Page, index: number, m: { name: string; email: string }, phoneSlot = index) {
   const card = page.locator("section").filter({ has: page.getByRole("heading", { name: new RegExp(`^Member ${index + 1}`) }) });
   await card.getByLabel("Full name").fill(m.name);
   await card.getByLabel("Email").fill(m.email);
-  await card.getByLabel("Phone number").fill(`+91 98000 1000${index}`);
+  await card.getByLabel("Phone number").fill(`+91 9${phoneBase}${phoneSlot}`);
   await card.getByLabel("Department").fill("Computer Science");
   await card.getByLabel("Academic year").fill("3rd Year");
 }
@@ -36,20 +39,26 @@ test("public registration creates a team with generated IDs", async ({ page }) =
   await page.getByRole("button", { name: "Submit registration" }).click();
 
   await expect(page.getByText("Registration received!")).toBeVisible();
-  teamCode = (await page.locator("dd").filter({ hasText: /^TEAM-\d{4}-\d{4,}$/ }).innerText()).trim();
+  teamCode = (await page.getByText(/^TEAM-\d{4}-\d{4,}$/).innerText()).trim();
   expect(teamCode).toMatch(/^TEAM-\d{4}-\d{4,}$/);
-  await expect(page.getByText(/PRT-\d{4}-\d{4,}/)).toHaveCount(2);
-  // The submitter is the Team Leader and gets a single-use activation link.
-  activationLink = (await page.getByRole("link", { name: "Activate my account" }).getAttribute("href")) ?? "";
-  expect(activationLink).toMatch(/\/invite\/[A-Za-z0-9_-]{40,}$/);
+  // Every member gets portal login details straight away.
+  const logins = page.getByRole("table", { name: "Portal login details" });
+  await expect(logins.getByText(/^PRT-\d{4}-\d{4,}$/)).toHaveCount(2);
+  const leaderRow = logins.getByRole("row").filter({ hasText: leader.name });
+  leaderPid = (await leaderRow.getByRole("cell").nth(1).innerText()).trim();
+  leaderCode = (await leaderRow.getByRole("cell").nth(2).innerText()).trim();
+  expect(leaderCode).toMatch(/^[A-HJ-KM-NP-Z2-9]{8}$/);
+  const memberCode = (await logins.getByRole("row").filter({ hasText: member.name }).getByRole("cell").nth(2).innerText()).trim();
+  expect(memberCode).toMatch(/^[A-HJ-KM-NP-Z2-9]{8}$/);
+  expect(memberCode).not.toBe(leaderCode);
 });
 
 test("duplicate team names are rejected and entered data is preserved", async ({ page }) => {
   await page.goto(`/register/${FORM_SLUG}`);
   await page.getByLabel("Team name").fill(teamName.toUpperCase().replace(" ", "   "));
   await page.getByLabel("College / institution").fill("Another College");
-  await fillMember(page, 0, { name: "Someone Else", email: `else.${run}@e2e.test` });
-  await fillMember(page, 1, { name: "Another Person", email: `another.${run}@e2e.test` });
+  await fillMember(page, 0, { name: "Someone Else", email: `else.${run}@e2e.test` }, 5);
+  await fillMember(page, 1, { name: "Another Person", email: `another.${run}@e2e.test` }, 6);
   const track = page.getByLabel(/Which track/);
   if (await track.count()) await track.selectOption({ index: 1 });
   await page.getByRole("button", { name: "Submit registration" }).click();
@@ -58,6 +67,18 @@ test("duplicate team names are rejected and entered data is preserved", async ({
   await expect(page.getByLabel("College / institution")).toHaveValue("Another College");
   const firstMember = page.locator("section").filter({ has: page.getByRole("heading", { name: /^Member 1/ }) });
   await expect(firstMember.getByLabel("Full name")).toHaveValue("Someone Else");
+});
+
+test("a phone number already used in another team is rejected", async ({ page }) => {
+  await page.goto(`/register/${FORM_SLUG}`);
+  await page.getByLabel("Team name").fill(`Phone Clash ${run}`);
+  await page.getByLabel("College / institution").fill("Another College");
+  await fillMember(page, 0, { name: "New Leader", email: `newlead.${run}@e2e.test` }, 7);
+  await fillMember(page, 1, { name: "Reused Phone", email: `reused.${run}@e2e.test` }, 1);
+  const track = page.getByLabel(/Which track/);
+  if (await track.count()) await track.selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Submit registration" }).click();
+  await expect(page.getByText("This phone number is already registered in another team.")).toBeVisible();
 });
 
 test("admin sees one row per team, expands members and opens details", async ({ page }) => {
@@ -130,10 +151,12 @@ test("official checks in a participant once; duplicates are blocked; admin areas
   }
 });
 
-test("team leader activates via the single-use link, sees only their team and raises support", async ({ page }) => {
-  expect(activationLink).not.toBe("");
-  await page.goto(activationLink);
-  await page.getByRole("textbox", { name: "Password", exact: true }).fill(`Rocket-${run}-Pass!`);
+test("team leader activates with the code from registration, sees only their team and raises support", async ({ page }) => {
+  expect(leaderCode).not.toBe("");
+  await page.goto("/activate");
+  await page.getByLabel("Participant ID").fill(leaderPid);
+  await page.getByLabel("Activation code").fill(leaderCode);
+  await page.getByLabel("New password").fill(`Rocket-${run}-Pass!`);
   await page.getByLabel("Confirm password").fill(`Rocket-${run}-Pass!`);
   await page.getByRole("button", { name: "Activate account" }).click();
   await expect(page).toHaveURL(/\/portal$/);
@@ -142,10 +165,15 @@ test("team leader activates via the single-use link, sees only their team and ra
   await expect(page.getByRole("table", { name: "Team members" })).toContainText(member.email);
   await expect(page.getByText("Code Ninjas")).toHaveCount(0);
 
-  // The link is single-use.
+  // The code is single-use.
   await page.context().clearCookies();
-  await page.goto(activationLink);
-  await expect(page.getByText("Link not usable")).toBeVisible();
+  await page.goto("/activate");
+  await page.getByLabel("Participant ID").fill(leaderPid);
+  await page.getByLabel("Activation code").fill(leaderCode);
+  await page.getByLabel("New password").fill(`Rocket-${run}-Pass!`);
+  await page.getByLabel("Confirm password").fill(`Rocket-${run}-Pass!`);
+  await page.getByRole("button", { name: "Activate account" }).click();
+  await expect(page.getByText("already has an account")).toBeVisible();
   await signIn(page, leader.email, `Rocket-${run}-Pass!`);
 
   // Staff areas are closed to participants.

@@ -25,3 +25,23 @@ alter table public.credential_events add constraint credential_events_event_type
   'account_deactivated', 'account_reactivated', 'account_suspended',
   'invitation_created', 'invitation_accepted', 'invitation_revoked',
   'activation_code_used'));
+
+-- =============================================================================
+-- No duplicate phone numbers across teams. phone_key = last 10 digits, so
+-- "+91 98765 43210" and "9876543210" are the same number.
+-- =============================================================================
+alter table public.participants
+  add column if not exists phone_key text
+  generated always as (nullif(right(regexp_replace(coalesce(phone, ''), '\D', '', 'g'), 10), '')) stored;
+
+do $$
+begin
+  if exists (
+    select 1 from public.participants where phone_key is not null
+    group by hackathon_id, phone_key having count(*) > 1
+  ) then
+    raise notice 'Some participants share a phone number; fix them, then run: create unique index participants_phone_unique on public.participants (hackathon_id, phone_key) where phone_key is not null;';
+  else
+    create unique index if not exists participants_phone_unique on public.participants (hackathon_id, phone_key) where phone_key is not null;
+  end if;
+end $$;

@@ -128,6 +128,14 @@ export function buildRegistrationSchema(form: RegistrationFormConfig) {
       if (leaders !== 1) {
         ctx.addIssue({ code: "custom", path: ["members"], message: "Exactly one member must be the team leader" });
       }
+      const phones = new Map<string, number>();
+      data.members.forEach((m, i) => {
+        const key = (m.phone ?? "").replace(/\D/g, "").slice(-10);
+        if (!key) return;
+        const prev = phones.get(key);
+        if (prev !== undefined) ctx.addIssue({ code: "custom", path: ["members", i, "phone"], message: `Same phone number as member ${prev + 1}` });
+        else phones.set(key, i);
+      });
       const seen = new Map<string, number>();
       data.members.forEach((m, i) => {
         const prev = seen.get(m.email);

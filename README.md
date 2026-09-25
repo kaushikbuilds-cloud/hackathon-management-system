@@ -192,7 +192,7 @@ No secrets are committed. `.env*` files are git-ignored, except `.env.example`.
 | `20260924000003_rls.sql` | RLS on every table, least-privilege grants (column-level where relevant) |
 | `20260924000004_storage.sql` | Private buckets `id-cards`, `participant-photos`, `support-attachments`; public `branding` |
 | `20260925000005_roles_permissions.sql` | Granular permissions, invitations, account status, official duties, contact-free lookup RPCs, tightened RLS (safe on an existing database) |
-| `20260926000006_activation_codes.sql` | One-time account activation codes printed on ID cards (service-role only table) |
+| `20260926000006_activation_codes.sql` | One-time account activation codes (shown at registration and printed on ID cards; service-role only table) and unique phone numbers across teams |
 
 Data model: `hackathons` (single row) → `registration_forms` → `registration_submissions`; `teams` → `participants`. Around those sit `profiles`, `permissions`, `staff_permissions`, `invitations`, `official_assignments`, `credential_events`, `id_card_templates`, `id_card_jobs`, `attendance`, `support_requests`, `support_messages`, `support_status_history`, `notifications`, `announcements`, `event_schedule`, `audit_logs` and `rate_limits`.
 
