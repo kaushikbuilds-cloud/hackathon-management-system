@@ -17,7 +17,7 @@ export async function endHackathon(formData: FormData) {
   if (!data) flash(PATH, { error: "This hackathon has already ended." });
   await audit(session, "hackathon.ended", { type: "hackathons", id: session.hackathonId });
   revalidatePath("/", "layout");
-  flash(PATH, { notice: "The hackathon has ended. Download the full data below; teams can now download their certificates." });
+  flash(PATH, { notice: "The hackathon has ended. Team and shop logins are closed. Download the full data below." });
 }
 
 export async function reopenHackathon(hackathonId: string) {

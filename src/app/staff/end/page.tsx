@@ -57,8 +57,9 @@ export default async function EndHackathonPage(props: PageProps<"/staff/end">) {
             <>
               <CardTitle description={h?.ended_at ? `Ended ${formatDateTime(h.ended_at, h.timezone)}.` : undefined}>This hackathon has ended</CardTitle>
               <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-ink">
-                <li>Registration forms and food shops are closed; shop logins no longer work.</li>
-                <li>Teams can sign in and download their certificates.</li>
+                <li>Registration forms and food shops are closed.</li>
+                <li>Team IDs, passwords, activation codes, ID card QR codes and shop logins no longer work.</li>
+                <li>Certificates: download them on the <a href="/staff/certificates" className="font-bold text-brand underline">Certificates</a> page and send them to the teams.</li>
               </ul>
               {isSuperAdmin(session) && (
                 <form action={reopenHackathon.bind(null, id)}>
@@ -70,9 +71,9 @@ export default async function EndHackathonPage(props: PageProps<"/staff/end">) {
             <>
               <CardTitle description="Do this after the last result is announced.">End the hackathon</CardTitle>
               <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-ink">
-                <li>Closes every registration form and food shop, and stops shop logins.</li>
-                <li>Opens certificate downloads for teams (set awards and signatures on the <a href="/staff/certificates" className="font-bold text-brand underline">Certificates</a> page first).</li>
-                <li>Team logins keep working so teams can download certificates. Only the platform owner can reopen it.</li>
+                <li>Closes every registration form and food shop.</li>
+                <li>Stops every Team ID and password, activation code, ID card QR code and shop login. Teams are signed out straight away.</li>
+                <li>Staff keep access to download the data and certificates (set awards and signatures on the <a href="/staff/certificates" className="font-bold text-brand underline">Certificates</a> page). Only the platform owner can reopen it.</li>
               </ul>
               {pendingPayments + openOrders + openSupport > 0 && (
                 <div className="mb-4"><Alert tone="amber" title="Some things are still open">{pendingPayments} payments to check, {openOrders} food orders, {openSupport} support requests. You can still end the hackathon.</Alert></div>

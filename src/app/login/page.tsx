@@ -12,6 +12,7 @@ const ERRORS: Record<string, string> = {
   no_team: "Your account is not linked to a team. Contact the organisers.",
   no_shop: "This shop login is not linked to a shop any more. Contact the organisers.",
   shop_ended: "This shop login has closed because the hackathon is over.",
+  ended: "This hackathon is over, so its Team IDs, passwords and shop logins no longer work.",
   link_invalid: "That sign-in link is invalid or has expired. Request a new one.",
 };
 

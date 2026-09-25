@@ -74,8 +74,10 @@ export async function redeemTeamCode(input: { teamCode: string; code: string; pa
   const code = normalizeActivationCode(input.code);
   if (!TEAM_CODE_PATTERN.test(teamCode) || !ACTIVATION_CODE_RE.test(code)) return { ok: false, error: GENERIC };
 
-  const { data: team } = await service.from("teams").select("id, name").eq("team_code", teamCode).maybeSingle<{ id: string; name: string }>();
+  const { data: team } = await service.from("teams").select("id, name, hackathons(status)").eq("team_code", teamCode)
+    .maybeSingle<{ id: string; name: string; hackathons: { status: string } | null }>();
   if (!team) return { ok: false, error: GENERIC };
+  if (team.hackathons?.status === "completed") return { ok: false, error: "This hackathon is over, so its ID cards and activation codes no longer work." };
   const { data: row } = await service.from("team_activation_codes").select("code, used_at").eq("team_id", team.id).maybeSingle<{ code: string; used_at: string | null }>();
   const { data: account } = await service.from("profiles").select("id, email").eq("team_id", team.id).maybeSingle<{ id: string; email: string }>();
   if (row?.used_at && account && sameCode(row.code, code)) {

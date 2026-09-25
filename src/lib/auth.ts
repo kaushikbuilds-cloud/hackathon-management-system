@@ -21,15 +21,26 @@ export type Session = {
   hackathonId: string | null;
 };
 
-/** Current user + profile + grants, memoised per request. Null when signed out or not active. */
-export const getSession = cache(async (): Promise<Session | null> => {
+/**
+ * Team, member and shop logins belong to one hackathon and stop working once
+ * it has ended (a shop's also a day after the end date). Staff keep access.
+ */
+export async function loginClosed(profile: Pick<Profile, "role" | "hackathon_id">): Promise<boolean> {
+  if ((profile.role !== "participant" && profile.role !== "vendor") || !profile.hackathon_id) return false;
+  const { data: h } = await (await createClient()).from("hackathons").select("ends_at, status").eq("id", profile.hackathon_id).maybeSingle<{ ends_at: string | null; status: string }>();
+  if (h?.status === "completed") return true;
+  return profile.role === "vendor" && Boolean(h?.ends_at && Date.parse(h.ends_at) + 24 * 3600_000 < requestTime());
+}
+
+const loadSession = cache(async (): Promise<{ session: Session | null; closed: boolean }> => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return null;
+  if (!user) return { session: null, closed: false };
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle<Profile>();
-  if (!profile || profile.status !== "active") return null;
+  if (!profile || profile.status !== "active") return { session: null, closed: false };
+  if (await loginClosed(profile)) return { session: null, closed: true };
   let permissions = new Set<Permission>();
   if (profile.role === "admin" || profile.role === "official") {
     const { data } = await supabase.from("staff_permissions").select("permission").eq("profile_id", user.id).returns<{ permission: string }[]>();
@@ -42,8 +53,18 @@ export const getSession = cache(async (): Promise<Session | null> => {
       ? ((await supabase.from("hackathons").select("id").eq("id", requested).maybeSingle<{ id: string }>()).data?.id ?? null)
       : null;
   }
-  return { userId: user.id, email: user.email ?? null, profile, permissions, hackathonId };
+  return { session: { userId: user.id, email: user.email ?? null, profile, permissions, hackathonId }, closed: false };
 });
+
+/** Current user + profile + grants, memoised per request. Null when signed out, not active, or the login has closed. */
+export async function getSession(): Promise<Session | null> {
+  return (await loadSession()).session;
+}
+
+/** True when someone is still signed in with a team or shop login whose hackathon has ended. */
+export async function hasClosedLogin(): Promise<boolean> {
+  return (await loadSession()).closed;
+}
 
 export function isSuperAdmin(session: Session | null): boolean {
   return session?.profile.role === "super_admin";
@@ -80,8 +101,8 @@ export function portalName(session: Session): string {
 type RequireOptions = { allowPasswordChange?: boolean };
 
 export async function requireSession(options: RequireOptions = {}): Promise<Session> {
-  const session = await getSession();
-  if (!session) redirect("/login");
+  const { session, closed } = await loadSession();
+  if (!session) redirect(closed ? "/auth/signout?reason=ended" : "/login");
   if (session.profile.must_change_password && !options.allowPasswordChange) redirect("/change-password");
   return session;
 }
@@ -131,8 +152,5 @@ export async function requireVendor(): Promise<Session & { shopId: string; hacka
   const session = await requireSession();
   if (session.profile.role !== "vendor") redirect(homePathFor(session.profile.role));
   if (!session.profile.shop_id || !session.hackathonId) redirect("/login?error=no_shop");
-  // Shop logins close a day after the hackathon ends.
-  const { data: h } = await (await createClient()).from("hackathons").select("ends_at, status").eq("id", session.hackathonId).maybeSingle<{ ends_at: string | null; status: string }>();
-  if (h?.status === "completed" || (h?.ends_at && Date.parse(h.ends_at) + 24 * 3600_000 < requestTime())) redirect("/auth/signout?reason=shop_ended");
   return { ...session, shopId: session.profile.shop_id, hackathonId: session.hackathonId };
 }

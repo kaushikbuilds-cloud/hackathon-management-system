@@ -27,6 +27,10 @@ describe.skipIf(!enabled)("ending a hackathon and certificates (database)", () =
     u.admin = await createUser(pool, "admin");
     u.official = await createUser(pool, "official");
     u.superAdmin = await createUser(pool, "super_admin");
+    u.team = await createUser(pool, "participant");
+    await pool.query("update profiles set team_id = $1 where id = $2", [a.team_id, u.team]);
+    u.shop = await createUser(pool, "vendor");
+    await pool.query("update profiles set shop_id = (select id from food_shops where name = 'Canteen') where id = $1", [u.shop]);
   });
   afterAll(async () => db?.drop());
 
@@ -56,5 +60,31 @@ describe.skipIf(!enabled)("ending a hackathon and certificates (database)", () =
     expect(await pgErrorCode(as(pool, u.admin, (c) => c.query("select reopen_hackathon($1)", [hA])))).toBe("42501");
     expect(await as(pool, u.superAdmin, async (c) => (await c.query("select reopen_hackathon($1) as ok", [hA])).rows[0].ok)).toBe(true);
     expect((await pool.query("select status, ended_at from hackathons where id = $1", [hA])).rows[0]).toEqual({ status: "active", ended_at: null });
+  });
+
+  it("once ended, team and shop logins see nothing and ID cards can't be used to check in", async () => {
+    const e2 = (await pool.query("select id, team_id from participants where email = 'e2@end.dev'")).rows[0];
+    const sees = async (who: string) => as(pool, who, async (c) => ({
+      team: (await c.query("select my_team_id() as t")).rows[0].t,
+      shop: (await c.query("select my_shop_id() as s")).rows[0].s,
+      teams: (await c.query("select 1 from teams")).rowCount,
+      orders: (await c.query("select 1 from food_shops")).rowCount,
+    }));
+    expect((await sees(u.team)).team).toBe(e2.team_id);
+    expect((await sees(u.shop)).shop).not.toBeNull();
+
+    await as(pool, u.admin, (c) => c.query("select end_hackathon()"));
+    expect(await sees(u.team)).toEqual({ team: null, shop: null, teams: 0, orders: 0 });
+    expect(await sees(u.shop)).toEqual({ team: null, shop: null, teams: 0, orders: 0 });
+    // Staff keep access to the data.
+    expect(await as(pool, u.admin, async (c) => (await c.query("select 1 from teams")).rowCount)).toBeGreaterThan(0);
+    // No check-ins, by RPC or directly.
+    expect(await pgErrorCode(as(pool, u.admin, (c) => c.query("select check_in($1, 'qr')", [e2.id])))).toBe("23514");
+    const present = (await pool.query("select id from attendance where hackathon_id = $1 limit 1", [hA])).rows[0].id;
+    expect(await pgErrorCode(as(pool, u.admin, (c) => c.query("select undo_check_in($1, 'mistake')", [present])))).toBe("23514");
+
+    await as(pool, u.superAdmin, (c) => c.query("select reopen_hackathon($1)", [hA]));
+    expect((await sees(u.team)).team).toBe(e2.team_id);
+    expect(await as(pool, u.admin, async (c) => (await c.query("select check_in($1, 'qr') as r", [e2.id])).rows[0].r.ok)).toBe(true);
   });
 });

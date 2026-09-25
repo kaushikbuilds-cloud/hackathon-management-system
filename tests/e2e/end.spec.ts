@@ -8,6 +8,8 @@ test.skip(!creds.admin.password || !creds.superAdmin.password || !creds.official
 
 const run = Date.now().toString(36);
 const throwaway = `E2E Ending ${run}`;
+const teamPassword = `Closing-${run}-Pass1!`;
+let teamCode = "";
 
 test("the Admin sets an award and downloads certificates", async ({ page }) => {
   await signIn(page, creds.admin.email, creds.admin.password);
@@ -39,8 +41,21 @@ test("the Admin sets an award and downloads certificates", async ({ page }) => {
 
 test("ending a hackathon closes it, and the full data ZIP has the data and README", async ({ page }) => {
   const pool = new pg.Pool({ connectionString: process.env.E2E_DATABASE_URL });
-  await pool.query("insert into hackathons (name, organizer_name, status) values ($1, 'E2E College', 'active')", [throwaway]);
+  const { rows: [h] } = await pool.query("insert into hackathons (name, organizer_name, status) values ($1, 'E2E College', 'active') returning id", [throwaway]);
+  const { rows: [t] } = await pool.query("insert into teams (hackathon_id, name) values ($1, 'Last Team') returning id, team_code", [h.id]);
+  await pool.query("insert into team_activation_codes (team_id, code) values ($1, 'ENDTEST2')", [t.id]);
   await pool.end();
+  teamCode = t.team_code;
+
+  // The team activates its login while the hackathon is running.
+  const team = await page.context().browser()!.newPage();
+  await team.goto("/activate");
+  await team.getByLabel("Team ID").fill(teamCode);
+  await team.getByLabel("Activation code").fill("ENDTEST2");
+  await team.getByLabel("New password").fill(teamPassword);
+  await team.getByLabel("Confirm password").fill(teamPassword);
+  await team.getByRole("button", { name: "Activate account" }).click();
+  await team.waitForURL(/\/portal/);
 
   await signIn(page, creds.superAdmin.email, creds.superAdmin.password);
   await openHackathon(page, throwaway);
@@ -51,6 +66,24 @@ test("ending a hackathon closes it, and the full data ZIP has the data and READM
   await page.getByRole("button", { name: "End hackathon" }).click();
   await expect(page.getByText("The hackathon has ended.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "This hackathon has ended" })).toBeVisible();
+
+  // The team is signed out straight away, and its Team ID, password and activation code stop working.
+  await team.goto("/portal");
+  await team.waitForURL(/\/login\?error=ended/);
+  await expect(team.getByText("This hackathon is over, so its Team IDs, passwords and shop logins no longer work.")).toBeVisible();
+  await team.goto("/login");
+  await team.getByLabel("Email").fill(teamCode);
+  await team.getByLabel("Password").fill(teamPassword);
+  await team.getByRole("button", { name: "Sign in" }).click();
+  await expect(team.getByRole("alert").filter({ hasText: "This hackathon is over" })).toBeVisible();
+  expect(await team.context().cookies()).not.toContainEqual(expect.objectContaining({ name: expect.stringMatching(/auth-token/) }));
+  await team.goto("/activate");
+  await team.getByLabel("Team ID").fill(teamCode);
+  await team.getByLabel("Activation code").fill("ENDTEST2");
+  await team.getByLabel("New password").fill(teamPassword);
+  await team.getByLabel("Confirm password").fill(teamPassword);
+  await team.getByRole("button", { name: "Activate account" }).click();
+  await expect(team.getByText("This hackathon is over, so its ID cards and activation codes no longer work.")).toBeVisible();
 
   await page.getByRole("button", { name: "Prepare full data download" }).click();
   await expect(page.getByText("Full data ready.")).toBeVisible({ timeout: 60000 });
@@ -64,6 +97,11 @@ test("ending a hackathon closes it, and the full data ZIP has the data and READM
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Reopen (platform owner)" }).click();
   await expect(page.getByText("Hackathon reopened.")).toBeVisible();
+
+  // Reopened: the team can sign in again.
+  await signIn(team, teamCode, teamPassword);
+  await team.waitForURL(/\/portal/);
+  await team.close();
 });
 
 test("teams and staff without event rights cannot download exports", async ({ page }) => {
@@ -73,5 +111,4 @@ test("teams and staff without event rights cannot download exports", async ({ pa
   for (const url of ["/api/certificates/zip", "/api/certificates/sample"]) {
     expect((await page.request.get(url)).status()).toBe(403);
   }
-  expect((await page.request.get("/api/portal/certificates")).status()).toBe(401);
 });

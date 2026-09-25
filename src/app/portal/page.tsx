@@ -30,15 +30,6 @@ export default async function PortalHome(props: PageProps<"/portal">) {
         </>}
       />
       <Flash notice={sp.notice} error={sp.error} />
-      {hackathon?.status === "completed" && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-line bg-pop p-5 shadow-brutal">
-          <div>
-            <p className="font-heading text-xl font-bold text-ink">{hackathon.name} has ended. Thank you for taking part!</p>
-            <p className="text-sm text-ink">Certificates are ready for every team member who checked in.</p>
-          </div>
-          <a href="/api/portal/certificates" className={buttonClass("primary")}>Download certificates</a>
-        </div>
-      )}
       <div className="grid gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <Card>

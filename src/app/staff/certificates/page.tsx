@@ -30,9 +30,7 @@ export default async function CertificatesPage(props: PageProps<"/staff/certific
         </>}
       />
       <Flash notice={sp.notice} error={sp.error} />
-      {h?.status === "completed"
-        ? <div className="mb-6"><Alert tone="green" title="The hackathon has ended">Teams can now download their certificates from the team portal.</Alert></div>
-        : <div className="mb-6"><Alert tone="blue" title="Teams get their certificates when you end the hackathon">Until then only you can preview and download them.</Alert></div>}
+      <div className="mb-6"><Alert tone="blue" title="You send the certificates">Teams can&apos;t download them: their logins close when the hackathon ends. Download a team&apos;s certificates here and send them (WhatsApp, email).</Alert></div>
 
       <div className="grid items-start gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">

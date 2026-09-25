@@ -3,10 +3,10 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
-import { homePathFor, getSession } from "@/lib/auth";
+import { homePathFor, getSession, loginClosed } from "@/lib/auth";
 import { recordCredentialEvent } from "@/lib/accounts";
 import { emailForParticipantCode, emailForTeamCode } from "@/lib/activation";
-import { emailForShopCode, shopLoginEndsAt } from "@/lib/shops";
+import { emailForShopCode } from "@/lib/shops";
 import { isParticipantCode, normalizeIdInput } from "@/lib/domain/ids";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { appUrl } from "@/lib/env";
@@ -65,13 +65,14 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     await supabase.auth.signOut();
     return { error: "Your temporary password has expired. Ask the organisers to issue a new one.", email };
   }
-  if (profile.role === "vendor") {
-    const { data: h } = await service.from("hackathons").select("ends_at, status").eq("id", profile.hackathon_id ?? "").maybeSingle<{ ends_at: string | null; status: string }>();
-    const ends = shopLoginEndsAt(h?.ends_at);
-    if (!profile.shop_id || h?.status === "completed" || (ends && ends.getTime() < Date.now())) {
-      await supabase.auth.signOut();
-      return { error: "This shop login has closed because the hackathon is over. Contact the organisers if you still need access.", email };
-    }
+  if (await loginClosed(profile)) {
+    await supabase.auth.signOut();
+    await audit(null, "auth.sign_in_failed", { type: "auth" }, { email_hash: hashKey(parsed.data.email), reason: "hackathon_ended" });
+    return { error: "This hackathon is over, so its Team IDs, passwords and shop logins no longer work.", email };
+  }
+  if (profile.role === "vendor" && !profile.shop_id) {
+    await supabase.auth.signOut();
+    return { error: "This shop login is not linked to a shop. Contact the organisers.", email };
   }
   if (profile.role === "participant" && !profile.participant_id && !profile.team_id) {
     await supabase.auth.signOut();
