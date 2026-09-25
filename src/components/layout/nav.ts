@@ -13,6 +13,7 @@ export function staffNav(session: Session): NavItem[] {
   const items: (NavItem & { show: boolean })[] = [
     { href: "/staff", label: sa && !inEvent ? "Platform Dashboard" : "Dashboard", icon: "dashboard", show: true },
     { href: "/staff/hackathons", label: "Hackathons", icon: "trophy", show: sa },
+    { href: "/staff/monthly-reports", label: "Monthly Reports", icon: "chart", show: sa },
     { href: "/staff/event", label: sa ? "Hackathon / Event Setup" : "Event Setup", icon: "settings", show: ev(can(session, "manage_event")) },
     { href: "/staff/brand", label: "Brand Kit", icon: "palette", show: ev(can(session, "manage_event")) },
     { href: "/staff/users/admins", label: "User Management", icon: "shield", show: ev(sa) },

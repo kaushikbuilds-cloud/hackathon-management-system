@@ -97,3 +97,28 @@ describe("FAQ grouping", () => {
     expect(groups.map((g) => [g.category, g.items.map((i) => i.id)])).toEqual([[null, ["2", "5"]], ["Food", ["1", "3"]], ["Portal", ["4"]]]);
   });
 });
+
+describe("monthly report", () => {
+  it("handles months in India time and across year ends", async () => {
+    const { currentMonth, lastMonths, monthLabel, parseMonth, shiftMonth } = await import("@/lib/domain/months");
+    expect(currentMonth(Date.parse("2026-09-30T19:00:00Z"))).toBe("2026-10"); // already 1 Oct in India
+    expect(shiftMonth("2026-01", -1)).toBe("2025-12");
+    expect(shiftMonth("2025-12", 1)).toBe("2026-01");
+    expect(lastMonths("2026-02", 3)).toEqual(["2026-02", "2026-01", "2025-12"]);
+    expect(parseMonth("2027-01", "2026-09")).toBe("2026-09"); // no future months
+    expect(parseMonth("2026-13", "2026-09")).toBe("2026-09");
+    expect(parseMonth("2026-03", "2026-09")).toBe("2026-03");
+    expect(monthLabel("2026-09")).toBe("September 2026");
+  });
+  it("totals every hackathon per month, including empty months", async () => {
+    const { totalsByMonth } = await import("@/lib/domain/report");
+    const row = (month: string, id: string, teams: number, fees: number) => ({
+      month, hackathon_id: id, hackathon_name: id, teams, participants: teams * 3, checked_in: 0, fees_verified: fees,
+      fees_pending: 0, food_orders: 0, food_revenue: 0, support_opened: 0,
+    });
+    const totals = totalsByMonth([row("2026-09", "a", 2, 100), row("2026-09", "b", 3, 50.5), row("2026-07", "a", 1, 0)], ["2026-09", "2026-08", "2026-07"]);
+    expect(totals.map((t) => [t.month, t.hackathons, t.teams, t.participants, t.fees_verified])).toEqual([
+      ["2026-09", 2, 5, 15, 150.5], ["2026-08", 0, 0, 0, 0], ["2026-07", 1, 1, 3, 0],
+    ]);
+  });
+});
