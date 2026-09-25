@@ -6,6 +6,7 @@ import { audit } from "@/lib/audit";
 import { homePathFor, getSession } from "@/lib/auth";
 import { recordCredentialEvent } from "@/lib/accounts";
 import { emailForParticipantCode } from "@/lib/activation";
+import { teamIdInsteadOfParticipantId } from "@/lib/domain/ids";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { appUrl } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
@@ -29,6 +30,8 @@ const loginSchema = z.object({
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().slice(0, 254);
   // Participants may sign in with the Participant ID printed on their card.
+  const teamId = email.includes("@") ? null : teamIdInsteadOfParticipantId(email);
+  if (teamId) return { error: teamId, email };
   const loginEmail = email.includes("@") ? email : (await emailForParticipantCode(email)) ?? email;
   const parsed = loginSchema.safeParse({ email: loginEmail, password: formData.get("password") });
   if (!parsed.success) {

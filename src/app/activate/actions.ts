@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { audit } from "@/lib/audit";
 import { redeemActivationCode } from "@/lib/activation";
+import { normalizeIdInput, teamIdInsteadOfParticipantId } from "@/lib/domain/ids";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
@@ -12,11 +13,13 @@ import type { Profile } from "@/lib/types";
 export type ActivateState = { error?: string; participantCode?: string };
 
 export async function activateAccount(_prev: ActivateState, formData: FormData): Promise<ActivateState> {
-  const participantCode = String(formData.get("participant_code") ?? "").trim().toUpperCase().slice(0, 30);
+  const participantCode = normalizeIdInput(String(formData.get("participant_code") ?? "").slice(0, 40)).slice(0, 30);
   const code = String(formData.get("code") ?? "").slice(0, 30);
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
   if (!participantCode || !code) return { error: "Enter your Participant ID and activation code from your ID card.", participantCode };
+  const teamId = teamIdInsteadOfParticipantId(participantCode);
+  if (teamId) return { error: teamId, participantCode };
   const weak = checkPasswordStrength(password);
   if (weak) return { error: weak, participantCode };
   if (password !== confirm) return { error: "Passwords do not match.", participantCode };

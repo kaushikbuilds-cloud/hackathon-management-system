@@ -1,7 +1,7 @@
 import "server-only";
 import { randomInt, timingSafeEqual } from "node:crypto";
 import { recordCredentialEvent } from "@/lib/accounts";
-import { PARTICIPANT_CODE_PATTERN } from "@/lib/domain/ids";
+import { PARTICIPANT_CODE_PATTERN, normalizeIdInput } from "@/lib/domain/ids";
 import { acceptInvitation, createInvitation } from "@/lib/invitations";
 import { createServiceClient } from "@/lib/supabase/server";
 
@@ -108,7 +108,7 @@ export async function redeemActivationCode(input: { participantCode: string; cod
 
 /** Resolves a Participant ID typed into the sign-in box to that participant's email. */
 export async function emailForParticipantCode(value: string): Promise<string | null> {
-  const participantCode = value.trim().toUpperCase();
+  const participantCode = normalizeIdInput(value);
   if (!PARTICIPANT_CODE_PATTERN.test(participantCode)) return null;
   const { data } = await createServiceClient()
     .from("participants").select("email").eq("participant_code", participantCode).maybeSingle<{ email: string }>();

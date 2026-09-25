@@ -72,3 +72,24 @@ test("the code is single use and the participant signs in with their Participant
   await signIn(page, PARTICIPANT.toLowerCase(), password);
   await expect(page).toHaveURL(/\/portal/);
 });
+
+test("typing the Team ID instead of the Participant ID explains the difference", async ({ page }) => {
+  const pool = new pg.Pool({ connectionString: dbUrl });
+  const { rows } = await pool.query("select team_code from teams where team_code ~ '-T[0-9]{4,}$' order by created_at desc limit 1");
+  await pool.end();
+  test.skip(!rows.length, "No prefixed team yet");
+  const teamCode: string = rows[0].team_code;
+  await page.goto("/activate");
+  await page.getByLabel("Participant ID").fill(teamCode.replace(/-T(\d+)$/, (_, n: string) => `-t${n.replace(/0/g, "o")}`));
+  await page.getByLabel("Activation code").fill("ABCDEFGH");
+  await page.getByLabel("New password").fill("Some-Long-Pass1!");
+  await page.getByLabel("Confirm password").fill("Some-Long-Pass1!");
+  await page.getByRole("button", { name: "Activate account" }).click();
+  await expect(page.getByText(`${teamCode} is your Team ID. Use your own Participant ID instead`)).toBeVisible();
+
+  await page.goto("/login");
+  await page.getByLabel("Email or Participant ID").fill(teamCode);
+  await page.getByLabel("Password").fill("whatever-password");
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByText(`${teamCode} is your Team ID.`)).toBeVisible();
+});

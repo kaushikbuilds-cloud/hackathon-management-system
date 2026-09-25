@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractQrToken, formatCode, isParticipantCode, isQrToken, isTeamCode } from "@/lib/domain/ids";
+import { extractQrToken, formatCode, isParticipantCode, isQrToken, isTeamCode, normalizeIdInput, teamIdInsteadOfParticipantId } from "@/lib/domain/ids";
 
 describe("formatCode", () => {
   it("joins the hackathon prefix, kind and a four-digit number", () => {
@@ -49,5 +49,20 @@ describe("QR tokens", () => {
     expect(extractQrToken(`https://x/verify/${"g".repeat(64)}`)).toBeNull();
     expect(extractQrToken(`https://x/verify/${token}extra`)).toBeNull();
     expect(extractQrToken("")).toBeNull();
+  });
+});
+
+describe("typed IDs", () => {
+  it("fixes letters typed for digits in the number part only", () => {
+    expect(normalizeIdInput(" sample1-t0o01 ")).toBe("SAMPLE1-T0001");
+    expect(normalizeIdInput("ROBO-PlO2")).toBe("ROBO-PLO2"); // too short to be an ID: only upper-cased
+    expect(normalizeIdInput("ROBO-P0I02")).toBe("ROBO-P0102");
+    expect(normalizeIdInput("PRT-2026-0001")).toBe("PRT-2026-0001");
+  });
+  it("explains when a Team ID is used as a Participant ID", () => {
+    expect(teamIdInsteadOfParticipantId("SAMPLE1-T0OO1")).toBe(
+      "SAMPLE1-T0001 is your Team ID. Use your own Participant ID instead: it is printed on your ID card and looks like SAMPLE1-P0001.");
+    expect(teamIdInsteadOfParticipantId("TEAM-2026-0001")).toMatch(/^TEAM-2026-0001 is your Team ID/);
+    expect(teamIdInsteadOfParticipantId("SAMPLE1-P0001")).toBeNull();
   });
 });
