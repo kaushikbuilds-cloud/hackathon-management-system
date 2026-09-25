@@ -1,7 +1,7 @@
 "use client";
 
 import jsQR from "jsqr";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Alert, Badge, Button, Card, CardTitle, inputClass } from "@/components/ui";
 import { confirmCheckIn, verifyScan, type VerifyResult } from "./actions";
 
@@ -12,9 +12,26 @@ const STATE_UI: Record<VerifyResult["state"], { tone: "green" | "amber" | "red";
   invalid: { tone: "red", title: "Invalid QR code" },
 };
 
+// "Mark present on scan" preference, remembered per device.
+const AUTO_KEY = "hms.autoCheckIn";
+const autoListeners = new Set<() => void>();
+function readAuto(): boolean {
+  try { return localStorage.getItem(AUTO_KEY) !== "0"; } catch { return true; }
+}
+function writeAuto(on: boolean) {
+  try { localStorage.setItem(AUTO_KEY, on ? "1" : "0"); } catch { /* storage unavailable */ }
+  autoListeners.forEach((l) => l());
+}
+function subscribeAuto(listener: () => void) {
+  autoListeners.add(listener);
+  return () => { autoListeners.delete(listener); };
+}
+
 /**
  * Camera QR scanner (getUserMedia + jsQR). Resolves the token server-side and
- * shows participant/team identity; the official must press "Confirm check-in".
+ * shows participant/team identity. With "Mark present on scan" on (default),
+ * a valid scan records attendance straight away; otherwise the official
+ * presses "Confirm check-in".
  */
 export function QrScanner({ initialToken }: { initialToken?: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -27,6 +44,22 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "green" | "red" | "amber"; text: string } | null>(null);
   const [manual, setManual] = useState("");
+  const autoCheckIn = useSyncExternalStore(subscribeAuto, readAuto, () => true);
+
+  const checkIn = useCallback(async (target: VerifyResult) => {
+    if (!target.participant) return;
+    setBusy(true);
+    const res = await confirmCheckIn(target.participant.id, "qr");
+    setBusy(false);
+    if (res.ok) {
+      navigator.vibrate?.([60, 60, 60]);
+      setMessage({ tone: "green", text: `Present: ${res.full_name} (${res.participant_code}) checked in.` });
+      setResult({ ...target, state: "already_checked_in", checked_in_at: res.checked_in_at });
+    } else {
+      setMessage({ tone: res.code === "already_checked_in" ? "amber" : "red", text: res.message ?? "Check-in failed." });
+      if (res.code === "already_checked_in") setResult({ ...target, state: "already_checked_in", checked_in_at: res.checked_in_at });
+    }
+  }, []);
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -37,14 +70,17 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
   const resolve = useCallback(async (text: string) => {
     setBusy(true);
     setMessage(null);
+    let verified: VerifyResult | null = null;
     try {
-      setResult(await verifyScan(text));
+      verified = await verifyScan(text);
+      setResult(verified);
     } catch {
       setMessage({ tone: "red", text: "Verification failed. Check your connection." });
     } finally {
       setBusy(false);
     }
-  }, []);
+    if (verified?.state === "valid" && verified.team?.status !== "rejected" && autoCheckIn) await checkIn(verified);
+  }, [checkIn, autoCheckIn]);
 
   useEffect(() => {
     // Opened from a QR URL (/verify/<token>): resolve it once, without recording attendance.
@@ -113,25 +149,11 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
     }
   }
 
-  async function checkIn() {
-    if (!result?.participant) return;
-    setBusy(true);
-    const res = await confirmCheckIn(result.participant.id, "qr");
-    setBusy(false);
-    if (res.ok) {
-      setMessage({ tone: "green", text: `${res.full_name} (${res.participant_code}) checked in.` });
-      setResult({ ...result, state: "already_checked_in", checked_in_at: res.checked_in_at });
-    } else {
-      setMessage({ tone: res.code === "already_checked_in" ? "amber" : "red", text: res.message ?? "Check-in failed." });
-      if (res.code === "already_checked_in") setResult({ ...result, state: "already_checked_in", checked_in_at: res.checked_in_at });
-    }
-  }
-
   const ui = result ? STATE_UI[result.state] : null;
 
   return (
     <Card>
-      <CardTitle description="Scanning shows who the card belongs to. Attendance is recorded only when you confirm.">QR check-in</CardTitle>
+      <CardTitle description={autoCheckIn ? "Scan a card: the person is marked present immediately." : "Scanning shows who the card belongs to. Attendance is recorded only when you confirm."}>QR check-in</CardTitle>
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <div className="relative aspect-square overflow-hidden rounded-xl border border-navy-700 bg-black">
@@ -140,6 +162,10 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
             {scanning && <div className="pointer-events-none absolute inset-[18%] rounded-lg border-2 border-violet-400/80" aria-hidden="true" />}
           </div>
           <canvas ref={canvasRef} className="hidden" />
+          <label className="mt-3 flex items-center gap-2 text-sm text-slate-200">
+            <input type="checkbox" checked={autoCheckIn} onChange={(e) => writeAuto(e.target.checked)} className="size-4 accent-violet-500" />
+            Mark present on scan
+          </label>
           <div className="mt-3 flex gap-2">
             {scanning ? <Button variant="secondary" onClick={stop}>Stop camera</Button> : <Button onClick={start}>Start camera</Button>}
           </div>
@@ -179,7 +205,7 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
                   {result.participant.college && <p className="mt-2 text-xs text-slate-400">{result.participant.college}{result.participant.department && ` · ${result.participant.department}`}</p>}
                   {result.checked_in_at && <p className="mt-2 text-xs text-amber-200">Checked in at {new Date(result.checked_in_at).toLocaleString()}</p>}
                   {result.state === "valid" && (
-                    <Button className="mt-4 w-full" onClick={checkIn} disabled={busy || result.team.status === "rejected"}>Confirm check-in</Button>
+                    <Button className="mt-4 w-full" onClick={() => void checkIn(result)} disabled={busy || result.team.status === "rejected"}>Confirm check-in</Button>
                   )}
                 </div>
               )}
