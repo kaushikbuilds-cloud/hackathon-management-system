@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui";
+import { PLATFORM } from "@/lib/platform";
 
 export function AuthShell({ title, description, children, footer }: { title: string; description?: ReactNode; children: ReactNode; footer?: ReactNode }) {
   return (
@@ -8,7 +9,7 @@ export function AuthShell({ title, description, children, footer }: { title: str
       <div className="w-full max-w-md">
         <Link href="/" className="mb-6 flex items-center justify-center gap-2 font-bold text-white">
           <span className="grid size-9 place-items-center rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 text-sm" aria-hidden="true">{"</>"}</span>
-          Hackathon Portal
+          {PLATFORM.name}
         </Link>
         <Card className="p-6 sm:p-8">
           <h1 className="text-xl font-bold text-white">{title}</h1>

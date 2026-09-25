@@ -1,3 +1,4 @@
+import { PLATFORM } from "@/lib/platform";
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
@@ -13,7 +14,7 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Hackathon Management System", template: "%s · Hackathon Management System" },
+  title: { default: PLATFORM.name, template: `%s · ${PLATFORM.name}` },
   description: "Registration, teams, ID cards, attendance and support for the hackathon.",
 };
 

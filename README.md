@@ -184,7 +184,7 @@ npm run dev                          # http://localhost:3000
 | `PARTICIPANT_INVITE_TTL_HOURS` | – | Participant activation link lifetime (default 168) |
 | `SETUP_TOKEN` | – | Enables `/setup` to create the first Super Admin; remove after use |
 | `NEXT_PUBLIC_PLATFORM_CONTACT_EMAIL` | – | Where "Host your hackathon / Contact the admin" emails go (default kaushik.builds@gmail.com) |
-| `NEXT_PUBLIC_PLATFORM_NAME` | – | Platform name shown on public pages (default "Hackathon Portal") |
+| `NEXT_PUBLIC_PLATFORM_NAME` | – | Platform name shown on public pages (default "HackathonBase") |
 | `SIGNED_URL_TTL_SECONDS` | – | Signed download URL lifetime (default 300) |
 | `SEED_SUPER_ADMIN_EMAIL` / `SEED_SUPER_ADMIN_PASSWORD` | – | Used only by `npm run seed:users` |
 | `TEST_DATABASE_URL` | – | Postgres URL for `npm run test:db` (a throwaway server; each run creates and drops its own database) |
