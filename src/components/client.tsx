@@ -1,7 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
-import { useState, type ComponentProps, type ReactNode } from "react";
+import { useEffect, useState, type ComponentProps, type ReactNode } from "react";
 import { buttonClass } from "@/components/ui";
 
 /** Submit button that shows a pending state while its form's action runs. */
@@ -54,5 +55,25 @@ export function AutoSubmitSelect({ children, ...props }: ComponentProps<"select"
     <select {...props} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
       {children}
     </select>
+  );
+}
+
+/**
+ * Keeps a server-rendered list current: re-fetches every `seconds` while the
+ * tab is visible, and immediately when the tab regains focus. New
+ * registrations appear without anyone pressing reload.
+ */
+export function AutoRefresh({ seconds = 15 }: { seconds?: number }) {
+  const router = useRouter();
+  useEffect(() => {
+    const tick = () => { if (document.visibilityState === "visible") router.refresh(); };
+    const id = window.setInterval(tick, seconds * 1000);
+    document.addEventListener("visibilitychange", tick);
+    return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", tick); };
+  }, [router, seconds]);
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-slate-400" title={`Updates automatically every ${seconds} seconds`}>
+      <span className="size-2 animate-pulse rounded-full bg-emerald-400" aria-hidden="true" />Live
+    </span>
   );
 }

@@ -4,7 +4,7 @@ import { SubmitButton } from "@/components/client";
 import { PdfBadge } from "@/components/status";
 import { Alert, Badge, Card, CardTitle, Checkbox, EmptyState, Flash, PageHeader, SelectField, Stat, Table, Td, TextField, Th, buttonClass } from "@/components/ui";
 import { can, requirePermission } from "@/lib/auth";
-import { CARD_SIZES, resolveTemplateConfig } from "@/lib/domain/template";
+import { CARD_SIZES, PAGE_LAYOUTS, resolveTemplateConfig, sheetGrid, type CardSize } from "@/lib/domain/template";
 import { formatDateTime } from "@/lib/format";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { IdCardTemplate, TeamOverview } from "@/lib/types";
@@ -75,8 +75,8 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
             ) : (
               <form action={publishTemplate} className="space-y-4">
                 <TextField label="Version name" name="name" defaultValue={active?.name ?? "Default portrait card"} maxLength={100} />
-                <SelectField label="Card size" name="cardSize" defaultValue={config.cardSize} options={Object.entries(CARD_SIZES).map(([v, s]) => ({ value: v, label: s.label }))} />
-                <SelectField label="Page layout" name="pageLayout" defaultValue={config.pageLayout} options={[{ value: "card", label: "Page = card size (one card per page)" }, { value: "a4", label: "A4, card centred with crop marks" }]} />
+                <SelectField label="Card size" name="cardSize" defaultValue={config.cardSize} options={Object.entries(CARD_SIZES).map(([v, s]) => ({ value: v, label: `${s.label} — ${sheetGrid(v as CardSize).perPage} per A4` }))} />
+                <SelectField label="Page layout" name="pageLayout" defaultValue={config.pageLayout} options={Object.entries(PAGE_LAYOUTS).map(([value, label]) => ({ value, label }))} />
                 <div className="grid grid-cols-2 gap-3">
                   <TextField label="Header colour" name="headerColor" type="color" defaultValue={config.headerColor} />
                   <TextField label="Accent colour" name="accentColor" type="color" defaultValue={config.accentColor} />

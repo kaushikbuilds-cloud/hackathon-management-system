@@ -3,7 +3,7 @@ import path from "node:path";
 import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, PDFFont, PDFImage, PDFPage, rgb, type RGB } from "pdf-lib";
 import QRCode from "qrcode";
-import { A4, CARD_SIZES, type TemplateConfig } from "@/lib/domain/template";
+import { A4, CARD_SIZES, sheetGrid, type TemplateConfig } from "@/lib/domain/template";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -282,14 +282,41 @@ function drawCropMarks(page: PDFPage, x: number, y: number, w: number, h: number
 
 type Shared = { fonts: Fonts; logo: PDFImage | null; header: RGB; accent: RGB; dates: string };
 
-async function drawCard(doc: PDFDocument, input: CardInput, member: CardMember, shared: Shared) {
+/** Where each card goes: one page per card, or tiled on A4 sheets. */
+function placeCards(doc: PDFDocument, template: TemplateConfig, count: number): { page: PDFPage; ox: number; oy: number }[] {
+  const card = CARD_SIZES[template.cardSize];
+  const slots: { page: PDFPage; ox: number; oy: number }[] = [];
+  if (template.pageLayout !== "sheet") {
+    const pageSize = template.pageLayout === "a4" ? A4 : card;
+    for (let i = 0; i < count; i++) {
+      const page = doc.addPage([pageSize.width, pageSize.height]);
+      slots.push({ page, ox: (pageSize.width - card.width) / 2, oy: (pageSize.height - card.height) / 2 });
+    }
+    return slots;
+  }
+  const { cols, rows, perPage, gap } = sheetGrid(template.cardSize);
+  const gridW = cols * card.width + (cols - 1) * gap;
+  const gridH = rows * card.height + (rows - 1) * gap;
+  const left = (A4.width - gridW) / 2;
+  const top = (A4.height + gridH) / 2;
+  let page: PDFPage | null = null;
+  for (let i = 0; i < count; i++) {
+    const n = i % perPage;
+    if (n === 0) page = doc.addPage([A4.width, A4.height]);
+    const col = n % cols;
+    const row = Math.floor(n / cols);
+    slots.push({ page: page!, ox: left + col * (card.width + gap), oy: top - (row + 1) * card.height - row * gap });
+  }
+  return slots;
+}
+
+async function drawCard(
+  page: PDFPage, ox: number, oy: number, input: CardInput, member: CardMember, shared: Shared,
+) {
   const { template, event, team } = input;
   const card = CARD_SIZES[template.cardSize];
-  const pageSize = template.pageLayout === "a4" ? A4 : card;
-  const page = doc.addPage([pageSize.width, pageSize.height]);
-  const ox = (pageSize.width - card.width) / 2;
-  const oy = (pageSize.height - card.height) / 2;
-  if (template.pageLayout === "a4") drawCropMarks(page, ox, oy, card.width, card.height);
+  const tight = template.pageLayout === "sheet" && sheetGrid(template.cardSize).tight;
+  if (template.pageLayout !== "card" && !tight) drawCropMarks(page, ox, oy, card.width, card.height);
 
   const s = Math.min(card.width / BASE_W, card.height / BASE_H);
   const W = card.width / s;
@@ -383,7 +410,7 @@ async function drawCard(doc: PDFDocument, input: CardInput, member: CardMember, 
   if (photoH > 0) {
     const photoW = photoH * 0.85;
     const px = cx - photoW / 2;
-    const photo = await embedImage(doc, member.photo);
+    const photo = await embedImage(page.doc, member.photo);
     c.rect(px, y, photoW, photoH, mix(WHITE, accent, 0.12), { border: accent, borderWidth: 0.8 });
     if (photo) {
       c.image(photo, px + 1, y + 1, photoW - 2, photoH - 2);
@@ -442,8 +469,8 @@ export class CardValidationError extends Error {
 }
 
 /**
- * Builds one PDF for a team: one single-sided portrait card per member, one
- * card per page, members ordered leader first then by Participant ID.
+* Builds one PDF for a team: one single-sided portrait card per member, one
+ * card per page or tiled on A4 sheets ready to print and cut, members ordered leader first then by Participant ID.
  */
 export async function generateTeamIdCardsPdf(input: CardInput): Promise<GeneratedPdf> {
   const validation = validateCardInput(input);
@@ -468,8 +495,9 @@ export async function generateTeamIdCardsPdf(input: CardInput): Promise<Generate
   const members = [...input.members].sort(
     (a, b) => Number(b.role === "leader") - Number(a.role === "leader") || a.participantCode.localeCompare(b.participantCode),
   );
-  for (const member of members) {
-    await drawCard(doc, input, member, shared);
+  const slots = placeCards(doc, input.template, members.length);
+  for (const [i, member] of members.entries()) {
+    await drawCard(slots[i].page, slots[i].ox, slots[i].oy, input, member, shared);
   }
 
   doc.setTitle(`${input.team.name} (${input.team.teamCode}) — ID Cards`);
@@ -479,6 +507,6 @@ export async function generateTeamIdCardsPdf(input: CardInput): Promise<Generate
   doc.setCreationDate(new Date());
 
   const out = await doc.save();
-  const pageSize = input.template.pageLayout === "a4" ? A4 : CARD_SIZES[input.template.cardSize];
+  const pageSize = input.template.pageLayout === "card" ? CARD_SIZES[input.template.cardSize] : A4;
   return { bytes: out, pageCount: doc.getPageCount(), pageWidth: pageSize.width, pageHeight: pageSize.height };
 }

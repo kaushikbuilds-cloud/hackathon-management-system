@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AutoSubmitSelect } from "@/components/client";
+import { AutoRefresh, AutoSubmitSelect } from "@/components/client";
 import { AttendanceBadge } from "@/components/status";
 import { Badge, Card, EmptyState, LinkButton, PageHeader, Pagination, Table, Td, Th, buttonClass, inputClass } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
@@ -32,7 +32,7 @@ export default async function ParticipantsPage(props: PageProps<"/staff/particip
 
   return (
     <>
-      <PageHeader title="Participants" description="Every registered participant across all teams." actions={<LinkButton href="/api/reports/participants" variant="secondary" prefetch={false}>Export CSV</LinkButton>} />
+      <PageHeader title="Participants" description="Every registered participant across all teams." actions={<><AutoRefresh /><LinkButton href="/api/reports/participants" variant="secondary" prefetch={false}>Export CSV</LinkButton></>} />
       <Card className="mb-4 p-4">
         <form className="grid gap-3 md:grid-cols-[2fr_1fr_1fr_auto]" role="search" aria-label="Filter participants">
           <label htmlFor="q" className="sr-only">Search</label>

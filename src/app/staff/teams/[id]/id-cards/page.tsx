@@ -4,7 +4,7 @@ import { PdfBadge } from "@/components/status";
 import { Alert, Badge, Card, CardTitle, DescriptionList, EmptyState, PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { loadTeamCardContext } from "@/lib/id-cards";
-import { CARD_SIZES } from "@/lib/domain/template";
+import { layoutSummary, pageCount } from "@/lib/domain/template";
 import { formatDateTime } from "@/lib/format";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { IdCardJob, Profile } from "@/lib/types";
@@ -24,7 +24,6 @@ export default async function TeamIdCardsPage(props: PageProps<"/staff/teams/[id
     .from("id_card_jobs").select("*, profiles:generated_by(full_name, email)").eq("team_id", id)
     .order("created_at", { ascending: false }).limit(1).maybeSingle<IdCardJob & { profiles: Pick<Profile, "full_name" | "email"> | null }>();
   const tz = ctx.hackathon.timezone;
-  const size = CARD_SIZES[ctx.templateConfig.cardSize];
   const { errors, warnings } = ctx.validation;
 
   return (
@@ -32,7 +31,7 @@ export default async function TeamIdCardsPage(props: PageProps<"/staff/teams/[id
       <PageHeader
         back={{ href: "/staff/id-cards", label: "ID Card Generation" }}
         title="ID Card PDF"
-        description="One single-sided portrait card per member, one card per page."
+        description="One single-sided portrait card per member, laid out for printing."
       />
       <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
         <div className="space-y-6">
@@ -43,9 +42,9 @@ export default async function TeamIdCardsPage(props: PageProps<"/staff/teams/[id
                 { label: "Team name", value: ctx.team.name },
                 { label: "Team ID", value: <span className="font-mono">{ctx.team.team_code}</span> },
                 { label: "Member count", value: ctx.members.length },
-                { label: "PDF pages", value: ctx.members.length },
+                { label: "PDF pages", value: pageCount(ctx.templateConfig, ctx.members.length) },
                 { label: "Template version", value: ctx.template ? `v${ctx.template.version} — ${ctx.template.name}` : "None" },
-                { label: "Card size", value: `${size.label}${ctx.templateConfig.pageLayout === "a4" ? ", centred on A4 with crop marks" : ", page = card"}` },
+                { label: "Card size", value: layoutSummary(ctx.templateConfig) },
                 { label: "PDF status", value: <PdfBadge status={ctx.team.pdf_status} /> },
                 { label: "Last generated", value: last ? `${formatDateTime(last.created_at, tz)} by ${last.profiles?.full_name || last.profiles?.email || "unknown"} (${last.status})` : "Never" },
                 { label: "File name", value: <span className="break-all font-mono text-xs">{ctx.fileName}</span> },

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { AutoSubmitSelect } from "@/components/client";
+import { AutoRefresh, AutoSubmitSelect } from "@/components/client";
 import { AttendanceBadge, PdfBadge, RegistrationBadge, TeamAttendance } from "@/components/status";
 import { Badge, Card, EmptyState, Flash, LinkButton, PageHeader, Pagination, Table, Td, Th, buttonClass, inputClass } from "@/components/ui";
 import { can, requirePermission } from "@/lib/auth";
@@ -67,8 +67,8 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
     <>
       <PageHeader
         title="Teams"
-        description="One row per team. Click a team name for full details, or expand to see members inline."
-        actions={<LinkButton href="/api/reports/teams" variant="secondary" prefetch={false}>Export CSV</LinkButton>}
+        description="One row per team. New registrations appear automatically. Click a team name for full details."
+        actions={<><AutoRefresh /><LinkButton href="/api/reports/teams" variant="secondary" prefetch={false}>Export CSV</LinkButton></>}
       />
       <Flash notice={sp.notice} error={sp.error} />
       <Card className="mb-4 p-4">

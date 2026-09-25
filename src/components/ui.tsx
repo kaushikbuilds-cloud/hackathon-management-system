@@ -135,7 +135,7 @@ export function CardTitle({ children, actions, description }: { children: ReactN
         <h2 className="text-base font-semibold text-white">{children}</h2>
         {description && <p className="mt-1 text-sm text-slate-400">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
@@ -152,7 +152,7 @@ export function PageHeader({ title, description, actions, back }: { title: React
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">{title}</h1>
         {description && <p className="mt-1 max-w-3xl text-sm text-slate-400">{description}</p>}
       </div>
-      {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
   );
 }
