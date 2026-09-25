@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { randomBytes, randomUUID } from "node:crypto";
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -97,6 +98,12 @@ export async function pgErrorCode(p: Promise<unknown>): Promise<string> {
   throw new Error("Expected a database error");
 }
 
+/** A distinct, stable phone number per email (phones are unique across teams). */
+export function phoneFor(email: string) {
+  const n = parseInt(createHash("sha256").update(email).digest("hex").slice(0, 12), 16) % 1e10;
+  return `+91 ${String(n).padStart(10, "0")}`;
+}
+
 export function payload(teamName: string, emails: string[], extra: Record<string, unknown> = {}) {
   return {
     team_name: teamName,
@@ -104,7 +111,7 @@ export function payload(teamName: string, emails: string[], extra: Record<string
     members: emails.map((email, i) => ({
       full_name: `Person ${String.fromCharCode(65 + i)}`,
       email,
-      phone: "+91 98000 00000",
+      phone: phoneFor(email),
       department: "CS",
       academic_year: "1st Year",
       role: i === 0 ? "leader" : "member",

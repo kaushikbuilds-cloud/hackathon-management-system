@@ -112,7 +112,7 @@ describe.skipIf(!enabled)("registration (database)", () => {
     const r = await register(pool, payload("Pdf Watchers", ["pw1@t.dev", "pw2@t.dev"]));
     const status = async () => (await pool.query("select pdf_status from teams where id = $1", [r.team_id])).rows[0].pdf_status;
     await pool.query("update teams set pdf_status = 'generated' where id = $1", [r.team_id]);
-    await pool.query("update participants set phone = '+91 90000 11111' where team_id = $1", [r.team_id]);
+    await pool.query("update participants set phone = '+91 9' || lpad((abs(hashtext(id::text)) % 1000000000)::text, 9, '0') where team_id = $1", [r.team_id]);
     expect(await status()).toBe("generated"); // phone is not printed on the card
     await pool.query("update participants set full_name = 'Renamed Person' where team_id = $1 and role = 'leader'", [r.team_id]);
     expect(await status()).toBe("outdated");
