@@ -7,6 +7,8 @@
 export const TEAM_CODE_PATTERN = /^(?:[A-Z0-9]{2,10}-T\d{4,}|TEAM-\d{4}-\d{4,})$/;
 export const PARTICIPANT_CODE_PATTERN = /^(?:[A-Z0-9]{2,10}-P\d{4,}|PRT-\d{4}-\d{4,})$/;
 export const CODE_PREFIX_PATTERN = /^[A-Z0-9]{2,10}$/;
+/** A food shop's login ID, e.g. SAMPLE1-S01. */
+export const SHOP_CODE_PATTERN = /^[A-Z0-9]{2,10}-S\d{2,}$/;
 
 export function formatCode(prefix: string, kind: "T" | "P", n: number): string {
   if (!Number.isInteger(n) || n < 1) throw new Error("Sequence value must be a positive integer");

@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 /** Users may edit only their own name and phone (column grants + RLS enforce this). */
 export async function updateOwnProfile(formData: FormData) {
   const session = await requireSession();
-  const back = session.profile.role === "participant" ? "/portal/profile" : "/staff/settings";
+  const back = session.profile.role === "participant" ? "/portal/profile" : session.profile.role === "vendor" ? "/shop/profile" : "/staff/settings";
   const fullName = str(formData, "full_name", 100).replace(/\s+/g, " ");
   const phone = str(formData, "phone", 20);
   if (fullName.length < 2) flash(back, { error: "Enter your name." });

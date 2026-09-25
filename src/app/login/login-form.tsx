@@ -11,7 +11,7 @@ export function LoginForm({ next }: { next: string }) {
     <form action={action} className="space-y-4">
       {state.error && <Alert tone="red">{state.error}</Alert>}
       <input type="hidden" name="next" value={next} />
-      <TextField label="Email or Team ID" name="email" type="text" autoComplete="username" required defaultValue={state.email} placeholder="you@example.com or SAMPLE1-T0001" />
+      <TextField label="Email, Team ID or Shop ID" name="email" type="text" autoComplete="username" required defaultValue={state.email} placeholder="you@example.com or SAMPLE1-T0001" />
       <TextField label="Password" name="password" type="password" autoComplete="current-password" required />
       <SubmitButton className="w-full" pendingText="Signing in…">Sign in</SubmitButton>
     </form>

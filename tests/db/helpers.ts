@@ -42,7 +42,7 @@ export async function createTestDatabase() {
   };
 }
 
-export type Role = "super_admin" | "admin" | "official" | "participant";
+export type Role = "super_admin" | "admin" | "official" | "participant" | "vendor";
 
 /**
  * Inserts an auth user (the on_auth_user_created trigger creates the profile)

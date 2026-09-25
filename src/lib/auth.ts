@@ -69,11 +69,11 @@ export function canAny(session: Session | null, permissions: Permission[]): bool
 }
 
 export function homePathFor(role: Profile["role"]): string {
-  return role === "participant" ? "/portal" : "/staff";
+  return role === "participant" ? "/portal" : role === "vendor" ? "/shop" : "/staff";
 }
 
 export function portalName(session: Session): string {
-  return { super_admin: "Super Admin Portal", admin: "Admin Portal", official: "Official Portal", participant: "Team Portal" }[session.profile.role];
+  return { super_admin: "Super Admin Portal", admin: "Admin Portal", official: "Official Portal", participant: "Team Portal", vendor: "Shop Portal" }[session.profile.role];
 }
 
 type RequireOptions = { allowPasswordChange?: boolean };
@@ -123,4 +123,12 @@ export async function requireParticipant(): Promise<Session & { participantId: s
   const isTeamAccount = Boolean(session.profile.team_id);
   if (!session.profile.participant_id && !isTeamAccount) redirect("/login?error=no_team");
   return { ...session, participantId: session.profile.participant_id, isTeamAccount };
+}
+
+/** A food shop's own login: its orders and menu only. */
+export async function requireVendor(): Promise<Session & { shopId: string; hackathonId: string }> {
+  const session = await requireSession();
+  if (session.profile.role !== "vendor") redirect(homePathFor(session.profile.role));
+  if (!session.profile.shop_id || !session.hackathonId) redirect("/login?error=no_shop");
+  return { ...session, shopId: session.profile.shop_id, hackathonId: session.hackathonId };
 }

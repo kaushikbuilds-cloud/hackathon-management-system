@@ -2,11 +2,15 @@ import type { FoodOrderStatus } from "@/lib/types";
 
 export const FOOD_STATUS_LABEL: Record<FoodOrderStatus, string> = {
   placed: "New",
-  preparing: "Preparing",
+  preparing: "Accepted, preparing",
   ready: "Ready to collect",
   collected: "Collected",
   cancelled: "Cancelled",
+  rejected: "Rejected by the shop",
 };
+
+/** What the team sees while an order waits. */
+export const FOOD_STATUS_FOR_TEAM: Record<FoodOrderStatus, string> = { ...FOOD_STATUS_LABEL, placed: "Waiting for the shop to accept" };
 
 export const FOOD_STATUS_TONE: Record<FoodOrderStatus, "neutral" | "blue" | "violet" | "green" | "amber" | "red"> = {
   placed: "blue",
@@ -14,11 +18,12 @@ export const FOOD_STATUS_TONE: Record<FoodOrderStatus, "neutral" | "blue" | "vio
   ready: "green",
   collected: "neutral",
   cancelled: "red",
+  rejected: "red",
 };
 
 /** The counter's next step for an order (mirrors set_food_order_status). */
 export const FOOD_NEXT: Partial<Record<FoodOrderStatus, { status: FoodOrderStatus; label: string }>> = {
-  placed: { status: "preparing", label: "Start preparing" },
+  placed: { status: "preparing", label: "Accept" },
   preparing: { status: "ready", label: "Mark ready" },
   ready: { status: "collected", label: "Collected" },
 };

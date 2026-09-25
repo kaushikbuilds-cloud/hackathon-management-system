@@ -2,7 +2,8 @@ export type RegistrationStatus = "pending" | "approved" | "rejected" | "flagged"
 export type PdfStatus = "not_generated" | "generated" | "outdated" | "failed";
 export type AttendanceState = "not_checked_in" | "present" | "corrected";
 export type TeamAttendanceState = "none" | "partial" | "full";
-export type AppRole = "super_admin" | "admin" | "official" | "participant";
+/** "vendor" is a food shop's own login (Shop portal). */
+export type AppRole = "super_admin" | "admin" | "official" | "participant" | "vendor";
 
 export const REGISTRATION_STATUS_LABEL: Record<RegistrationStatus, string> = {
   pending: "Pending",
@@ -35,4 +36,5 @@ export const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Admin",
   official: "Official",
   participant: "Participant",
+  vendor: "Food shop",
 };

@@ -8,8 +8,8 @@ import { updateOwnProfile } from "@/lib/profile/actions";
 
 export function ProfileSecurity({ session, extra }: { session: Session; extra?: { label: string; value: React.ReactNode }[] }) {
   const p = session.profile;
-  const team = Boolean(p.team_id); // shared team login: no personal profile, no email
-  const perms = p.role === "super_admin" ? "All permissions" : p.role === "participant" ? null : [...session.permissions].map(permissionLabel).join(", ") || "None";
+  const team = Boolean(p.team_id || p.shop_id); // shared team or shop login: no personal profile, no email
+  const perms = p.role === "super_admin" ? "All permissions" : p.role === "participant" || p.role === "vendor" ? null : [...session.permissions].map(permissionLabel).join(", ") || "None";
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {!team && <Card>

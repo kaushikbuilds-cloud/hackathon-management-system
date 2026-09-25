@@ -6,6 +6,7 @@ import { audit } from "@/lib/audit";
 import { homePathFor, getSession } from "@/lib/auth";
 import { recordCredentialEvent } from "@/lib/accounts";
 import { emailForParticipantCode, emailForTeamCode } from "@/lib/activation";
+import { emailForShopCode } from "@/lib/shops";
 import { isParticipantCode, normalizeIdInput } from "@/lib/domain/ids";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { appUrl } from "@/lib/env";
@@ -33,13 +34,13 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   // Teams sign in with their Team ID; older per-member accounts with a Participant ID.
   const loginEmail = email.includes("@")
     ? email
-    : ((await emailForTeamCode(email)) ?? (await emailForParticipantCode(email)) ?? email);
+    : ((await emailForTeamCode(email)) ?? (await emailForShopCode(email)) ?? (await emailForParticipantCode(email)) ?? email);
   if (!email.includes("@") && loginEmail === email && isParticipantCode(normalizeIdInput(email))) {
     return { error: "Your team signs in with its Team ID (…-T0001), printed on every member's ID card.", email };
   }
   const parsed = loginSchema.safeParse({ email: loginEmail, password: formData.get("password") });
   if (!parsed.success) {
-    return { error: email.includes("@") ? "Enter a valid email and password." : "Invalid Team ID or password.", email };
+    return { error: email.includes("@") ? "Enter a valid email and password." : "Invalid ID or password.", email };
   }
 
   const ip = await clientIp();
@@ -51,7 +52,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error || !data.user) {
     await audit(null, "auth.sign_in_failed", { type: "auth" }, { email_hash: hashKey(parsed.data.email), reason: error?.code ?? "unknown" });
-    return { error: email.includes("@") ? "Invalid email or password." : "Invalid Team ID or password.", email };
+    return { error: email.includes("@") ? "Invalid email or password." : "Invalid ID or password.", email };
   }
 
   const service = createServiceClient(data.user.id);

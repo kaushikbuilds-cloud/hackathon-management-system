@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 const ERRORS: Record<string, string> = {
   no_team: "Your account is not linked to a team. Contact the organisers.",
+  no_shop: "This shop login is not linked to a shop any more. Contact the organisers.",
   link_invalid: "That sign-in link is invalid or has expired. Request a new one.",
 };
 

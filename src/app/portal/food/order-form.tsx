@@ -8,8 +8,8 @@ import { formatRupees } from "@/lib/domain/fees";
 type MenuItem = { id: string; name: string; description: string | null; price: number; isVeg: boolean; available: boolean; limit: number | null };
 
 /** Menu with quantity steppers and a running total; the database re-checks every line. */
-export function OrderForm({ action, items, free, shopName, members }: {
-  action: (formData: FormData) => void; items: MenuItem[]; free: boolean; shopName: string; members: { id: string; name: string }[] | null;
+export function OrderForm({ action, items, free, shopName, members, closed = false }: {
+  action: (formData: FormData) => void; items: MenuItem[]; free: boolean; shopName: string; members: { id: string; name: string }[] | null; closed?: boolean;
 }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const set = (id: string, n: number, max: number) => setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(n, max)) }));
@@ -56,7 +56,7 @@ export function OrderForm({ action, items, free, shopName, members }: {
       <TextField label="Note for the counter (optional)" name="note" id={`note-${shopName}`} maxLength={200} placeholder="e.g. less spicy, no onion" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="font-bold text-ink">{count} item{count === 1 ? "" : "s"} · {free ? "Free" : `${formatRupees(total)} (pay at the counter)`}</p>
-        <SubmitButton disabled={count === 0} pendingText="Placing order…">Place order</SubmitButton>
+        <SubmitButton disabled={count === 0 || closed} pendingText="Sending order…">Place order</SubmitButton>
       </div>
     </form>
   );

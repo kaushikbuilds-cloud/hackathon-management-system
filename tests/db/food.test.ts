@@ -163,4 +163,57 @@ describe.skipIf(!enabled)("food ordering (database)", () => {
     expect(await pgErrorCode(as(pool, adminB, (c) => c.query(
       "insert into food_items (hackathon_id, shop_id, name) values ($1, $2, 'Sneaky')", [hB, paidShop])))).toBe("42501");
   });
+  it("a shop login sees and handles only its own orders, and a rejection needs a reason", async () => {
+    const vendor = await createUser(pool, "vendor");
+    await pool.query("update profiles set shop_id = $1 where id = $2", [paidShop, vendor]);
+    const other = await createUser(pool, "vendor");
+    await pool.query("update profiles set shop_id = $1 where id = $2", [freeShop, other]);
+    const { rows: [prof] } = await pool.query("select hackathon_id, role from profiles where id = $1", [vendor]);
+    expect(prof).toEqual({ hackathon_id: hA, role: "vendor" });
+
+    const [p2] = (await pool.query("select id from participants where email = 'f2@food.dev'")).rows.map((r) => r.id);
+    await pool.query("update food_orders set status = 'cancelled' where participant_id = $1 and status in ('placed', 'preparing', 'ready')", [p2]);
+    const r = await order(u.p2, paidShop, [{ item_id: chai, qty: 2 }]);
+    const shopOrders = await as(pool, vendor, async (c) => (await c.query("select shop_id from food_orders")).rows);
+    expect(shopOrders.length).toBeGreaterThan(0);
+    expect(shopOrders.every((o) => o.shop_id === paidShop)).toBe(true);
+    // Names are not exposed to shops through participants.
+    expect(await as(pool, vendor, async (c) => (await c.query("select 1 from participants")).rowCount)).toBe(0);
+
+    const set = (who: string, status: string, reason: string | null = null) =>
+      as(pool, who, async (c) => (await c.query("select set_food_order_status($1, $2, $3) as ok", [r.order_id, status, reason])).rows[0].ok);
+    expect(await pgErrorCode(set(other, "preparing"))).toBe("42501"); // another shop's login
+    expect(await pgErrorCode(set(vendor, "rejected", ""))).toBe("23514");
+    expect(await set(vendor, "rejected", "Sold out")).toBe(true);
+    expect((await pool.query("select status, reject_reason from food_orders where id = $1", [r.order_id])).rows[0]).toEqual({ status: "rejected", reject_reason: "Sold out" });
+    expect(await set(vendor, "preparing")).toBe(false); // rejected is final
+
+    const r2 = await order(u.p2, paidShop, [{ item_id: chai, qty: 1 }]);
+    const set2 = (status: string) => as(pool, vendor, async (c) => (await c.query("select set_food_order_status($1, $2) as ok", [r2.order_id, status])).rows[0].ok);
+    expect(await set2("preparing")).toBe(true);
+    expect(await set2("ready")).toBe(true);
+    expect(await set2("collected")).toBe(true);
+  });
+
+  it("a shop login edits only its own menu and opens or closes only its own shop", async () => {
+    const vendor = (await pool.query("select id from profiles where shop_id = $1", [paidShop])).rows[0].id;
+    await as(pool, vendor, async (c) => {
+      expect((await c.query("update food_items set price = 18 where id = $1", [chai])).rowCount).toBe(1);
+      expect((await c.query("update food_items set price = 0 where id = $1", [lunch])).rowCount).toBe(0);
+      expect((await c.query("update food_shops set is_free = true")).rowCount).toBe(0);
+      expect((await c.query("select set_my_shop_open(false) as ok")).rows[0].ok).toBe(true);
+    });
+    expect(await pgErrorCode(as(pool, vendor, (c) => c.query(
+      "insert into food_items (hackathon_id, shop_id, name, price) values ($1, $2, 'Sneaky', 1)", [hA, freeShop])))).toBe("42501");
+    const { rows } = await pool.query("select id, is_open from food_shops where id in ($1, $2)", [paidShop, freeShop]);
+    expect(Object.fromEntries(rows.map((x) => [x.id, x.is_open]))).toEqual({ [paidShop]: false, [freeShop]: true });
+    expect(Number((await pool.query("select price from food_items where id = $1", [chai])).rows[0].price)).toBe(18);
+    await pool.query("update food_shops set is_open = true where id = $1", [paidShop]);
+  });
+
+  it("gives each shop a Shop ID from the hackathon prefix", async () => {
+    const { rows } = await pool.query("select s.code, h.code_prefix from food_shops s join hackathons h on h.id = s.hackathon_id where s.hackathon_id = $1", [hA]);
+    for (const r of rows) expect(r.code).toMatch(new RegExp(`^${r.code_prefix}-S\\d{2,}$`));
+    expect(new Set(rows.map((r) => r.code)).size).toBe(rows.length);
+  });
 });

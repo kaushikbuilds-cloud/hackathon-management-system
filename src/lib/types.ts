@@ -40,6 +40,8 @@ export type Profile = {
   participant_id: string | null;
   /** Set on a team's shared portal login (then participant_id is null). */
   team_id?: string | null;
+  /** Set on a food shop's login (role vendor). */
+  shop_id?: string | null;
   /** The hackathon this person belongs to (null for the Super Admin). */
   hackathon_id: string | null;
   is_active: boolean;
@@ -273,6 +275,8 @@ export type FoodShop = {
   location: string | null;
   is_free: boolean;
   is_open: boolean;
+  /** Shop login ID, e.g. SAMPLE1-S01 (set by the database). */
+  code?: string | null;
   created_at: string;
 };
 
@@ -289,7 +293,7 @@ export type FoodItem = {
   sort_order: number;
 };
 
-export type FoodOrderStatus = "placed" | "preparing" | "ready" | "collected" | "cancelled";
+export type FoodOrderStatus = "placed" | "preparing" | "ready" | "collected" | "cancelled" | "rejected";
 
 export type FoodOrder = {
   id: string;
@@ -301,6 +305,7 @@ export type FoodOrder = {
   is_free: boolean;
   total: number;
   note: string | null;
+  reject_reason?: string | null;
   created_at: string;
   updated_at: string;
 };

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { UUID, bool, dbErrorMessage, flash, str } from "@/lib/actions";
 import { requirePermission } from "@/lib/auth";
-import { FOOD_STATUS_LABEL, isFoodStatus } from "@/lib/domain/food";
+import { issueShopLogin } from "@/lib/shops";
 import { createClient } from "@/lib/supabase/server";
 
 const BOARD = "/staff/food";
@@ -107,12 +107,19 @@ export async function deleteItem(id: string) {
   done(MENU, "Item removed from the menu.");
 }
 
-export async function setOrderStatus(id: string, status: string, back: string) {
-  await requirePermission("manage_food");
-  const path = back.startsWith(BOARD) ? back : BOARD;
-  if (!UUID.test(id) || !isFoodStatus(status)) flash(path, { error: "Invalid order." });
-  const { data, error } = await (await createClient()).rpc("set_food_order_status", { p_order: id, p_status: status });
-  if (error) flash(path, { error: dbErrorMessage(error) });
-  if (!data) flash(path, { error: "That order has already moved on. The board has been refreshed." });
-  done(path, `Order marked ${FOOD_STATUS_LABEL[status as keyof typeof FOOD_STATUS_LABEL].toLowerCase()}.`);
+export type ShopLoginState = { error?: string; password?: string; code?: string };
+
+/** Creates the shop's own login (or a new temporary password). The password is shown once. */
+export async function issueShopLoginAction(shopId: string, _prev: ShopLoginState, _formData: FormData): Promise<ShopLoginState> {
+  const session = await requirePermission("manage_food");
+  if (!UUID.test(shopId)) return { error: "Invalid shop." };
+  const { data: shop } = await (await createClient()).from("food_shops").select("id, name, code").eq("id", shopId).maybeSingle<{ id: string; name: string; code: string | null }>();
+  if (!shop?.code) return { error: "Shop not found. Run the latest SQL update first." };
+  try {
+    const password = await issueShopLogin(session, shop);
+    revalidatePath(MENU);
+    return { password, code: shop.code };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not create the shop login." };
+  }
 }

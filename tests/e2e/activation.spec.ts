@@ -97,7 +97,7 @@ test("the code is single use and every member signs in with the Team ID", async 
 
   await page.context().clearCookies();
   await page.goto("/login");
-  await page.getByLabel("Email or Team ID").fill(MEMBER);
+  await page.getByLabel("Email, Team ID or Shop ID").fill(MEMBER);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByText("Your team signs in with its Team ID")).toBeVisible();
@@ -123,10 +123,10 @@ test("a team that forgot its password gets a new code from the organisers", asyn
 
   await page.context().clearCookies();
   await page.goto("/login");
-  await page.getByLabel("Email or Team ID").fill(TEAM);
+  await page.getByLabel("Email, Team ID or Shop ID").fill(TEAM);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByText("Invalid Team ID or password.")).toBeVisible();
+  await expect(page.getByText("Invalid ID or password.")).toBeVisible();
   await signIn(page, TEAM, newPassword);
   await expect(page).toHaveURL(/\/portal/);
 });

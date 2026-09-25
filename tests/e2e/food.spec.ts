@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { FORM_SLUG, creds, signIn, teamCredentials } from "./helpers";
+import { creds, registerTeam, signIn, signOut, teamCredentials } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!creds.admin.password || !process.env.E2E_DATABASE_URL, "Set E2E_ADMIN_PASSWORD and E2E_DATABASE_URL (see README).");
@@ -10,15 +10,21 @@ const freeShop = `Meals ${run}`;
 const paidShop = `Snacks ${run}`;
 const leaderEmail = `eater.${run}@e2e.test`;
 const password = `Eater-${run}-Pass1!`;
-const phoneBase = String(Date.now()).slice(-7);
-let loginId = ""; // the team signs in with its Team ID
+const shopPassword = `Stall-${run}-Pass1!`;
+let teamLogin = "";
+let shopLogin = "";
 
 /** The innermost card whose heading is `name` (cards sit inside page sections). */
 function shopCard(page: Page, name: string) {
   return page.locator("section").filter({ has: page.getByRole("heading", { name, exact: true }) }).last();
 }
 
-test("the Admin sets up a free meals counter and a paid snack stall", async ({ page }) => {
+async function axe(page: Page) {
+  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
+  expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id} — ${v.help}`)).toEqual([]);
+}
+
+test("the Admin adds shops and menus and creates the snack stall's own login", async ({ page }) => {
   await signIn(page, creds.admin.email, creds.admin.password);
   await page.goto("/staff/food/menu");
   await page.getByLabel("Shop name").first().fill(freeShop);
@@ -40,27 +46,30 @@ test("the Admin sets up a free meals counter and a paid snack stall", async ({ p
   await shop.getByLabel("Price (₹)").fill("15");
   await shop.getByRole("button", { name: "Add item" }).click();
   await expect(page.getByText("Item added to the menu.")).toBeVisible();
+
+  shop = shopCard(page, paidShop);
+  await expect(shop).toContainText("Not created yet");
+  shopLogin = (await shop.getByText(/Shop login: /).innerText()).match(/[A-Z0-9]{2,10}-S\d{2,}/)![0];
+  await shop.getByRole("button", { name: "Create shop login" }).click();
+  await expect(page.getByText("Give these to the shop now")).toBeVisible();
+  const temp = (await page.locator(".font-mono.text-lg").innerText()).trim();
+
+  // The shop signs in with its Shop ID and must choose its own password.
+  await signOut(page);
+  await signIn(page, shopLogin, temp);
+  await page.waitForURL(/\/change-password/);
+  await page.getByLabel("New password").first().fill(shopPassword);
+  await page.getByLabel("Confirm new password").fill(shopPassword);
+  await page.getByRole("button", { name: "Save password" }).click();
+  await page.waitForURL(/\/shop/);
+  await expect(page.getByRole("heading", { name: paidShop })).toBeVisible();
+  await expect(page.getByText("Open: taking orders")).toBeVisible();
 });
 
-test("a participant orders food and cannot exceed the free meal limit", async ({ page }) => {
-  await page.goto(`/register/${FORM_SLUG}`);
-  await page.getByLabel("Team name").fill(`Food Lovers ${run}`);
-  await page.getByLabel("College / institution").fill("Food College");
-  for (const [i, name, email] of [[0, "Hungry Leader", leaderEmail], [1, "Hungry Member", `eater2.${run}@e2e.test`]] as const) {
-    const card = page.locator("section").filter({ has: page.getByRole("heading", { name: new RegExp(`^Member ${i + 1}`) }) });
-    await card.getByLabel("Full name").fill(name);
-    await card.getByLabel("Email").fill(email);
-    await card.getByLabel("Phone number").fill(`+91 7${phoneBase}${i}${run.length % 10}`);
-    await card.getByLabel("Department").fill("Mech");
-    await card.getByLabel("Academic year").fill("1st Year");
-  }
-  const track = page.getByLabel(/Which track/);
-  if (await track.count()) await track.selectOption({ index: 1 });
-  await page.getByRole("button", { name: "Submit registration" }).click();
-  await expect(page.getByText("Registration received!")).toBeVisible();
-
+test("a team picks a shop, sees its menu and orders; the free meal limit holds", async ({ page }) => {
+  await registerTeam(page, `Food Lovers ${run}`, [["Hungry Leader", leaderEmail], ["Hungry Member", `eater2.${run}@e2e.test`]]);
   const { teamCode, code } = await teamCredentials(leaderEmail);
-  loginId = teamCode;
+  teamLogin = teamCode;
   await page.goto("/activate");
   await page.getByLabel("Team ID").fill(teamCode);
   await page.getByLabel("Activation code").fill(code);
@@ -70,75 +79,105 @@ test("a participant orders food and cannot exceed the free meal limit", async ({
   await page.waitForURL(/\/portal/);
 
   await page.goto("/portal/food");
-  const meals = shopCard(page, freeShop);
-  await expect(meals.getByRole("button", { name: "One more Lunch" })).toBeVisible();
-  await meals.getByLabel("Who is this order for?").selectOption({ label: "Hungry Leader" });
-  await meals.getByRole("button", { name: "One more Lunch" }).click();
-  await expect(meals.getByRole("button", { name: "One more Lunch" })).toBeDisabled(); // limit 1
-  await meals.getByRole("button", { name: "Place order" }).click();
-  await expect(page.getByText(/Order #\d{4} placed/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Shops" })).toBeVisible();
+  await axe(page);
+  await page.getByRole("link", { name: new RegExp(freeShop) }).click();
+  await expect(page.getByRole("heading", { name: freeShop })).toBeVisible();
+  await page.getByLabel("Who is this order for?").selectOption({ label: "Hungry Leader" });
+  await page.getByRole("button", { name: "One more Lunch" }).click();
+  await expect(page.getByRole("button", { name: "One more Lunch" })).toBeDisabled(); // limit 1
+  await page.getByRole("button", { name: "Place order" }).click();
+  await expect(page.getByText(/Order #\d{4} sent to the shop/)).toBeVisible();
+  await expect(page.getByText("Waiting for the shop to accept").first()).toBeVisible();
 
-  const snacks = shopCard(page, paidShop);
-  await snacks.getByLabel("Who is this order for?").selectOption({ label: "Hungry Leader" });
-  await snacks.getByRole("button", { name: "One more Masala chai" }).click();
-  await snacks.getByRole("button", { name: "One more Masala chai" }).click();
-  await expect(snacks.getByText("2 items · ₹30 (pay at the counter)")).toBeVisible();
-  await snacks.getByLabel("Note for the counter (optional)").fill("less sugar");
-  await snacks.getByRole("button", { name: "Place order" }).click();
-  await expect(page.getByText(/Order #\d{4} placed/)).toBeVisible();
-  await expect(page.getByText("Pay ₹30 when you collect")).toBeVisible();
+  await page.getByRole("link", { name: new RegExp(paidShop) }).click();
+  await page.getByLabel("Who is this order for?").selectOption({ label: "Hungry Leader" });
+  await page.getByRole("button", { name: "One more Masala chai" }).click();
+  await page.getByRole("button", { name: "One more Masala chai" }).click();
+  await expect(page.getByText("2 items · ₹30 (pay at the counter)")).toBeVisible();
+  await page.getByLabel("Note for the counter (optional)").fill("less sugar");
+  await page.getByRole("button", { name: "Place order" }).click();
+  await expect(page.getByText(/Order #\d{4} sent to the shop/)).toBeVisible();
 
-  // A second lunch for the same member is refused by the database; a teammate still gets theirs.
-  await meals.getByLabel("Who is this order for?").selectOption({ label: "Hungry Leader" });
-  await meals.getByRole("button", { name: "One more Lunch" }).click();
-  await meals.getByRole("button", { name: "Place order" }).click();
+  // A second lunch for the same member is refused by the database.
+  await page.getByRole("link", { name: new RegExp(freeShop) }).click();
+  await page.getByLabel("Who is this order for?").selectOption({ label: "Hungry Leader" });
+  await page.getByRole("button", { name: "One more Lunch" }).click();
+  await page.getByRole("button", { name: "Place order" }).click();
   await expect(page.getByText("Lunch is limited to 1 per person")).toBeVisible();
-  await meals.getByLabel("Who is this order for?").selectOption({ label: "Hungry Member" });
-  await meals.getByRole("button", { name: "One more Lunch" }).click();
-  await meals.getByRole("button", { name: "Place order" }).click();
-  await expect(page.getByText(/Order #\d{4} placed/)).toBeVisible();
-  await expect(page.getByText("For Hungry Member")).toBeVisible();
 });
 
-test("the counter moves the order along and the participant sees it is ready", async ({ page, browser }) => {
-  await signIn(page, creds.admin.email, creds.admin.password);
-  await page.goto("/staff/food");
-  await page.getByRole("link", { name: paidShop, exact: true }).click();
-  await page.waitForURL(/\/staff\/food\?shop=/);
-  const card = page.getByRole("article").filter({ hasText: "Hungry Leader" });
+test("the shop accepts the order, marks it ready, and the team sees it", async ({ page, browser }) => {
+  await signIn(page, shopLogin, shopPassword);
+  await page.waitForURL(/\/shop/);
+  await axe(page);
+  const card = page.getByRole("article").filter({ hasText: "Hungry Leader" }).filter({ hasText: "Masala chai" });
   await expect(card).toContainText("2 × Masala chai");
   await expect(card).toContainText("Note: less sugar");
   await expect(card).toContainText("Collect ₹30");
-  await card.getByRole("button", { name: "Start preparing" }).click();
-  await expect(page.getByText("Order marked preparing.")).toBeVisible();
-  await page.getByRole("article").filter({ hasText: "Hungry Leader" }).getByRole("button", { name: "Mark ready" }).click();
+  await card.getByRole("button", { name: "Accept" }).click();
+  await expect(page.getByText("Order marked accepted, preparing.")).toBeVisible();
+
+  const team = await browser.newPage();
+  await signIn(team, teamLogin, password);
+  await team.goto("/portal/food");
+  await expect(team.getByText("Accepted, preparing").first()).toBeVisible();
+
+  await page.getByRole("article").filter({ hasText: "Masala chai" }).getByRole("button", { name: "Mark ready" }).click();
   await expect(page.getByText("Order marked ready to collect.")).toBeVisible();
+  await team.reload();
+  await expect(team.getByText("Your food is ready. Show this order number at the counter.")).toBeVisible();
+  await team.close();
 
-  const participant = await browser.newPage();
-  await signIn(participant, loginId, password);
-  await participant.goto("/portal/food");
-  await expect(participant.getByText("Your food is ready. Show this order number at the counter.")).toBeVisible();
-  await participant.close();
-
-  await page.getByRole("article").filter({ hasText: "Hungry Leader" }).getByRole("button", { name: "Collected" }).click();
+  await page.getByRole("article").filter({ hasText: "Masala chai" }).getByRole("button", { name: "Collected" }).click();
   await expect(page.getByText("Order marked collected.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Recently finished" })).toBeVisible();
 });
 
-test("closing a counter hides it from participants", async ({ page }) => {
-  await signIn(page, creds.admin.email, creds.admin.password);
+test("the shop rejects an order with a reason the team can read", async ({ page, browser }) => {
+  const team = await browser.newPage();
+  await signIn(team, teamLogin, password);
+  await team.goto("/portal/food");
+  await team.getByRole("link", { name: new RegExp(paidShop) }).click();
+  await team.getByLabel("Who is this order for?").selectOption({ label: "Hungry Member" });
+  await team.getByRole("button", { name: "One more Masala chai" }).click();
+  await team.getByRole("button", { name: "Place order" }).click();
+  await expect(team.getByText(/sent to the shop/)).toBeVisible();
+
+  await signIn(page, shopLogin, shopPassword);
+  const card = page.getByRole("article").filter({ hasText: "Hungry Member" });
+  await card.getByText("Reject", { exact: true }).click();
+  await card.getByLabel("Reason for the team").fill("Milk ran out");
+  await card.getByRole("button", { name: "Reject order" }).click();
+  await expect(page.getByText("Order marked rejected by the shop.")).toBeVisible();
+
+  await team.reload();
+  await expect(team.getByText("Reason: Milk ran out")).toBeVisible();
+  await team.close();
+});
+
+test("the shop edits its own menu price and closes; teams see both", async ({ page }) => {
+  await signIn(page, shopLogin, shopPassword);
+  await page.goto("/shop/menu");
+  await page.getByText("Edit item or price").first().click();
+  await page.getByLabel("Price (₹)").first().fill("20");
+  await page.getByRole("button", { name: "Save", exact: true }).first().click();
+  await expect(page.getByText("Item saved.")).toBeVisible();
+  await expect(page.getByText("₹20").first()).toBeVisible();
+  await page.goto("/shop");
+  await page.getByRole("button", { name: "Close shop" }).click();
+  await expect(page.getByText("Your shop is closed to new orders.")).toBeVisible();
+  // Staff pages stay closed to shop logins.
   await page.goto("/staff/food");
-  await page.getByRole("link", { name: freeShop, exact: true }).click();
-  await page.waitForURL(/\/staff\/food\?shop=/);
-  await page.locator("form").filter({ hasText: freeShop }).getByRole("button", { name: "Close" }).click();
-  await expect(page.getByText("The counter stopped taking new orders.")).toBeVisible();
+  await expect(page).toHaveURL(/\/shop/);
+
   await page.context().clearCookies();
-  await signIn(page, loginId, password);
+  await signIn(page, teamLogin, password);
   await page.goto("/portal/food");
-  await expect(page.getByRole("heading", { name: freeShop, exact: true })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: paidShop, exact: true })).toBeVisible();
-  const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
-  expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id} — ${v.help}`)).toEqual([]);
+  await page.getByRole("link", { name: new RegExp(paidShop) }).click();
+  await expect(page.getByText("This shop is closed right now")).toBeVisible();
+  await expect(page.getByText("₹20").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Place order" })).toBeDisabled();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });

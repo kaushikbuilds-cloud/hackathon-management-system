@@ -3,9 +3,10 @@ import { ConfirmSubmit, SubmitButton } from "@/components/client";
 import { Badge, Card, CardTitle, Checkbox, EmptyState, Flash, PageHeader, SelectField, TextField } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { formatRupees } from "@/lib/domain/fees";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { FoodItem, FoodShop } from "@/lib/types";
 import { deleteItem, deleteShop, saveItem, saveShop, setItemAvailable } from "../actions";
+import { ShopLoginButton } from "./shop-login";
 
 export const metadata: Metadata = { title: "Shops & Menus" };
 
@@ -13,13 +14,16 @@ const KIND = [{ value: "paid", label: "Paid — participants pay at the counter"
 const DIET = [{ value: "veg", label: "Veg" }, { value: "nonveg", label: "Non-veg" }];
 
 export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">) {
-  await requirePermission("manage_food");
+  const session = await requirePermission("manage_food");
   const sp = await props.searchParams;
   const supabase = await createClient();
   const [{ data: shops }, { data: items }] = await Promise.all([
     supabase.from("food_shops").select("*").order("created_at").returns<FoodShop[]>(),
     supabase.from("food_items").select("*").order("sort_order").order("name").returns<FoodItem[]>(),
   ]);
+  const { data: logins } = await createServiceClient().from("profiles").select("shop_id, status, last_sign_in_at")
+    .eq("hackathon_id", session.hackathonId).not("shop_id", "is", null).returns<{ shop_id: string; status: string; last_sign_in_at: string | null }[]>();
+  const loginFor = new Map((logins ?? []).map((l) => [l.shop_id, l]));
 
   return (
     <>
@@ -44,6 +48,14 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
               >
                 {shop.name}
               </CardTitle>
+              <div className="mb-4 rounded-md border-2 border-line bg-paper-2 p-3">
+                <p className="text-sm font-bold text-ink">
+                  Shop login: <span className="font-mono">{shop.code ?? "—"}</span>{" "}
+                  <Badge tone={loginFor.get(shop.id) ? "green" : "neutral"}>{loginFor.get(shop.id) ? "Created" : "Not created yet"}</Badge>
+                </p>
+                <p className="mb-2 text-xs text-ink-soft">The shop signs in with this Shop ID to accept or reject its orders and edit its own menu and prices.</p>
+                <ShopLoginButton shopId={shop.id} hasLogin={Boolean(loginFor.get(shop.id))} />
+              </div>
               <details className="mb-4">
                 <summary className="cursor-pointer text-sm font-bold text-brand">Edit shop</summary>
                 <div className="mt-3"><ShopForm shop={shop} /></div>
