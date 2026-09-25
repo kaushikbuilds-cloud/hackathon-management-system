@@ -76,7 +76,9 @@ src/
     pdf/id-cards.ts    Card renderer (pdf-lib + fontkit + qrcode)
     id-cards.ts        Loads team data via RLS, renders, stores, records jobs
     auth.ts            Session/profile loading, role and permission guards
-    accounts.ts        Account provisioning (temporary passwords, invites, deactivation)
+    accounts.ts        Account status lifecycle (suspend / deactivate / reactivate)
+    invitations.ts     Single-use expiring invitation and reset links
+    permissions.ts     Permission catalogue (mirrors the database)
     supabase/          Server clients (user-scoped + service role) and session refresh
   proxy.ts             Refreshes the Supabase session; redirects anonymous users from protected areas
 supabase/
@@ -101,22 +103,23 @@ How the pieces work together:
 
 ## Security model
 
-| Role | Can |
-| --- | --- |
-| **Super Admin** | Everything, including creating and removing administrators and changing roles. |
-| **Admin** | Event, forms, teams, credentials, templates, PDFs, attendance corrections, support assignment, announcements, reports, audit logs, and managing **officials**. Cannot change other admins. |
-| **Official** | View teams and participants, verify QR codes, check people in, and handle support requests assigned to them. Optional per-official permissions: **edit registrations**, **generate PDFs**, **correct attendance**, **see and assign all support**. |
-| **Team leader / member** | Their own team's data, announcements, the schedule, and their team's support requests. Nothing else (enforced by RLS). |
-| **Public** | Event page, published registration form, public schedule. |
+| Role | Created by | Can |
+| --- | --- | --- |
+| **Super Admin** | One-time protected setup (`/setup` with `SETUP_TOKEN`, or SQL) | Everything: User Management (Admins, Officials), roles, all permissions, audit logs, system settings. |
+| **Admin** | Super Admin only, by invitation | Exactly the permissions granted (see below). Can invite Officials only with **Manage Officials**, and only grant permissions they hold. Cannot manage Admins or raise their own access. |
+| **Official** | Super Admin or an Admin with **Manage Officials**, by invitation | QR check-in, own attendance history, assigned help-desk requests, duty/station. Manual check-in, corrections, ID cards etc. only if granted. Never sees participant contact details (uses a contact-free lookup). |
+| **Team Leader** | Registration (activation link shown after submitting) | Own team: members incl. contacts, registration status, team ID card PDF (if enabled), change requests via support. |
+| **Participant** | Registration, then an activation link from the organisers | Own profile/IDs, contact-free team roster, own ID card (if enabled), schedule, announcements, own support requests. |
+| **Public** | – | Event page, published registration form, public schedule. |
+
+**Permissions** (table `permissions`, grants in `staff_permissions`): Event settings, Registration management, Correct registrations, Full participant data, Generate ID cards, QR check-in, Manual check-in, Correct attendance, Attendance dashboard, Manage Officials, Announcements & schedule, All support requests, Reports & exports. New Admins get all but *Manage Officials* ticked by default; new Officials get *QR check-in*.
+
+**Account lifecycle:** Invited (pending) → Active → Suspended / Deactivated. Suspending or deactivating bans the auth user (sessions stop refreshing) and every database permission check denies access immediately.
 
 How this is enforced:
 
-- **Authorisation is checked on the server and again in the database.** Pages and actions call `requireAdmin` / `requirePermission` / `requireParticipant`, and every table has RLS policies. Helper functions (`is_admin()`, `has_permission()`, `my_team_id()`) check that the profile is active.
-- **Credentials**: every person has their own Supabase Auth account. There is no shared team password (the PRD's preferred option). Admins can either:
-  - send an **activation email** (Supabase invite → `/auth/confirm` → choose a password), or
-  - issue a **temporary password**. It is shown **once**, never stored or logged, must be changed at first sign-in, and expires after `TEMP_PASSWORD_TTL_HOURS`.
-
-  Both actions are recorded in `credential_events` and the audit log. Deactivating an account also bans the auth user, so its existing sessions stop refreshing.
+- **Authorisation is checked on the server and again in the database.** Pages and actions call `requirePermission` / `requireSuperAdmin` / `requireParticipant`; every table has RLS policies built on `has_permission()`, which only the Super Admin passes implicitly.
+- **Invitations**: single-use, expiring links (72 h staff, 7 days participants). Only a SHA-256 hash of the token is stored; the link is shown once to the inviter with Copy / email / WhatsApp buttons. Opening it verifies the invitee, who sets their own password and is signed straight in. Password resets use the same mechanism. Invitations, acceptances, revocations, role and permission changes are audit-logged; tokens never are.
 - **Roles live in `app_metadata`**, which only the service role can write, and are mirrored to `profiles`. The `role` column can't be updated through the client API, and a guard trigger blocks privilege escalation even if grants are widened by mistake.
 - **Rate limits** are stored in Postgres, so they work across serverless instances:
   - registration: 10 per hour per IP
@@ -168,9 +171,10 @@ npm run dev                          # http://localhost:3000
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | ✔ | Publishable key `sb_publishable_…` (safe in the browser; RLS protects the data). Legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` also works. |
 | `SUPABASE_SECRET_KEY` | ✔ | **Server-only** secret key `sb_secret_…`. Bypasses RLS. Never expose it or prefix it with `NEXT_PUBLIC_`. Legacy `SUPABASE_SERVICE_ROLE_KEY` also works. |
 | `NEXT_PUBLIC_APP_URL` | ✔ in prod | Public base URL. It is encoded in the QR codes on cards and used in email links. |
-| `TEMP_PASSWORD_TTL_HOURS` | – | Temporary password lifetime (default 72) |
+| `STAFF_INVITE_TTL_HOURS` | – | Staff invitation / reset link lifetime (default 72) |
+| `PARTICIPANT_INVITE_TTL_HOURS` | – | Participant activation link lifetime (default 168) |
+| `SETUP_TOKEN` | – | Enables `/setup` to create the first Super Admin; remove after use |
 | `SIGNED_URL_TTL_SECONDS` | – | Signed download URL lifetime (default 300) |
-| `AUTO_INVITE_ON_REGISTRATION` | – | `true` emails every new member an activation link (needs SMTP) |
 | `SEED_SUPER_ADMIN_EMAIL` / `SEED_SUPER_ADMIN_PASSWORD` | – | Used only by `npm run seed:users` |
 | `TEST_DATABASE_URL` | – | Postgres URL for `npm run test:db` (a throwaway server; each run creates and drops its own database) |
 | `E2E_*` | – | Playwright settings (see [Testing](#testing)) |
@@ -187,8 +191,9 @@ No secrets are committed. `.env*` files are git-ignored, except `.env.example`.
 | `20260924000002_functions.sql` | Authorisation helpers, audit/ID/outdated/support triggers, auth-user sync, and the RPCs `register_team`, `verify_qr`, `check_in`, `undo_check_in`, `publish_id_card_template`, `set_team_leader`, `rotate_qr_token`, `check_rate_limit`, plus the `team_overview` and `participant_overview` views |
 | `20260924000003_rls.sql` | RLS on every table, least-privilege grants (column-level where relevant) |
 | `20260924000004_storage.sql` | Private buckets `id-cards`, `participant-photos`, `support-attachments`; public `branding` |
+| `20260925000005_roles_permissions.sql` | Granular permissions, invitations, account status, official duties, contact-free lookup RPCs, tightened RLS (safe on an existing database) |
 
-Data model: `hackathons` (single row) → `registration_forms` → `registration_submissions`; `teams` → `participants`. Around those sit `profiles`, `official_permissions`, `credential_events`, `id_card_templates`, `id_card_jobs`, `attendance`, `support_requests`, `support_messages`, `support_status_history`, `notifications`, `announcements`, `event_schedule`, `audit_logs` and `rate_limits`.
+Data model: `hackathons` (single row) → `registration_forms` → `registration_submissions`; `teams` → `participants`. Around those sit `profiles`, `permissions`, `staff_permissions`, `invitations`, `official_assignments`, `credential_events`, `id_card_templates`, `id_card_jobs`, `attendance`, `support_requests`, `support_messages`, `support_status_history`, `notifications`, `announcements`, `event_schedule`, `audit_logs` and `rate_limits`.
 
 `supabase/seed.sql` is **development data only**. It creates teams through `register_team()`, so the IDs are generated exactly as they would be in production.
 

@@ -5,11 +5,11 @@ import { toCsv } from "@/lib/domain/csv";
 import { createClient } from "@/lib/supabase/server";
 import type { Permission } from "@/lib/types";
 
-type Report = { requirement: "staff" | "admin" | Permission; build: (sb: Awaited<ReturnType<typeof createClient>>) => Promise<{ headers: string[]; rows: unknown[][] }> };
+type Report = { requirement: "super_admin" | Permission; build: (sb: Awaited<ReturnType<typeof createClient>>) => Promise<{ headers: string[]; rows: unknown[][] }> };
 
 const REPORTS: Record<string, Report> = {
   teams: {
-    requirement: "staff",
+    requirement: "view_reports",
     async build(sb) {
       const { data } = await sb.from("team_overview").select("*").order("team_code");
       return {
@@ -19,7 +19,7 @@ const REPORTS: Record<string, Report> = {
     },
   },
   participants: {
-    requirement: "staff",
+    requirement: "view_participants",
     async build(sb) {
       const { data } = await sb.from("participant_overview").select("*").order("participant_code");
       return {
@@ -29,7 +29,7 @@ const REPORTS: Record<string, Report> = {
     },
   },
   attendance: {
-    requirement: "staff",
+    requirement: "view_attendance",
     async build(sb) {
       const { data } = await sb
         .from("attendance")
@@ -43,7 +43,7 @@ const REPORTS: Record<string, Report> = {
     },
   },
   "team-attendance": {
-    requirement: "staff",
+    requirement: "view_reports",
     async build(sb) {
       const { data } = await sb.from("team_overview").select("team_code, name, member_count, present_count, attendance_state").order("team_code");
       return { headers: ["Team ID", "Team", "Members", "Present", "State"], rows: (data ?? []).map((t) => [t.team_code, t.name, t.member_count, t.present_count, t.attendance_state]) };
@@ -61,7 +61,7 @@ const REPORTS: Record<string, Report> = {
     },
   },
   submissions: {
-    requirement: "admin",
+    requirement: "manage_registrations",
     async build(sb) {
       const { data } = await sb.from("registration_submissions").select("created_at, status, payload, errors, team_id").order("created_at");
       return {
@@ -71,7 +71,7 @@ const REPORTS: Record<string, Report> = {
     },
   },
   audit: {
-    requirement: "admin",
+    requirement: "super_admin",
     async build(sb) {
       const { data } = await sb.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(5000);
       return {

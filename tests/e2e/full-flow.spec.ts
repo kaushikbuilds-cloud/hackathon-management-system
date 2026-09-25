@@ -12,7 +12,7 @@ const leader = { name: "Priya Raman", email: `priya.${run}@e2e.test` };
 const member = { name: "Dev Malhotra", email: `dev.${run}@e2e.test` };
 let teamCode = "";
 let teamUrl = "";
-let tempPassword = "";
+let activationLink = "";
 
 test.skip(!creds.admin.password || !creds.official.password, "Set E2E_ADMIN_PASSWORD and E2E_OFFICIAL_PASSWORD (see README).");
 
@@ -39,6 +39,9 @@ test("public registration creates a team with generated IDs", async ({ page }) =
   teamCode = (await page.locator("dd").filter({ hasText: /^TEAM-\d{4}-\d{4,}$/ }).innerText()).trim();
   expect(teamCode).toMatch(/^TEAM-\d{4}-\d{4,}$/);
   await expect(page.getByText(/PRT-\d{4}-\d{4,}/)).toHaveCount(2);
+  // The submitter is the Team Leader and gets a single-use activation link.
+  activationLink = (await page.getByRole("link", { name: "Activate my account" }).getAttribute("href")) ?? "";
+  expect(activationLink).toMatch(/\/invite\/[A-Za-z0-9_-]{40,}$/);
 });
 
 test("duplicate team names are rejected and entered data is preserved", async ({ page }) => {
@@ -73,15 +76,13 @@ test("admin sees one row per team, expands members and opens details", async ({ 
   await expect(page.getByRole("table", { name: `Members of ${teamName}` })).toContainText("Team Leader");
 });
 
-test("admin issues a temporary password (shown once, never on the card)", async ({ page }) => {
+test("admin can create a single-use activation link for a member", async ({ page }) => {
   await signIn(page, creds.admin.email, creds.admin.password);
   await page.goto(teamUrl);
-  await page.locator("summary").filter({ hasText: leader.name }).click();
-  await page.getByRole("button", { name: "Create account (temp password)" }).click();
-  const code = page.locator("code").first();
-  await expect(code).toBeVisible();
-  tempPassword = (await code.innerText()).trim();
-  expect(tempPassword).toHaveLength(14);
+  await page.locator("summary").filter({ hasText: member.name }).click();
+  await page.getByRole("button", { name: "Create activation link" }).click();
+  await expect(page.getByText(`Link created for ${member.email}`)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Share on WhatsApp" })).toBeVisible();
 });
 
 test("team PDF: one page per member, correct filename, status updates", async ({ page }) => {
@@ -109,33 +110,43 @@ test("team PDF: one page per member, correct filename, status updates", async ({
   await expect(page.getByRole("row").filter({ hasText: teamCode })).toContainText("Generated");
 });
 
-test("official checks in a participant once; duplicates are blocked", async ({ page }) => {
+test("official checks in a participant once; duplicates are blocked; admin areas are closed", async ({ page }) => {
   await signIn(page, creds.official.email, creds.official.password);
-  await expect(page).toHaveURL(/\/staff\/attendance/);
-  await page.getByLabel("Search participants").fill(member.email);
-  await page.getByRole("button", { name: "Search" }).click();
+  await expect(page.getByText("Official Portal").first()).toBeVisible();
+  await page.goto(`/staff/attendance/manual?q=${encodeURIComponent(member.email)}`);
   const item = page.getByRole("listitem").filter({ hasText: member.name });
+  await expect(item).not.toContainText(member.email); // contact-free lookup
   page.once("dialog", (d) => d.accept());
   await item.getByRole("button", { name: "Check in" }).click();
   await expect(item.getByText("Present")).toBeVisible();
   await expect(item.getByRole("button", { name: "Check in" })).toHaveCount(0);
 
-  // Officials cannot reach admin-only pages.
-  await page.goto("/staff/officials");
-  await expect(page.getByText("You don't have access to this page")).toBeVisible();
+  await page.goto("/staff/attendance/history");
+  await expect(page.getByRole("table", { name: "Attendance history" })).toContainText(member.name);
+
+  for (const path of ["/staff/users/officials", "/staff/users/admins", "/staff/teams", "/staff/audit"]) {
+    await page.goto(path);
+    await expect(page.getByText("You don't have access to this page")).toBeVisible();
+  }
 });
 
-test("team leader signs in, must change password, sees only their team and raises support", async ({ page }) => {
-  expect(tempPassword).not.toBe("");
-  await signIn(page, leader.email, tempPassword);
-  await expect(page).toHaveURL(/\/change-password/);
-  await page.getByRole("textbox", { name: "New password", exact: true }).fill(`Rocket-${run}-Pass!`);
-  await page.getByLabel("Confirm new password").fill(`Rocket-${run}-Pass!`);
-  await page.getByRole("button", { name: "Save password" }).click();
+test("team leader activates via the single-use link, sees only their team and raises support", async ({ page }) => {
+  expect(activationLink).not.toBe("");
+  await page.goto(activationLink);
+  await page.getByRole("textbox", { name: "Password", exact: true }).fill(`Rocket-${run}-Pass!`);
+  await page.getByLabel("Confirm password").fill(`Rocket-${run}-Pass!`);
+  await page.getByRole("button", { name: "Activate account" }).click();
   await expect(page).toHaveURL(/\/portal$/);
   await expect(page.getByRole("heading", { name: teamName })).toBeVisible();
-  await expect(page.getByRole("table", { name: "Team members" })).toContainText(member.name);
+  await expect(page.getByText("Team Leader dashboard")).toBeVisible();
+  await expect(page.getByRole("table", { name: "Team members" })).toContainText(member.email);
   await expect(page.getByText("Code Ninjas")).toHaveCount(0);
+
+  // The link is single-use.
+  await page.context().clearCookies();
+  await page.goto(activationLink);
+  await expect(page.getByText("Link not usable")).toBeVisible();
+  await signIn(page, leader.email, `Rocket-${run}-Pass!`);
 
   // Staff areas are closed to participants.
   await page.goto("/staff/teams");
@@ -186,7 +197,7 @@ test("core pages have no serious accessibility violations @responsive", async ({
 
 test("staff pages are accessible and responsive @responsive", async ({ page }) => {
   await signIn(page, creds.admin.email, creds.admin.password);
-  for (const path of ["/staff", "/staff/teams", "/staff/attendance", "/staff/support"]) {
+  for (const path of ["/staff", "/staff/teams", "/staff/attendance", "/staff/attendance/manual", "/staff/support", "/staff/settings"]) {
     await page.goto(path);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
     const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");

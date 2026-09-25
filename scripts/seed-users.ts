@@ -50,9 +50,15 @@ async function ensureUser(email: string, fullName: string, appMeta: Record<strin
 async function main() {
   console.log("Creating demo accounts (development only)…\n");
   await ensureUser(process.env.SEED_SUPER_ADMIN_EMAIL || "superadmin@example.com", "Sam Super", { role: "super_admin" }, process.env.SEED_SUPER_ADMIN_PASSWORD || password());
-  await ensureUser("admin@example.com", "Asha Admin", { role: "admin" });
+  const adminId = await ensureUser("admin@example.com", "Asha Admin", { role: "admin" });
   const officialId = await ensureUser("official@example.com", "Omar Official", { role: "official" });
-  await supabase.from("official_permissions").upsert({ profile_id: officialId, can_generate_pdf: true, can_correct_attendance: false, can_edit_registrations: false, can_manage_all_support: false });
+  // Staff get explicit grants (normally set when an invitation is accepted).
+  const { data: perms } = await supabase.from("permissions").select("key, default_for");
+  const grant = async (id: string, keys: string[]) =>
+    keys.length && (await supabase.from("staff_permissions").upsert(keys.map((permission) => ({ profile_id: id, permission })), { onConflict: "profile_id,permission" }));
+  await grant(adminId, (perms ?? []).filter((p) => p.default_for.includes("admin")).map((p) => p.key));
+  await grant(officialId, ["record_attendance", "manual_checkin", "generate_pdf"]);
+  await supabase.from("official_assignments").upsert({ profile_id: officialId, duty: "Registration desk check-in", station: "Gate A" });
 
   const { data: leader } = await supabase.from("participants").select("id, email, full_name").eq("email", "aarav.sharma@example.edu").maybeSingle();
   if (leader) {

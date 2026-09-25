@@ -5,7 +5,7 @@ import { NewRequestForm } from "./new-request-form";
 
 export default async function NewSupportRequestPage() {
   const session = await requireParticipant();
-  const data = await loadMyTeam();
+  const data = await loadMyTeam(session.participantId);
   return (
     <>
       <PageHeader back={{ href: "/portal/support", label: "Help & Support" }} title="New support request" />

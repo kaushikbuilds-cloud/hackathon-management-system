@@ -7,10 +7,10 @@ import { createClient } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: { default: "Team Portal", template: "%s · Team Portal" } };
 
 const NAV = [
-  { href: "/portal", label: "My Team", icon: "▦" },
+  { href: "/portal", label: "Dashboard", icon: "▦" },
   { href: "/portal/schedule", label: "Announcements & Schedule", icon: "✉" },
   { href: "/portal/support", label: "Help & Support", icon: "?" },
-  { href: "/change-password", label: "Change password", icon: "⚙" },
+  { href: "/portal/profile", label: "Profile & Security", icon: "⚙" },
 ];
 
 export default async function PortalLayout({ children }: LayoutProps<"/portal">) {

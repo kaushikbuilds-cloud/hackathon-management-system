@@ -7,7 +7,7 @@ import { getHackathon } from "@/lib/data/event";
 import { loadDashboardStats } from "@/lib/data/stats";
 import { PDF_STATUS_LABEL, REGISTRATION_STATUS_LABEL, TEAM_ATTENDANCE_LABEL } from "@/lib/domain/labels";
 import { SUPPORT_STATUSES, supportStatusLabel } from "@/lib/domain/support";
-import { formatDateTime } from "@/lib/format";
+import { formatDateTime, requestTime } from "@/lib/format";
 import { permissionLabel } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import type { OfficialAssignment } from "@/lib/types";
@@ -69,7 +69,7 @@ async function Overview({ tz, superAdmin }: { tz: string; superAdmin: boolean })
 /** Dashboard for staff without report access (typically Officials): duties and quick actions. */
 async function WorkDashboard({ session, tz }: { session: Session; tz: string }) {
   const supabase = await createClient();
-  const since = new Date(Date.now() - 24 * 3600_000).toISOString();
+  const since = new Date(requestTime() - 24 * 3600_000).toISOString();
   const [{ data: assignment }, { count: myCheckins }, { count: myRequests }] = await Promise.all([
     supabase.from("official_assignments").select("*").eq("profile_id", session.userId).maybeSingle<OfficialAssignment>(),
     supabase.from("attendance").select("id", { count: "exact", head: true }).eq("recorded_by", session.userId).gte("checked_in_at", since),

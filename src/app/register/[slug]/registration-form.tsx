@@ -44,8 +44,15 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
               </dd>
             </div>
           </dl>
+          {state.result.activation_url ? (
+            <div className="rounded-xl border border-violet-500/30 bg-violet-500/10 p-4">
+              <p className="font-semibold text-white">Team Leader: activate your Team Portal account</p>
+              <p className="mt-1 text-sm text-slate-300">This personal link works once and expires in 7 days. Open it now to set your password.</p>
+              <a href={state.result.activation_url} className="mt-3 inline-flex rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white">Activate my account</a>
+            </div>
+          ) : null}
           <p className="text-sm text-slate-400">
-            The organisers will share Team Portal access with each member. ID cards are handed out at check-in.
+            Other members receive their activation links from the organisers. ID cards are handed out at check-in.
           </p>
         </div>
       </Card>

@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 
 export const creds = {
+  superAdmin: { email: process.env.E2E_SUPER_ADMIN_EMAIL ?? "superadmin@example.com", password: process.env.E2E_SUPER_ADMIN_PASSWORD ?? "" },
   admin: { email: process.env.E2E_ADMIN_EMAIL ?? "admin@example.com", password: process.env.E2E_ADMIN_PASSWORD ?? "" },
   official: { email: process.env.E2E_OFFICIAL_EMAIL ?? "official@example.com", password: process.env.E2E_OFFICIAL_PASSWORD ?? "" },
 };

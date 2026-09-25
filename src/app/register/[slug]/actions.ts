@@ -2,8 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { settings } from "@/lib/env";
-import { sendParticipantActivation } from "@/lib/accounts";
+import { createInvitation } from "@/lib/invitations";
 import { clientIp } from "@/lib/request";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -16,7 +15,7 @@ export type RegisterState = {
   message?: string;
   fieldErrors?: Record<string, string>;
   values?: RegistrationDraft;
-  result?: { team_code: string; team_name: string; participant_codes: string[] };
+  result?: { team_code: string; team_name: string; participant_codes: string[]; activation_url?: string };
   /** Changes on every response so the client form remounts with the submitted values. */
   nonce?: string;
 };
@@ -72,22 +71,19 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
     return { nonce: randomUUID(), status: "error", values, fieldErrors, message: result.message };
   }
 
-  if (settings.autoInviteOnRegistration && !result.replayed) {
-    await inviteTeamMembers(result.team_id);
+  // The submitter is the Team Leader: give them a single-use activation link.
+  // Other members receive theirs from the organisers.
+  let activationUrl: string | undefined;
+  if (!result.replayed) {
+    const { data: leader } = await service.from("participants").select("id, email, full_name").eq("team_id", result.team_id).eq("role", "leader").single<{ id: string; email: string; full_name: string }>();
+    if (leader) {
+      activationUrl = (await createInvitation(null, { role: "participant", email: leader.email, participantId: leader.id, fullName: leader.full_name })).url;
+    }
   }
 
   return {
     status: "success",
-    result: { team_code: result.team_code, team_name: result.team_name, participant_codes: result.participant_codes },
+    result: { team_code: result.team_code, team_name: result.team_name, participant_codes: result.participant_codes, activation_url: activationUrl },
   };
 }
 
-/** Optional: email each new member an activation invite (requires SMTP + templates, see README). */
-async function inviteTeamMembers(teamId: string) {
-  const { data: members } = await createServiceClient().from("participants").select("id, email, full_name, user_id").eq("team_id", teamId);
-  for (const m of members ?? []) {
-    if (m.user_id) continue;
-    const res = await sendParticipantActivation(null, m);
-    if (!res.ok) console.error("activation invite failed", m.id, res.error);
-  }
-}
