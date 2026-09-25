@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { UUID, bool, dbErrorMessage, flash, str } from "@/lib/actions";
 import { requirePermission } from "@/lib/auth";
+import { checkPasswordStrength } from "@/lib/domain/password";
 import { issueShopLogin } from "@/lib/shops";
 import { createClient } from "@/lib/supabase/server";
 
@@ -107,19 +108,22 @@ export async function deleteItem(id: string) {
   done(MENU, "Item removed from the menu.");
 }
 
-export type ShopLoginState = { error?: string; password?: string; code?: string };
+export type ShopLoginState = { error?: string; saved?: { code: string; password: string } };
 
-/** Creates the shop's own login (or a new temporary password). The password is shown once. */
-export async function issueShopLoginAction(shopId: string, _prev: ShopLoginState, _formData: FormData): Promise<ShopLoginState> {
+/** Creates the shop's login with the password typed by the organisers, or changes it. */
+export async function issueShopLoginAction(shopId: string, _prev: ShopLoginState, formData: FormData): Promise<ShopLoginState> {
   const session = await requirePermission("manage_food");
   if (!UUID.test(shopId)) return { error: "Invalid shop." };
+  const password = String(formData.get("password") ?? "").trim();
+  const weak = checkPasswordStrength(password);
+  if (weak) return { error: weak };
   const { data: shop } = await (await createClient()).from("food_shops").select("id, name, code").eq("id", shopId).maybeSingle<{ id: string; name: string; code: string | null }>();
   if (!shop?.code) return { error: "Shop not found. Run the latest SQL update first." };
   try {
-    const password = await issueShopLogin(session, shop);
+    await issueShopLogin(session, shop, password);
     revalidatePath(MENU);
-    return { password, code: shop.code };
+    return { saved: { code: shop.code, password } };
   } catch (e) {
-    return { error: e instanceof Error ? e.message : "Could not create the shop login." };
+    return { error: e instanceof Error ? e.message : "Could not save the shop login." };
   }
 }

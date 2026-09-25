@@ -122,3 +122,15 @@ describe("monthly report", () => {
     ]);
   });
 });
+
+describe("shop logins", () => {
+  it("suggests an easy default password that passes the strength rules", async () => {
+    const { checkPasswordStrength, suggestShopPassword } = await import("@/lib/domain/password");
+    for (const name of ["Snacks mugwtofb", "Tea", "123 Canteen", "", "Main Hall Meals"]) {
+      const p = suggestShopPassword(name);
+      expect(p).toMatch(/^[A-Z][a-z]*@\d{4,}$/);
+      expect(checkPasswordStrength(p)).toBeNull();
+    }
+    expect(suggestShopPassword("Snacks stall")).toMatch(/^Snacks@\d{6}$/);
+  });
+});

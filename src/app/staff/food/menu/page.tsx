@@ -3,10 +3,14 @@ import { ConfirmSubmit, SubmitButton } from "@/components/client";
 import { Badge, Card, CardTitle, Checkbox, EmptyState, Flash, PageHeader, SelectField, TextField } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { formatRupees } from "@/lib/domain/fees";
+import { suggestShopPassword } from "@/lib/domain/password";
+import { getHackathon } from "@/lib/data/event";
+import { formatDateTime } from "@/lib/format";
+import { shopLoginEndsAt } from "@/lib/shops";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { FoodItem, FoodShop } from "@/lib/types";
 import { deleteItem, deleteShop, saveItem, saveShop, setItemAvailable } from "../actions";
-import { ShopLoginButton } from "./shop-login";
+import { ShopLoginForm } from "./shop-login";
 
 export const metadata: Metadata = { title: "Shops & Menus" };
 
@@ -23,6 +27,9 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
   ]);
   const { data: logins } = await createServiceClient().from("profiles").select("shop_id, status, last_sign_in_at")
     .eq("hackathon_id", session.hackathonId).not("shop_id", "is", null).returns<{ shop_id: string; status: string; last_sign_in_at: string | null }[]>();
+  const hackathon = await getHackathon();
+  const tz = hackathon?.timezone ?? "Asia/Kolkata";
+  const loginEnds = shopLoginEndsAt(hackathon?.ends_at);
   const loginFor = new Map((logins ?? []).map((l) => [l.shop_id, l]));
 
   return (
@@ -53,8 +60,8 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
                   Shop login: <span className="font-mono">{shop.code ?? "—"}</span>{" "}
                   <Badge tone={loginFor.get(shop.id) ? "green" : "neutral"}>{loginFor.get(shop.id) ? "Created" : "Not created yet"}</Badge>
                 </p>
-                <p className="mb-2 text-xs text-ink-soft">The shop signs in with this Shop ID to accept or reject its orders and edit its own menu and prices.</p>
-                <ShopLoginButton shopId={shop.id} hasLogin={Boolean(loginFor.get(shop.id))} />
+                <p className="mb-2 text-xs text-ink-soft">The shop signs in with this Shop ID and the password you set to accept or reject its orders and edit its own menu and prices. {loginEnds ? `The login works until ${formatDateTime(loginEnds.toISOString(), tz)} (a day after the hackathon ends).` : "The login works until a day after the hackathon ends (set the end date in Event Setup)."}</p>
+                <ShopLoginForm shopId={shop.id} hasLogin={Boolean(loginFor.get(shop.id))} suggestion={suggestShopPassword(shop.name)} />
               </div>
               <details className="mb-4">
                 <summary className="cursor-pointer text-sm font-bold text-brand">Edit shop</summary>

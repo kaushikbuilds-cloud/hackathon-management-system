@@ -6,7 +6,7 @@ import { audit } from "@/lib/audit";
 import { homePathFor, getSession } from "@/lib/auth";
 import { recordCredentialEvent } from "@/lib/accounts";
 import { emailForParticipantCode, emailForTeamCode } from "@/lib/activation";
-import { emailForShopCode } from "@/lib/shops";
+import { emailForShopCode, shopLoginEndsAt } from "@/lib/shops";
 import { isParticipantCode, normalizeIdInput } from "@/lib/domain/ids";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { appUrl } from "@/lib/env";
@@ -64,6 +64,14 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   if (profile.must_change_password && profile.temp_password_expires_at && new Date(profile.temp_password_expires_at) < new Date()) {
     await supabase.auth.signOut();
     return { error: "Your temporary password has expired. Ask the organisers to issue a new one.", email };
+  }
+  if (profile.role === "vendor") {
+    const { data: h } = await service.from("hackathons").select("ends_at").eq("id", profile.hackathon_id ?? "").maybeSingle<{ ends_at: string | null }>();
+    const ends = shopLoginEndsAt(h?.ends_at);
+    if (!profile.shop_id || (ends && ends.getTime() < Date.now())) {
+      await supabase.auth.signOut();
+      return { error: "This shop login has closed because the hackathon is over. Contact the organisers if you still need access.", email };
+    }
   }
   if (profile.role === "participant" && !profile.participant_id && !profile.team_id) {
     await supabase.auth.signOut();

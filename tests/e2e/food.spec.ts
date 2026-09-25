@@ -50,18 +50,16 @@ test("the Admin adds shops and menus and creates the snack stall's own login", a
   shop = shopCard(page, paidShop);
   await expect(shop).toContainText("Not created yet");
   shopLogin = (await shop.getByText(/Shop login: /).innerText()).match(/[A-Z0-9]{2,10}-S\d{2,}/)![0];
+  // The Admin sets the shop's password (a suggestion is pre-filled); it works as-is until the hackathon ends.
+  await expect(shop.getByLabel("Password for the shop")).toHaveValue(/^Snacks@\d{6}$/);
+  await shop.getByLabel("Password for the shop").fill(shopPassword);
   await shop.getByRole("button", { name: "Create shop login" }).click();
-  await expect(page.getByText("Give these to the shop now")).toBeVisible();
-  const temp = (await page.locator(".font-mono.text-lg").innerText()).trim();
+  await expect(page.getByText("Shop login ready")).toBeVisible();
+  await expect(page.getByText(shopPassword)).toBeVisible();
 
-  // The shop signs in with its Shop ID and must choose its own password.
   await signOut(page);
-  await signIn(page, shopLogin, temp);
-  await page.waitForURL(/\/change-password/);
-  await page.getByLabel("New password").first().fill(shopPassword);
-  await page.getByLabel("Confirm new password").fill(shopPassword);
-  await page.getByRole("button", { name: "Save password" }).click();
-  await page.waitForURL(/\/shop/);
+  await signIn(page, shopLogin, shopPassword);
+  await page.waitForURL(/\/shop$/);
   await expect(page.getByRole("heading", { name: paidShop })).toBeVisible();
   await expect(page.getByText("Open: taking orders")).toBeVisible();
 });

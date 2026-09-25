@@ -30,3 +30,15 @@ export function checkPasswordStrength(password: string): string | null {
   if (classes < 3) return "Use at least three of: lowercase, uppercase, digits, symbols.";
   return null;
 }
+
+/**
+ * Easy-to-read default password for a food shop, e.g. "Snacks@482731":
+ * the shop's first word, @, then digits (always passes checkPasswordStrength).
+ */
+export function suggestShopPassword(shopName: string): string {
+  const word = (shopName.match(/[A-Za-z]+/)?.[0] ?? "Shop").slice(0, 10).toLowerCase();
+  const base = `${word[0].toUpperCase()}${word.slice(1)}@`;
+  let digits = "";
+  while (digits.length < 6 || base.length + digits.length < 12) digits += DIGITS[randomInt(DIGITS.length)];
+  return base + digits;
+}

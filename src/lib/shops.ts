@@ -2,7 +2,6 @@ import "server-only";
 import { recordCredentialEvent } from "@/lib/accounts";
 import type { Session } from "@/lib/auth";
 import { SHOP_CODE_PATTERN, normalizeIdInput } from "@/lib/domain/ids";
-import { generateTemporaryPassword } from "@/lib/domain/password";
 import { createServiceClient } from "@/lib/supabase/server";
 
 /** The sign-in address behind a shop login (never shown or mailed). */
@@ -21,21 +20,25 @@ export async function emailForShopCode(value: string): Promise<string | null> {
   return account?.email ?? null;
 }
 
-const TEMP_DAYS = 7;
+/** Hours after the hackathon's end that shop logins keep working (settling up). */
+export const SHOP_LOGIN_GRACE_HOURS = 24;
+
+/** When a shop login stops working: a day after the hackathon ends (null while no end date is set). */
+export function shopLoginEndsAt(hackathonEndsAt: string | null | undefined): Date | null {
+  return hackathonEndsAt ? new Date(new Date(hackathonEndsAt).getTime() + SHOP_LOGIN_GRACE_HOURS * 3600_000) : null;
+}
 
 /**
- * Creates the shop's login, or gives it a new password. Returns a temporary
- * password to hand to the shop once; they must choose their own at first sign-in.
+ * Creates the shop's login with the password the organisers chose, or sets a
+ * new one. The shop uses it as-is (no forced change) until the hackathon ends.
  */
-export async function issueShopLogin(actor: Session, shop: { id: string; name: string }): Promise<string> {
+export async function issueShopLogin(actor: Session, shop: { id: string; name: string }, password: string): Promise<void> {
   const service = createServiceClient(actor.userId);
-  const password = generateTemporaryPassword();
-  const expires = new Date(Date.now() + TEMP_DAYS * 86400_000).toISOString();
   const { data: existing } = await service.from("profiles").select("id").eq("shop_id", shop.id).maybeSingle<{ id: string }>();
   let profileId = existing?.id;
   if (profileId) {
     const { error } = await service.auth.admin.updateUserById(profileId, { password });
-    if (error) throw new Error("Could not reset the shop password.");
+    if (error) throw new Error("Could not change the shop password.");
   } else {
     const { data, error } = await service.auth.admin.createUser({
       email: shopLoginEmail(shop.id), password, email_confirm: true,
@@ -45,12 +48,11 @@ export async function issueShopLogin(actor: Session, shop: { id: string; name: s
     profileId = data.user.id;
   }
   const { error: linkError } = await service.from("profiles")
-    .update({ role: "vendor", shop_id: shop.id, full_name: shop.name, status: "active", must_change_password: true, temp_password_expires_at: expires })
+    .update({ role: "vendor", shop_id: shop.id, full_name: shop.name, status: "active", must_change_password: false, temp_password_expires_at: null })
     .eq("id", profileId);
   if (linkError) {
     if (!existing) await service.auth.admin.deleteUser(profileId);
     throw new Error("Could not link the login to the shop.");
   }
-  await recordCredentialEvent(actor, "temp_password_issued", { profileId }, `Shop login for ${shop.name}`);
-  return password;
+  await recordCredentialEvent(actor, "temp_password_issued", { profileId }, `Shop login password set for ${shop.name}`);
 }
