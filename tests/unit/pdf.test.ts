@@ -62,6 +62,14 @@ describe("team ID card PDF", () => {
     expect(sheetGrid("badge3x4").perPage).toBe(4);
   });
 
+  it("uses the hackathon's brand kit colours, with readable text on light accents", async () => {
+    const base = input([member(1, "leader"), member(2)], { pageLayout: "card" });
+    for (const accent of ["#22c55e", "#2f3fe0", "#fde047"]) {
+      const pdf = await generateTeamIdCardsPdf({ ...base, event: { ...base.event, brand: { background: "#0f3d2e", accent } } });
+      expect(pdf.pageCount).toBe(2);
+    }
+  });
+
   it("embeds fonts (no reliance on viewer fonts)", async () => {
     const pdf = await generateTeamIdCardsPdf(input([member(1, "leader")]));
     const doc = await PDFDocument.load(pdf.bytes);

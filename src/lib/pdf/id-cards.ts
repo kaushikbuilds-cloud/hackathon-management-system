@@ -17,6 +17,9 @@ export type CardEvent = {
   timezone?: string | null;
   venue?: string | null;
   logo?: Uint8Array | null;
+  organizerLogo?: Uint8Array | null;
+  /** The hackathon's brand kit colours; they override the template's colours. */
+  brand?: { background: string; accent: string } | null;
 };
 
 export type CardTeam = { name: string; teamCode: string };
@@ -321,7 +324,7 @@ function drawCropMarks(page: PDFPage, x: number, y: number, w: number, h: number
   }
 }
 
-type Shared = { fonts: Fonts; logo: PDFImage | null; header: RGB; accent: RGB; dates: string };
+type Shared = { fonts: Fonts; logo: PDFImage | null; organizerLogo: PDFImage | null; header: RGB; accent: RGB; dates: string };
 
 /** Where each card goes: one page per card, or tiled on A4 sheets. */
 function placeCards(doc: PDFDocument, template: TemplateConfig, count: number): { page: PDFPage; ox: number; oy: number }[] {
@@ -372,6 +375,8 @@ async function drawCard(
   const soft = mix(fg, bg, 0.35);
   const faint = mix(fg, bg, 0.75);
   const accent2 = mix(accent, WHITE, 0.35);
+  // Text on accent-filled boxes: ink on light accents, white on dark ones (keeps 4.5:1+).
+  const onAccent = contrastRatio(accent, WHITE) >= 4.5 ? WHITE : INK;
 
   // Background with soft accent glows and a thin inner frame.
   c.rect(0, 0, W, H, bg);
@@ -424,14 +429,20 @@ async function drawCard(
   const footerTop = H - footerH - 3;
   c.line(pad, footerTop, W - pad, footerTop, faint, 0.4);
   const orgLine = f(fonts.semibold, (template.footerText || event.organizerName || "").toUpperCase());
+  // Organiser logo (brand kit) sits at the left of the footer; the text centres in the remaining space.
+  const orgLogoS = shared.organizerLogo ? 13 : 0;
+  if (shared.organizerLogo) c.image(shared.organizerLogo, pad, footerTop + 3.5, orgLogoS, orgLogoS);
+  const textLeft = pad + (orgLogoS ? orgLogoS + 3 : 0);
+  const textW = W - pad - textLeft;
+  const fcx = textLeft + textW / 2;
   if (orgLine) {
     const lbl = "ORGANIZED BY";
     const showLabel = !template.footerText;
-    if (showLabel) c.spaced(lbl, cx - c.spacedWidth(lbl, fonts.regular, 3.3, 0.9) / 2, footerTop + 7.5, fonts.regular, 3.3, soft, 0.9);
+    if (showLabel) c.spaced(lbl, fcx - c.spacedWidth(lbl, fonts.regular, 3.3, 0.9) / 2, footerTop + 7.5, fonts.regular, 3.3, soft, 0.9);
     let size = 4.2;
-    while (size > 3 && c.spacedWidth(orgLine, fonts.semibold, size, 0.6) > W - pad * 2) size -= 0.2;
-    const shown = ellipsize(fonts.semibold, orgLine, size, W - pad * 2);
-    c.spaced(shown, cx - c.spacedWidth(shown, fonts.semibold, size, 0.6) / 2, footerTop + (showLabel ? 14 : 11), fonts.semibold, size, fg, 0.6);
+    while (size > 3 && c.spacedWidth(orgLine, fonts.semibold, size, 0.6) > textW) size -= 0.2;
+    const shown = ellipsize(fonts.semibold, orgLine, size, textW);
+    c.spaced(shown, fcx - c.spacedWidth(shown, fonts.semibold, size, 0.6) / 2, footerTop + (showLabel ? 14 : 11), fonts.semibold, size, fg, 0.6);
   }
 
   // Lower block (bottom-aligned above the footer): QR + Participant ID | Team ID + activation.
@@ -466,7 +477,7 @@ async function drawCard(
     py += 2.5;
     c.round(inX, py, inW, 10.5, 3, { fill: accent });
     const v = fitOneLine(fonts.bold, value, 6.2, 3.8, inW - 5);
-    c.text(v.text, inX + 2.8, py + 7.3, fonts.bold, v.size, WHITE);
+    c.text(v.text, inX + 2.8, py + 7.3, fonts.bold, v.size, onAccent);
     py += 10.5 + 7;
   };
   valueBox("TEAM ID", team.teamCode, "user");
@@ -493,7 +504,7 @@ async function drawCard(
   const roleLabel = member.role === "leader" ? "TEAM LEADER" : "PARTICIPANT";
   const pillW = fonts.bold.widthOfTextAtSize(roleLabel, 4.6) + 9;
   c.round(pad, y, pillW, 8, 2.5, { fill: accent });
-  c.text(roleLabel, pad + 4.5, y + 5.7, fonts.bold, 4.6, WHITE);
+  c.text(roleLabel, pad + 4.5, y + 5.7, fonts.bold, 4.6, onAccent);
   y += 8;
   const name = fitWrap(fonts.bold, f(fonts.bold, member.fullName.toUpperCase()), 12, 7, W - pad * 2, 2);
   for (const line of name.lines) {
@@ -529,6 +540,16 @@ async function drawCard(
 
 function luminance(c: RGB): number {
   return 0.2126 * c.red + 0.7152 * c.green + 0.0722 * c.blue;
+}
+
+/** WCAG contrast ratio between two colours. */
+function contrastRatio(a: RGB, b: RGB): number {
+  const rel = (c: RGB) => {
+    const f = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * f(c.red) + 0.7152 * f(c.green) + 0.0722 * f(c.blue);
+  };
+  const [x, y] = [rel(a), rel(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
 }
 
 /** Default logo when the event has none: a hexagon "network" mark. */
@@ -618,8 +639,9 @@ export async function generateTeamIdCardsPdf(input: CardInput): Promise<Generate
   const shared: Shared = {
     fonts,
     logo: await embedImage(doc, input.event.logo),
-    header: hexToRgb(input.template.headerColor),
-    accent: hexToRgb(input.template.accentColor),
+    header: hexToRgb(input.event.brand?.background ?? input.template.headerColor),
+    accent: hexToRgb(input.event.brand?.accent ?? input.template.accentColor),
+    organizerLogo: await embedImage(doc, input.event.organizerLogo),
     dates: formatEventDates(input.event.startsAt, input.event.endsAt, input.event.timezone),
   };
 

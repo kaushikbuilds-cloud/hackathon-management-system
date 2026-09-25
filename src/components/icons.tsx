@@ -29,6 +29,7 @@ const PATHS = {
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   arrowRight: "M5 12h14M13 5l7 7-7 7",
   mail: "M3 5h18v14H3zM3 6l9 7 9-7",
+  palette: "M12 22a10 10 0 1 1 10-10c0 3-2.5 4-4.5 4H15a2 2 0 0 0-1.5 3.3A1.6 1.6 0 0 1 12 22zM7.5 11.5h.01M10.5 7.5h.01M15.5 7.5h.01M17.5 11.5h.01",
 } as const;
 
 export type IconName = keyof typeof PATHS;

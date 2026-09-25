@@ -77,10 +77,12 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
                 <TextField label="Version name" name="name" defaultValue={active?.name ?? "Default portrait card"} maxLength={100} />
                 <SelectField label="Card size" name="cardSize" defaultValue={config.cardSize} options={Object.entries(CARD_SIZES).map(([v, s]) => ({ value: v, label: `${s.label} — ${sheetGrid(v as CardSize).perPage} per A4` }))} />
                 <SelectField label="Page layout" name="pageLayout" defaultValue={config.pageLayout} options={Object.entries(PAGE_LAYOUTS).map(([value, label]) => ({ value, label }))} />
-                <div className="grid grid-cols-2 gap-3">
-                  <TextField label="Background colour" name="headerColor" type="color" defaultValue={config.headerColor} />
-                  <TextField label="Accent colour" name="accentColor" type="color" defaultValue={config.accentColor} />
-                </div>
+                {/* Colours come from the Brand Kit; kept here only so older template versions stay valid. */}
+                <input type="hidden" name="headerColor" value={config.headerColor} />
+                <input type="hidden" name="accentColor" value={config.accentColor} />
+                <p className="rounded-md border-2 border-line bg-sky-tint p-3 text-sm text-ink">
+                  Card colours and logos come from your <a href="/staff/brand" className="font-bold text-brand underline-offset-4 hover:underline">Brand Kit</a>.
+                </p>
                 <fieldset className="space-y-2">
                   <legend className="text-sm font-medium text-ink">Show on card</legend>
                   <Checkbox name="showCollege" label="College" defaultChecked={config.showCollege} />

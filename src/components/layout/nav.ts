@@ -14,6 +14,7 @@ export function staffNav(session: Session): NavItem[] {
     { href: "/staff", label: sa && !inEvent ? "Platform Dashboard" : "Dashboard", icon: "dashboard", show: true },
     { href: "/staff/hackathons", label: "Hackathons", icon: "trophy", show: sa },
     { href: "/staff/event", label: sa ? "Hackathon / Event Setup" : "Event Setup", icon: "settings", show: ev(can(session, "manage_event")) },
+    { href: "/staff/brand", label: "Brand Kit", icon: "palette", show: ev(can(session, "manage_event")) },
     { href: "/staff/users/admins", label: "User Management", icon: "shield", show: ev(sa) },
     { href: "/staff/users/officials", label: "Officials Management", icon: "users", show: ev(!sa && can(session, "manage_officials")) },
     { href: "/staff/forms", label: sa ? "Registration Management" : "Form Builder & Submissions", icon: "form", show: ev(can(session, "manage_registrations")) },

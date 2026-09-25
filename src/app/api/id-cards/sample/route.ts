@@ -25,6 +25,8 @@ export async function GET() {
     event: {
       name: hackathon.name, tagline: hackathon.tagline, organizerName: hackathon.organizer_name, startsAt: hackathon.starts_at,
       endsAt: hackathon.ends_at, timezone: hackathon.timezone, venue: hackathon.venue, logo: await downloadObject(BUCKETS.branding, hackathon.logo_path),
+      organizerLogo: await downloadObject(BUCKETS.branding, hackathon.organizer_logo_path),
+      brand: { background: hackathon.primary_color, accent: hackathon.accent_color },
     },
     team: { name: "Sample Team", teamCode: `TEAM-${hackathon.id_year}-0000` },
     members: [

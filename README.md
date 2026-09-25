@@ -55,6 +55,8 @@ Stack: **Next.js 16 (App Router) + TypeScript + Tailwind CSS 4**, **Supabase** (
 - If validation fails, the form keeps everything the applicant typed and shows errors next to each field. Rejected attempts are stored so admins can review them.
 
 ### ID cards and PDFs
+
+- **Brand Kit** (`/staff/brand`, needs *Event settings*): each hackathon's host uploads its logo and organiser logo and picks a card background and accent colour (with presets and a live preview). Every ID card uses them; text on accent boxes switches between ink and white automatically to stay readable. The event page and registration form show the logo and a brand-colour stripe.
 - Cards are single-sided and portrait. Sizes: CR80 badge, A6, or 4×6 in. Pages are either the card size or A4 with crop marks.
 - The card shows the event branding, the participant's name, a photo (or initials), their role, Participant ID, team name and Team ID, college and department, event date and venue, and a QR code.
 - **One PDF per team, one page per member.** Fonts are embedded. The QR codes are vector graphics. The filename is `<NormalizedTeamName>_<TeamID>_ID_Cards.pdf`.

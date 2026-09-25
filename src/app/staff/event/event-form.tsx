@@ -10,7 +10,7 @@ type Initial = Omit<Hackathon, "starts_at" | "ends_at" | "registration_opens_at"
   starts_at: string; ends_at: string; registration_opens_at: string; registration_closes_at: string;
 };
 
-export function EventForm({ initial: h, logoUrl, organizerLogoUrl }: { initial: Initial; logoUrl: string | null; organizerLogoUrl: string | null }) {
+export function EventForm({ initial: h }: { initial: Initial }) {
   const [state, action] = useActionState<EventFormState, FormData>(saveEvent, {});
   const e = state.fieldErrors ?? {};
   return (
@@ -24,12 +24,9 @@ export function EventForm({ initial: h, logoUrl, organizerLogoUrl }: { initial: 
           <TextField label="Tagline" name="tagline" defaultValue={h.tagline ?? ""} maxLength={200} />
           <TextArea label="Description" name="description" defaultValue={h.description ?? ""} maxLength={5000} className="md:col-span-2" />
           <TextField label="Organiser / institution" name="organizer_name" defaultValue={h.organizer_name ?? ""} maxLength={150} />
-          <div className="grid grid-cols-2 gap-4">
-            <TextField label="Primary colour" name="primary_color" type="color" defaultValue={h.primary_color} error={e.primary_color} />
-            <TextField label="Accent colour" name="accent_color" type="color" defaultValue={h.accent_color} error={e.accent_color} />
-          </div>
-          <LogoField name="logo" label="Hackathon logo (PNG/JPG, max 2 MB)" url={logoUrl} error={e.logo} />
-          <LogoField name="organizer_logo" label="Organiser logo" url={organizerLogoUrl} error={e.organizer_logo} />
+          <p className="self-end text-sm text-muted md:col-span-2">
+            Logos and colours are in the <a href="/staff/brand" className="font-bold text-brand underline-offset-4 hover:underline">Brand Kit</a>; ID cards and your public pages use them.
+          </p>
         </div>
       </Card>
       <Card>
@@ -66,18 +63,5 @@ export function EventForm({ initial: h, logoUrl, organizerLogoUrl }: { initial: 
       </Card>
       <div className="flex justify-end"><SubmitButton pendingText="Saving…">Save event settings</SubmitButton></div>
     </form>
-  );
-}
-
-function LogoField({ name, label, url, error }: { name: string; label: string; url: string | null; error?: string }) {
-  return (
-    <div className="space-y-2">
-      <label htmlFor={name} className="block text-sm font-medium text-ink">{label}</label>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {url && <img src={url} alt="" className="h-12 w-auto rounded bg-surface p-1" />}
-      <input id={name} name={name} type="file" accept="image/png,image/jpeg" className="block text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-paper-2 file:px-3 file:py-1.5 file:text-ink" />
-      {url && <Checkbox name={`remove_${name}`} label="Remove current image" />}
-      {error && <p className="text-xs text-danger" role="alert">{error}</p>}
-    </div>
   );
 }

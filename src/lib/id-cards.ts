@@ -78,6 +78,8 @@ async function buildCardInput(ctx: TeamCardContext, opts: { activation: boolean 
       timezone: ctx.hackathon.timezone,
       venue: ctx.hackathon.venue,
       logo: await downloadObject(BUCKETS.branding, ctx.hackathon.logo_path),
+      organizerLogo: await downloadObject(BUCKETS.branding, ctx.hackathon.organizer_logo_path),
+      brand: { background: ctx.hackathon.primary_color, accent: ctx.hackathon.accent_color },
     },
     team: { name: ctx.team.name, teamCode: ctx.team.team_code },
     members: ctx.members.map((m) => ({
