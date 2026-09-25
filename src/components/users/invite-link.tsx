@@ -15,7 +15,7 @@ export function InviteLink({ link, email, name, expiresAt, purpose, eventName }:
   const body = `Hi ${name || ""},\n\nUse this personal, single-use link to ${purpose === "password reset" ? "set a new password" : "activate your account"} for ${eventName}:\n\n${link}\n\nThe link expires on ${expires}. Do not share it.\n`;
   return (
     <Alert tone="green" title={`Link created for ${email}`}>
-      <p className="mt-2 break-all rounded-lg bg-navy-950 p-2 font-mono text-xs text-white">{link}</p>
+      <p className="mt-2 break-all rounded-lg bg-paper p-2 font-mono text-xs text-ink">{link}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         <CopyButton value={link} label="Copy link" />
         <a className={buttonClass("secondary", "sm")} href={`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`}>Send by email</a>

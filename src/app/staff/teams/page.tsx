@@ -56,7 +56,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
   const sortHref = (key: (typeof SORTS)[number]) =>
     hrefWith("/staff/teams", sp, { sort: key, dir: sort === key && dir === "asc" ? "desc" : "asc", page: null });
   const sortLabel = (key: (typeof SORTS)[number], label: string) => (
-    <Link href={sortHref(key)} className="inline-flex items-center gap-1 hover:text-white" aria-label={`Sort by ${label}`}>
+    <Link href={sortHref(key)} className="inline-flex items-center gap-1 hover:text-ink" aria-label={`Sort by ${label}`}>
       {label}
       {sort === key && <span aria-hidden="true">{dir === "asc" ? "▲" : "▼"}</span>}
     </Link>
@@ -108,7 +108,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
                 <Th>ID Card PDF</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-navy-800">
+            <tbody className="divide-y divide-line-soft">
               {teams.map((t) => {
                 const open = expand === t.id;
                 return (
@@ -140,15 +140,15 @@ function FilterSelect({ name, label, value, options }: { name: string; label: st
 function TeamRows({ team: t, open, members, canPdf, toggleHref }: { team: TeamOverview; open: boolean; members: ParticipantOverview[]; canPdf: boolean; toggleHref: string }) {
   return (
     <>
-      <tr className={open ? "bg-navy-850/60" : "hover:bg-navy-850/40"}>
+      <tr className={open ? "bg-paper" : "hover:bg-paper"}>
         <Td>
           <Link href={toggleHref} scroll={false} aria-expanded={open} aria-controls={`members-${t.id}`} aria-label={`${open ? "Collapse" : "Expand"} members of ${t.name}`}
-            className="grid size-7 place-items-center rounded-md text-slate-400 hover:bg-navy-700 hover:text-white">
+            className="grid size-7 place-items-center rounded-md text-muted hover:bg-paper hover:text-ink">
             <span aria-hidden="true">{open ? "▾" : "▸"}</span>
           </Link>
         </Td>
         <Td className="min-w-40 font-semibold">
-          <Link href={`/staff/teams/${t.id}`} className="text-blue-300 hover:text-blue-200 hover:underline">{t.name}</Link>
+          <Link href={`/staff/teams/${t.id}`} className="text-brand hover:text-brand hover:underline">{t.name}</Link>
         </Td>
         <Td className="font-mono text-xs whitespace-nowrap">{t.team_code}</Td>
         <Td className="min-w-32">{t.leader_name ?? "—"}</Td>
@@ -174,16 +174,16 @@ function TeamRows({ team: t, open, members, canPdf, toggleHref }: { team: TeamOv
         </Td>
       </tr>
       {open && (
-        <tr id={`members-${t.id}`} className="bg-navy-850/60">
+        <tr id={`members-${t.id}`} className="bg-paper">
           <td colSpan={9} className="px-3 pb-4">
             {members.length === 0 ? (
-              <p className="py-3 text-sm text-slate-400">No members.</p>
+              <p className="py-3 text-sm text-muted">No members.</p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border border-navy-700">
+              <div className="overflow-x-auto rounded-lg border-2 border-line">
                 <table className="min-w-full text-sm">
                   <caption className="sr-only">Members of {t.name}</caption>
                   <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
+                    <tr className="text-left text-xs uppercase tracking-wide text-muted">
                       <th scope="col" className="px-3 py-2">Participant ID</th>
                       <th scope="col" className="px-3 py-2">Name</th>
                       <th scope="col" className="px-3 py-2">Role</th>
@@ -194,7 +194,7 @@ function TeamRows({ team: t, open, members, canPdf, toggleHref }: { team: TeamOv
                       <th scope="col" className="px-3 py-2">Attendance</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-navy-800">
+                  <tbody className="divide-y divide-line-soft">
                     {members.map((m) => (
                       <tr key={m.id}>
                         <td className="px-3 py-2 font-mono text-xs">{m.participant_code}</td>

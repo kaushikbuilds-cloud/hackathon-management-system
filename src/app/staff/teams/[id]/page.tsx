@@ -68,7 +68,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
           <DescriptionList
             items={[
               { label: "Team ID", value: <span className="font-mono">{team.team_code}</span> },
-              { label: "Registration status", value: <span className="inline-flex items-center gap-2"><RegistrationBadge status={team.status} />{team.status_reason && <span className="text-slate-400">— {team.status_reason}</span>}</span> },
+              { label: "Registration status", value: <span className="inline-flex items-center gap-2"><RegistrationBadge status={team.status} />{team.status_reason && <span className="text-muted">— {team.status_reason}</span>}</span> },
               { label: "College", value: team.college },
               { label: "ID card PDF", value: <PdfBadge status={team.pdf_status} /> },
               { label: "Registered", value: formatDateTime(team.created_at, tz) },
@@ -77,8 +77,8 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
             ]}
           />
           {canEdit && (
-            <details className="mt-6 rounded-xl border border-navy-700 p-4">
-              <summary className="cursor-pointer text-sm font-semibold text-slate-200">Correct team details</summary>
+            <details className="mt-6 rounded-md border-2 border-line p-4">
+              <summary className="cursor-pointer text-sm font-semibold text-ink">Correct team details</summary>
               <form action={updateTeam.bind(null, id)} className="mt-4 grid gap-4 sm:grid-cols-2">
                 <TextField label="Team name" name="name" defaultValue={team.name} required maxLength={80} hint="Must stay unique (case and spacing are ignored)." />
                 <TextField label="College" name="college" defaultValue={team.college ?? ""} maxLength={150} />
@@ -112,7 +112,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                 <Th>Participant ID</Th><Th>Name</Th><Th>Role</Th><Th>Email</Th><Th>Phone</Th><Th>Department</Th><Th>Year</Th><Th>Attendance</Th>{canAccounts && <Th>Account</Th>}
               </tr>
             </thead>
-            <tbody className="divide-y divide-navy-800">
+            <tbody className="divide-y divide-line-soft">
               {list.map((m) => {
                 const acct = accountByParticipant.get(m.id);
                 return (
@@ -139,13 +139,13 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
 
         {(canEdit || canAccounts) && list.length > 0 && (
           <div className="mt-6 space-y-3">
-            <h3 className="text-sm font-semibold text-slate-200">Manage members</h3>
+            <h3 className="text-sm font-semibold text-ink">Manage members</h3>
             {list.map((m) => {
               const acct = accountByParticipant.get(m.id);
               return (
-                <details key={m.id} className="rounded-xl border border-navy-700 p-4">
-                  <summary className="cursor-pointer text-sm font-semibold text-slate-200">
-                    {m.full_name} <span className="font-mono text-xs text-slate-400">({m.participant_code})</span>
+                <details key={m.id} className="rounded-md border-2 border-line p-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-ink">
+                    {m.full_name} <span className="font-mono text-xs text-muted">({m.participant_code})</span>
                   </summary>
                   <div className="mt-4 grid gap-6 lg:grid-cols-2">
                     {canEdit && (
@@ -183,15 +183,15 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                       {canEdit && (
                         <form action={uploadPhoto.bind(null, id, m.id)} className="flex flex-wrap items-end gap-2">
                           <div>
-                            <label htmlFor={`photo-${m.id}`} className="block text-sm font-medium text-slate-200">ID card photo (PNG/JPG, max 2 MB)</label>
-                            <input id={`photo-${m.id}`} name="photo" type="file" accept="image/png,image/jpeg" required className="mt-1 block text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-navy-700 file:px-3 file:py-1.5 file:text-slate-100" />
+                            <label htmlFor={`photo-${m.id}`} className="block text-sm font-medium text-ink">ID card photo (PNG/JPG, max 2 MB)</label>
+                            <input id={`photo-${m.id}`} name="photo" type="file" accept="image/png,image/jpeg" required className="mt-1 block text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-paper-2 file:px-3 file:py-1.5 file:text-ink" />
                           </div>
                           <SubmitButton variant="secondary" size="sm">Upload</SubmitButton>
                         </form>
                       )}
                       {canAccounts && (
-                        <div className="space-y-2 border-t border-navy-800 pt-4">
-                          <p className="text-sm font-semibold text-slate-200">Team Portal access</p>
+                        <div className="space-y-2 border-t border-line pt-4">
+                          <p className="text-sm font-semibold text-ink">Team Portal access</p>
                           <ParticipantLinkButton participantId={m.id} hasAccount={Boolean(acct)} eventName={hackathon?.name ?? "Hackathon"} />
                           {acct && (
                             <div className="flex flex-wrap gap-2">
@@ -206,7 +206,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                               )}
                             </div>
                           )}
-                          {acct?.last_sign_in_at && <p className="text-xs text-slate-400">Last sign-in {formatDateTime(acct.last_sign_in_at, tz)}</p>}
+                          {acct?.last_sign_in_at && <p className="text-xs text-muted">Last sign-in {formatDateTime(acct.last_sign_in_at, tz)}</p>}
                         </div>
                       )}
                     </div>
@@ -218,8 +218,8 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
         )}
 
         {canEdit && list.length < maxMembers && (
-          <details className="mt-4 rounded-xl border border-dashed border-navy-600 p-4">
-            <summary className="cursor-pointer text-sm font-semibold text-slate-200">+ Add a member</summary>
+          <details className="mt-4 rounded-md border-2 border-dashed border-line p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-ink">+ Add a member</summary>
             <form action={addParticipant.bind(null, id)} className="mt-4 grid gap-3 sm:grid-cols-3">
               <TextField label="Full name" name="full_name" required maxLength={100} />
               <TextField label="Email" name="email" type="email" required maxLength={254} />
@@ -239,16 +239,16 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
           {!jobs?.length ? (
             <EmptyState title="No PDFs generated yet" />
           ) : (
-            <ul className="divide-y divide-navy-800 text-sm">
+            <ul className="divide-y divide-line-soft text-sm">
               {jobs.map((j) => (
                 <li key={j.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                   <span>
                     {formatDateTime(j.created_at, tz)} · v{j.template_version ?? "?"} · {j.page_count || j.member_count} pages
-                    {j.error && <span className="block text-xs text-red-300">{j.error}</span>}
+                    {j.error && <span className="block text-xs text-danger">{j.error}</span>}
                   </span>
                   <span className="flex items-center gap-2">
                     <Badge tone={j.status === "completed" ? "green" : j.status === "failed" ? "red" : "amber"}>{j.status}</Badge>
-                    {j.status === "completed" && canPdf && <a className="text-blue-300 hover:underline" href={`/api/id-cards/jobs/${j.id}/download`}>Download</a>}
+                    {j.status === "completed" && canPdf && <a className="text-brand hover:underline" href={`/api/id-cards/jobs/${j.id}/download`}>Download</a>}
                   </span>
                 </li>
               ))}
@@ -263,9 +263,9 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
             ) : (
               <ul className="max-h-96 space-y-2 overflow-y-auto text-sm">
                 {history.map((h) => (
-                  <li key={h.id} className="rounded-lg bg-navy-850 px-3 py-2">
-                    <p className="font-medium text-slate-100">{h.action} <span className="text-xs text-slate-400">· {h.actor_role ?? "system"} · {formatDateTime(h.created_at, tz)}</span></p>
-                    <p className="mt-0.5 break-all font-mono text-xs text-slate-400">{summarizeDetails(h.details)}</p>
+                  <li key={h.id} className="rounded-lg bg-paper px-3 py-2">
+                    <p className="font-medium text-ink">{h.action} <span className="text-xs text-muted">· {h.actor_role ?? "system"} · {formatDateTime(h.created_at, tz)}</span></p>
+                    <p className="mt-0.5 break-all font-mono text-xs text-muted">{summarizeDetails(h.details)}</p>
                   </li>
                 ))}
               </ul>

@@ -37,29 +37,29 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {logo && <img src={logo} alt="" className="mb-6 h-14 w-auto" />}
               <Badge tone="violet">{formatEventDates(hackathon.starts_at, hackathon.ends_at, tz) || "Dates to be announced"}</Badge>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-6xl">
-                <span className="bg-gradient-to-r from-white via-blue-100 to-violet-300 bg-clip-text text-transparent">{hackathon.name}</span>
+              <h1 className="mt-4 text-4xl font-bold tracking-tight text-ink sm:text-6xl">
+                {hackathon.name}
               </h1>
-              {hackathon.tagline && <p className="mt-4 text-lg text-slate-300">{hackathon.tagline}</p>}
-              {hackathon.description && <p className="mt-4 max-w-2xl whitespace-pre-line text-slate-400">{hackathon.description}</p>}
+              {hackathon.tagline && <p className="mt-4 text-lg text-ink-soft">{hackathon.tagline}</p>}
+              {hackathon.description && <p className="mt-4 max-w-2xl whitespace-pre-line text-muted">{hackathon.description}</p>}
               <div className="mt-8 flex flex-wrap gap-3">
                 {form && availability.open ? (
                   <LinkButton href={`/register/${form.slug}`}>Register your team</LinkButton>
                 ) : (
-                  <span className="rounded-lg border border-navy-600 px-4 py-2 text-sm text-slate-300">{"reason" in availability && availability.reason ? availability.reason : "Registration is not open."}</span>
+                  <span className="rounded-lg border-2 border-line px-4 py-2 text-sm text-ink-soft">{"reason" in availability && availability.reason ? availability.reason : "Registration is not open."}</span>
                 )}
                 <LinkButton href="/login" variant="secondary">Team &amp; staff sign in</LinkButton>
               </div>
             </div>
             <Card>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Event details</h2>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Event details</h2>
               <dl className="mt-4 space-y-3 text-sm">
-                <div><dt className="text-slate-400">Venue</dt><dd className="text-slate-100">{hackathon.venue ?? "To be announced"}</dd></div>
-                <div><dt className="text-slate-400">Starts</dt><dd className="text-slate-100">{formatDateTime(hackathon.starts_at, tz)}</dd></div>
-                <div><dt className="text-slate-400">Ends</dt><dd className="text-slate-100">{formatDateTime(hackathon.ends_at, tz)}</dd></div>
-                {form && <div><dt className="text-slate-400">Team size</dt><dd className="text-slate-100">{form.min_team_size}–{form.max_team_size} members</dd></div>}
-                {form?.closes_at && <div><dt className="text-slate-400">Registration closes</dt><dd className="text-slate-100">{formatDateTime(form.closes_at, tz)}</dd></div>}
-                {hackathon.organizer_name && <div><dt className="text-slate-400">Organiser</dt><dd className="text-slate-100">{hackathon.organizer_name}</dd></div>}
+                <div><dt className="text-muted">Venue</dt><dd className="text-ink">{hackathon.venue ?? "To be announced"}</dd></div>
+                <div><dt className="text-muted">Starts</dt><dd className="text-ink">{formatDateTime(hackathon.starts_at, tz)}</dd></div>
+                <div><dt className="text-muted">Ends</dt><dd className="text-ink">{formatDateTime(hackathon.ends_at, tz)}</dd></div>
+                {form && <div><dt className="text-muted">Team size</dt><dd className="text-ink">{form.min_team_size}–{form.max_team_size} members</dd></div>}
+                {form?.closes_at && <div><dt className="text-muted">Registration closes</dt><dd className="text-ink">{formatDateTime(form.closes_at, tz)}</dd></div>}
+                {hackathon.organizer_name && <div><dt className="text-muted">Organiser</dt><dd className="text-ink">{hackathon.organizer_name}</dd></div>}
               </dl>
             </Card>
           </div>
@@ -67,17 +67,17 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
       </section>
       {schedule && schedule.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-20" aria-labelledby="schedule-heading">
-          <h2 id="schedule-heading" className="mb-4 text-xl font-semibold text-white">Schedule</h2>
+          <h2 id="schedule-heading" className="mb-4 text-xl font-semibold text-ink">Schedule</h2>
           <ol className="grid gap-3 sm:grid-cols-2">
             {schedule.map((item) => (
-              <li key={item.id} className="rounded-xl border border-navy-700 bg-navy-900/70 p-4">
-                <p className="text-xs font-semibold text-violet-300">
+              <li key={item.id} className="rounded-md border-2 border-line bg-paper p-4">
+                <p className="text-xs font-semibold text-brand">
                   {formatDateTime(item.starts_at, tz)}
                   {item.ends_at && ` – ${formatTime(item.ends_at, tz)}`}
                 </p>
-                <p className="mt-1 font-semibold text-white">{item.title}</p>
-                {item.venue && <p className="text-sm text-slate-400">{item.venue}</p>}
-                {item.description && <p className="mt-1 text-sm text-slate-300">{item.description}</p>}
+                <p className="mt-1 font-semibold text-ink">{item.title}</p>
+                {item.venue && <p className="text-sm text-muted">{item.venue}</p>}
+                {item.description && <p className="mt-1 text-sm text-ink-soft">{item.description}</p>}
               </li>
             ))}
           </ol>

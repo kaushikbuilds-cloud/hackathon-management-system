@@ -22,7 +22,7 @@ export function ManualCheckInButton({ participantId, name }: { participantId: st
       >
         {pending ? "Saving…" : "Check in"}
       </Button>
-      {msg && <span role="status" className="text-xs text-slate-300">{msg}</span>}
+      {msg && <span role="status" className="text-xs text-ink-soft">{msg}</span>}
     </span>
   );
 }
@@ -49,7 +49,7 @@ export function UndoCheckIn({ attendanceId }: { attendanceId: string }) {
       <input id={`reason-${attendanceId}`} className={`${inputClass} h-8 w-48 py-1`} placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} minLength={3} required />
       <Button size="sm" variant="danger" disabled={pending || reason.trim().length < 3}>{pending ? "Saving…" : "Confirm undo"}</Button>
       <Button size="sm" variant="ghost" type="button" onClick={() => setOpen(false)}>Cancel</Button>
-      {error && <span role="alert" className="text-xs text-red-300">{error}</span>}
+      {error && <span role="alert" className="text-xs text-danger">{error}</span>}
     </form>
   );
 }

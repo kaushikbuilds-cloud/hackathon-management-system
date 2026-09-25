@@ -66,19 +66,19 @@ export default async function HackathonDetailPage(props: PageProps<"/staff/hacka
               <SelectField label="Change status" name="status" defaultValue={h.status} options={Object.entries(HACKATHON_STATUS_LABEL).map(([value, label]) => ({ value, label }))} />
               <SubmitButton variant="secondary" pendingText="Saving…">Save status</SubmitButton>
             </form>
-            <p className="mt-2 text-xs text-slate-400">Only Active hackathons are listed on the public home page. Archived hackathons have no public page.</p>
+            <p className="mt-2 text-xs text-muted">Only Active hackathons are listed on the public home page. Archived hackathons have no public page.</p>
           </Card>
           <Card className="p-0">
             <div className="p-5 pb-0"><CardTitle>Staff</CardTitle></div>
             {!admins?.length ? (
-              <p className="p-5 text-sm text-slate-400">No staff accounts yet. Invite the organiser as Admin.</p>
+              <p className="p-5 text-sm text-muted">No staff accounts yet. Invite the organiser as Admin.</p>
             ) : (
               <Table caption="Staff of this hackathon">
                 <thead><tr><Th>Name</Th><Th>Role</Th><Th>Status</Th><Th>Last sign-in</Th></tr></thead>
                 <tbody>
                   {admins.map((p) => (
                     <tr key={p.id}>
-                      <Td><div className="font-medium text-white">{p.full_name ?? "—"}</div><div className="text-xs text-slate-400">{p.email}</div></Td>
+                      <Td><div className="font-medium text-ink">{p.full_name ?? "—"}</div><div className="text-xs text-muted">{p.email}</div></Td>
                       <Td className="capitalize">{p.role}</Td>
                       <Td><Badge tone={p.status === "active" ? "green" : "amber"}>{p.status}</Badge></Td>
                       <Td className="text-xs">{p.last_sign_in_at ? formatDateTime(p.last_sign_in_at, tz) : "Never"}</Td>
@@ -100,7 +100,7 @@ export default async function HackathonDetailPage(props: PageProps<"/staff/hacka
               <ul className="space-y-2 text-sm">
                 {invites.map((i) => (
                   <li key={i.id} className="flex justify-between gap-3">
-                    <span className="truncate text-slate-200">{i.email}</span>
+                    <span className="truncate text-ink">{i.email}</span>
                     <Badge tone={invitationState(i) === "accepted" ? "green" : invitationState(i) === "pending" ? "blue" : "neutral"}>{invitationState(i)}</Badge>
                   </li>
                 ))}

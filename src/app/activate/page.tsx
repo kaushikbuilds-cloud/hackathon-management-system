@@ -10,7 +10,7 @@ export default function ActivatePage() {
     <AuthShell
       title="Activate your account"
       description="Use the Participant ID and one-time activation code printed on your ID card, then choose your password."
-      footer={<>Already activated? <Link href="/login" className="text-violet-300 hover:text-violet-200">Sign in</Link></>}
+      footer={<>Already activated? <Link href="/login" className="text-brand hover:text-brand">Sign in</Link></>}
     >
       <ActivateForm />
     </AuthShell>

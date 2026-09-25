@@ -94,7 +94,7 @@ export default async function TeamIdCardsPage(props: PageProps<"/staff/teams/[id
                         teamCode={ctx.team.team_code}
                         config={ctx.templateConfig}
                       />
-                      <figcaption className="mt-2 text-center text-xs text-slate-400">Page {i + 1} · <Badge>{m.role === "leader" ? "Leader" : "Member"}</Badge></figcaption>
+                      <figcaption className="mt-2 text-center text-xs text-muted">Page {i + 1} · <Badge>{m.role === "leader" ? "Leader" : "Member"}</Badge></figcaption>
                     </figure>
                   ))}
               </div>

@@ -16,7 +16,7 @@ export default async function ChangePasswordPage() {
           <Alert tone="amber">You are using a temporary password. Choose a new password to continue.</Alert>
         </div>
       )}
-      <p className="mb-4 text-sm text-slate-400">
+      <p className="mb-4 text-sm text-muted">
         At least {PASSWORD_MIN_LENGTH} characters, using three of: lowercase, uppercase, digits, symbols.
       </p>
       <ChangePasswordForm />

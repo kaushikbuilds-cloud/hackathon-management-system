@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function SetupPage() {
   const done = await superAdminExists();
   return (
-    <AuthShell title="Initial setup" description="Create the Super Admin account. This works only once." footer={<Link href="/login" className="hover:text-white">Go to sign in</Link>}>
+    <AuthShell title="Initial setup" description="Create the Super Admin account. This works only once." footer={<Link href="/login" className="hover:text-ink">Go to sign in</Link>}>
       {done ? (
         <Alert tone="green" title="Setup complete">A Super Admin already exists. Sign in instead.</Alert>
       ) : settings.setupToken.length < 16 ? (

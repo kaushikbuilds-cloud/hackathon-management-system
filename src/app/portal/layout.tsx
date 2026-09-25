@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
+import type { NavItem } from "@/components/layout/nav";
 import { requireParticipant } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: { default: "Team Portal", template: "%s · Team Portal" } };
 
-const NAV = [
-  { href: "/portal", label: "Dashboard", icon: "▦" },
-  { href: "/portal/schedule", label: "Announcements & Schedule", icon: "✉" },
-  { href: "/portal/support", label: "Help & Support", icon: "?" },
-  { href: "/portal/profile", label: "Profile & Security", icon: "⚙" },
+const NAV: NavItem[] = [
+  { href: "/portal", label: "Dashboard", icon: "dashboard" },
+  { href: "/portal/schedule", label: "Announcements & Schedule", icon: "calendar" },
+  { href: "/portal/support", label: "Help & Support", icon: "help" },
+  { href: "/portal/profile", label: "Profile & Security", icon: "user" },
 ];
 
 export default async function PortalLayout({ children }: LayoutProps<"/portal">) {

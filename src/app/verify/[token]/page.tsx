@@ -13,8 +13,8 @@ export default async function VerifyPage(props: PageProps<"/verify/[token]">) {
     return (
       <main id="main" className="grid min-h-screen place-items-center px-4 text-center">
         <div>
-          <h1 className="text-xl font-bold text-white">Participant verification</h1>
-          <p className="mt-2 text-slate-400">This code can only be verified by event officials.</p>
+          <h1 className="text-xl font-bold text-ink">Participant verification</h1>
+          <p className="mt-2 text-muted">This code can only be verified by event officials.</p>
         </div>
       </main>
     );

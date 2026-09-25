@@ -61,8 +61,8 @@ export const templateConfigSchema = z.object({
    * "card": page size equals the card. "a4": one card centred on A4 with crop marks.
    */
   pageLayout: z.enum(["sheet", "card", "a4"]).default("sheet"),
-  headerColor: hex.default("#0b1535"),
-  accentColor: hex.default("#6d5dfc"),
+  headerColor: hex.default("#141414"),
+  accentColor: hex.default("#2f3fe0"),
   showPhoto: z.boolean().default(true),
   showCollege: z.boolean().default(true),
   showDepartment: z.boolean().default(true),

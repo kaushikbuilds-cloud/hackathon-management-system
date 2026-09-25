@@ -51,7 +51,7 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
             <div className="mt-4">
               <Table caption="Teams needing PDF generation">
                 <thead><tr><Th>Team</Th><Th>Team ID</Th><Th>Members</Th><Th>Status</Th><Th>Action</Th></tr></thead>
-                <tbody className="divide-y divide-navy-800">
+                <tbody className="divide-y divide-line-soft">
                   {pending.map((t) => (
                     <tr key={t.id}>
                       <Td>{t.name}</Td>
@@ -82,7 +82,7 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
                   <TextField label="Accent colour" name="accentColor" type="color" defaultValue={config.accentColor} />
                 </div>
                 <fieldset className="space-y-2">
-                  <legend className="text-sm font-medium text-slate-200">Show on card</legend>
+                  <legend className="text-sm font-medium text-ink">Show on card</legend>
                   <Checkbox name="showCollege" label="College" defaultChecked={config.showCollege} />
                   <Checkbox name="showDepartment" label="Department & year" defaultChecked={config.showDepartment} />
                   <Checkbox name="showEventDate" label="Event date" defaultChecked={config.showEventDate} />
@@ -100,7 +100,7 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
               {(templates ?? []).map((t) => (
                 <li key={t.id} className="flex items-center justify-between gap-2">
                   <span>v{t.version} — {t.name}</span>
-                  <span className="flex items-center gap-2 text-xs text-slate-400">{formatDateTime(t.created_at)} {t.is_active && <Badge tone="green">Active</Badge>}</span>
+                  <span className="flex items-center gap-2 text-xs text-muted">{formatDateTime(t.created_at)} {t.is_active && <Badge tone="green">Active</Badge>}</span>
                 </li>
               ))}
             </ul>

@@ -35,22 +35,22 @@ export default async function ManualCheckInPage(props: PageProps<"/staff/attenda
         </form>
       </Card>
       {!q ? (
-        <p className="text-sm text-slate-400">Enter at least two characters.</p>
+        <p className="text-sm text-muted">Enter at least two characters.</p>
       ) : error ? (
         <EmptyState title="Search failed">{error.message}</EmptyState>
       ) : rows.length === 0 ? (
         <EmptyState title="No matching participants">Check the spelling, or send the person to the help desk.</EmptyState>
       ) : (
         <Card>
-          <ul className="divide-y divide-navy-800">
+          <ul className="divide-y divide-line-soft">
             {rows.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
-                  <p className="font-medium text-slate-100">{p.full_name} <span className="font-mono text-xs text-slate-400">{p.participant_code}</span></p>
-                  <p className="text-xs text-slate-400">
+                  <p className="font-medium text-ink">{p.full_name} <span className="font-mono text-xs text-muted">{p.participant_code}</span></p>
+                  <p className="text-xs text-muted">
                     {p.team_name} · {p.team_code} · {p.role === "leader" ? "Team Leader" : "Member"}
                     {p.college && ` · ${p.college}`}
-                    {p.team_status !== "approved" && <span className="text-amber-300"> · registration {p.team_status}</span>}
+                    {p.team_status !== "approved" && <span className="text-warn"> · registration {p.team_status}</span>}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

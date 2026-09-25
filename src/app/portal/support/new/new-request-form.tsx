@@ -24,11 +24,11 @@ export function NewRequestForm({ team, email }: { team: string; email: string })
           <TextField label="Contact phone" name="contact_phone" type="tel" defaultValue={v.contact_phone} error={e.contact_phone} />
         </div>
         <div>
-          <label htmlFor="attachment" className="block text-sm font-medium text-slate-200">Attachment (optional)</label>
+          <label htmlFor="attachment" className="block text-sm font-medium text-ink">Attachment (optional)</label>
           <input id="attachment" name="attachment" type="file" accept="image/png,image/jpeg,application/pdf,text/plain"
-            className="mt-1 block text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-navy-700 file:px-3 file:py-1.5 file:text-slate-100" aria-describedby="attachment-hint" />
-          <p id="attachment-hint" className="mt-1 text-xs text-slate-400">PNG, JPG, PDF or TXT, up to 5 MB.</p>
-          {e.attachment && <p className="text-xs text-red-300" role="alert">{e.attachment}</p>}
+            className="mt-1 block text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-paper-2 file:px-3 file:py-1.5 file:text-ink" aria-describedby="attachment-hint" />
+          <p id="attachment-hint" className="mt-1 text-xs text-muted">PNG, JPG, PDF or TXT, up to 5 MB.</p>
+          {e.attachment && <p className="text-xs text-danger" role="alert">{e.attachment}</p>}
         </div>
         <SubmitButton pendingText="Submitting…">Submit request</SubmitButton>
       </form>

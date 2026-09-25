@@ -40,8 +40,8 @@ export default async function HackathonsPage(props: PageProps<"/staff/hackathons
                 {rows.map((h) => (
                   <tr key={h.id}>
                     <Td>
-                      <Link href={`/staff/hackathons/${h.id}`} className="font-semibold text-white hover:underline">{h.name}</Link>
-                      {h.organizer_name && <div className="text-xs text-slate-400">{h.organizer_name}</div>}
+                      <Link href={`/staff/hackathons/${h.id}`} className="font-semibold text-ink hover:underline">{h.name}</Link>
+                      {h.organizer_name && <div className="text-xs text-muted">{h.organizer_name}</div>}
                     </Td>
                     <Td><Badge tone={HACKATHON_STATUS_TONE[h.status]}>{HACKATHON_STATUS_LABEL[h.status]}</Badge></Td>
                     <Td className="whitespace-nowrap text-xs">{h.starts_at ? formatDate(h.starts_at) : "—"}</Td>

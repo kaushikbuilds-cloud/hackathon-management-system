@@ -156,14 +156,14 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
       <CardTitle description={autoCheckIn ? "Scan a card: the person is marked present immediately." : "Scanning shows who the card belongs to. Attendance is recorded only when you confirm."}>QR check-in</CardTitle>
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <div className="relative aspect-square overflow-hidden rounded-xl border border-navy-700 bg-black">
+          <div className="relative aspect-square overflow-hidden rounded-md border-2 border-line bg-ink shadow-brutal">
             <video ref={videoRef} className={`size-full object-cover ${scanning ? "" : "hidden"}`} muted playsInline aria-label="Camera preview" />
-            {!scanning && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-slate-400">Camera is off</div>}
-            {scanning && <div className="pointer-events-none absolute inset-[18%] rounded-lg border-2 border-violet-400/80" aria-hidden="true" />}
+            {!scanning && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm font-bold text-paper">Camera is off</div>}
+            {scanning && <div className="pointer-events-none absolute inset-[18%] rounded-lg border-2 border-line" aria-hidden="true" />}
           </div>
           <canvas ref={canvasRef} className="hidden" />
-          <label className="mt-3 flex items-center gap-2 text-sm text-slate-200">
-            <input type="checkbox" checked={autoCheckIn} onChange={(e) => writeAuto(e.target.checked)} className="size-4 accent-violet-500" />
+          <label className="mt-3 flex items-center gap-2 text-sm text-ink">
+            <input type="checkbox" checked={autoCheckIn} onChange={(e) => writeAuto(e.target.checked)} className="size-4 accent-brand" />
             Mark present on scan
           </label>
           <div className="mt-3 flex gap-2">
@@ -183,8 +183,8 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
           </form>
         </div>
         <div aria-live="polite" className="space-y-3">
-          {busy && <p className="text-sm text-slate-400">Checking…</p>}
-          {!result && !busy && <p className="text-sm text-slate-400">Scan a participant&apos;s ID card QR code.</p>}
+          {busy && <p className="text-sm text-muted">Checking…</p>}
+          {!result && !busy && <p className="text-sm text-muted">Scan a participant&apos;s ID card QR code.</p>}
           {result && ui && (
             <div className="space-y-3">
               <Alert tone={ui.tone} title={ui.title}>
@@ -192,18 +192,18 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
                   "Do not check this person in. Send them to the help desk with a photo ID so the organisers can verify their registration."}
               </Alert>
               {result.participant && result.team && (
-                <div className="rounded-xl border border-navy-700 bg-navy-850 p-4">
-                  <p className="text-lg font-bold text-white">{result.participant.full_name}</p>
-                  <p className="font-mono text-sm text-slate-300">{result.participant.participant_code}</p>
-                  <p className="mt-2 text-sm text-slate-300">
-                    Team <strong className="text-white">{result.team.name}</strong> <span className="font-mono text-xs">({result.team.team_code})</span>
+                <div className="rounded-md border-2 border-line bg-paper p-4">
+                  <p className="text-lg font-bold text-ink">{result.participant.full_name}</p>
+                  <p className="font-mono text-sm text-ink-soft">{result.participant.participant_code}</p>
+                  <p className="mt-2 text-sm text-ink-soft">
+                    Team <strong className="text-ink">{result.team.name}</strong> <span className="font-mono text-xs">({result.team.team_code})</span>
                   </p>
                   <p className="mt-1 flex flex-wrap gap-2 text-sm">
                     <Badge tone="violet">{result.participant.role === "leader" ? "Team Leader" : "Member"}</Badge>
                     {result.team.status !== "approved" && <Badge tone="amber">Registration {result.team.status}</Badge>}
                   </p>
-                  {result.participant.college && <p className="mt-2 text-xs text-slate-400">{result.participant.college}{result.participant.department && ` · ${result.participant.department}`}</p>}
-                  {result.checked_in_at && <p className="mt-2 text-xs text-amber-200">Checked in at {new Date(result.checked_in_at).toLocaleString()}</p>}
+                  {result.participant.college && <p className="mt-2 text-xs text-muted">{result.participant.college}{result.participant.department && ` · ${result.participant.department}`}</p>}
+                  {result.checked_in_at && <p className="mt-2 text-xs text-warn">Checked in at {new Date(result.checked_in_at).toLocaleString()}</p>}
                   {result.state === "valid" && (
                     <Button className="mt-4 w-full" onClick={() => void checkIn(result)} disabled={busy || result.team.status === "rejected"}>Confirm check-in</Button>
                   )}

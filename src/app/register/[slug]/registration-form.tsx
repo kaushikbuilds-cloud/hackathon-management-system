@@ -32,21 +32,21 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
           <Alert tone="green" title="Registration received!">
             Team <strong>{state.result.team_name}</strong> is registered. Keep these identifiers for your records.
           </Alert>
-          <div className="rounded-xl border border-navy-700 bg-navy-850 p-4">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Team ID</p>
-            <p className="mt-1 font-mono text-xl font-bold text-white">{state.result.team_code}</p>
+          <div className="rounded-md border-2 border-line bg-paper p-4">
+            <p className="text-xs uppercase tracking-wide text-muted">Team ID</p>
+            <p className="mt-1 font-mono text-xl font-bold text-ink">{state.result.team_code}</p>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-violet-500/30 bg-violet-500/10">
+          <div className="overflow-x-auto rounded-md border-2 border-line bg-brand-tint">
             <table className="w-full text-left text-sm" aria-label="Portal login details">
               <caption className="px-4 pt-4 text-left">
-                <span className="block font-semibold text-white">Student portal login for every member</span>
-                <span className="mt-1 block text-slate-300">
+                <span className="block font-semibold text-ink">Student portal login for every member</span>
+                <span className="mt-1 block text-ink-soft">
                   Each member activates their own account once with their Participant ID and activation code, then signs in with their email or Participant ID.
                   Save or screenshot this now — the codes are also printed on the ID cards.
                 </span>
               </caption>
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-slate-400">
+                <tr className="text-xs uppercase tracking-wide text-muted">
                   <th scope="col" className="px-4 py-2 font-medium">Member</th>
                   <th scope="col" className="px-4 py-2 font-medium">Participant ID</th>
                   <th scope="col" className="px-4 py-2 font-medium">Activation code</th>
@@ -54,20 +54,20 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
               </thead>
               <tbody>
                 {state.result.logins.map((m) => (
-                  <tr key={m.participant_code} className="border-t border-violet-500/20">
-                    <td className="px-4 py-2 text-slate-100">{m.full_name}{m.role === "leader" && <span className="ml-2 text-xs text-violet-300">Leader</span>}</td>
-                    <td className="px-4 py-2 font-mono text-slate-100">{m.participant_code}</td>
-                    <td className="px-4 py-2 font-mono text-lg font-bold tracking-wider text-white">{m.activation_code ?? "Ask the organisers"}</td>
+                  <tr key={m.participant_code} className="border-t border-line">
+                    <td className="px-4 py-2 text-ink">{m.full_name}{m.role === "leader" && <span className="ml-2 text-xs text-brand">Leader</span>}</td>
+                    <td className="px-4 py-2 font-mono text-ink">{m.participant_code}</td>
+                    <td className="px-4 py-2 font-mono text-lg font-bold tracking-wider text-ink">{m.activation_code ?? "Ask the organisers"}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="flex flex-wrap gap-2 p-4">
-              <a href="/activate" className="inline-flex rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white">Activate an account</a>
-              <button type="button" onClick={() => window.print()} className="inline-flex rounded-lg border border-navy-600 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-navy-800">Print / save as PDF</button>
+              <a href="/activate" className={buttonClass("primary")}>Activate an account</a>
+              <button type="button" onClick={() => window.print()} className={buttonClass("secondary")}>Print / save as PDF</button>
             </div>
           </div>
-          <p className="text-sm text-slate-400">Codes work once. If a code is lost, the organisers can issue a new activation link.</p>
+          <p className="text-sm text-muted">Codes work once. If a code is lost, the organisers can issue a new activation link.</p>
         </div>
       </Card>
     );
@@ -113,7 +113,7 @@ function FormBody({
       )}
 
       <Card>
-        <h2 className="mb-4 text-lg font-semibold text-white">Team details</h2>
+        <h2 className="mb-4 text-lg font-semibold text-ink">Team details</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField label="Team name" name="team_name" required maxLength={80} defaultValue={values?.team_name} error={errors.team_name}
             hint="Must be unique. Letters, numbers, spaces and & ' . _ ! -" autoComplete="off" />
@@ -124,8 +124,8 @@ function FormBody({
       <fieldset className="space-y-4">
         <legend className="sr-only">Team members</legend>
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">
-            Members <span className="text-sm font-normal text-slate-400">({rows.length} of {minMembers}–{maxMembers})</span>
+          <h2 className="text-lg font-semibold text-ink">
+            Members <span className="text-sm font-normal text-muted">({rows.length} of {minMembers}–{maxMembers})</span>
           </h2>
           <Button type="button" variant="secondary" size="sm" disabled={rows.length >= maxMembers}
             onClick={() => setRows((r) => [...r, { key: newKey(), initial: { ...EMPTY_MEMBER } }])}>
@@ -140,12 +140,12 @@ function FormBody({
           return (
             <Card key={row.key} aria-labelledby={`${baseId}-m${i}`}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h3 id={`${baseId}-m${i}`} className="font-semibold text-white">
-                  Member {i + 1} {i === leaderIndex && <span className="ml-2 rounded-full bg-violet-500/20 px-2 py-0.5 text-xs text-violet-200">Team leader</span>}
+                <h3 id={`${baseId}-m${i}`} className="font-semibold text-ink">
+                  Member {i + 1} {i === leaderIndex && <span className="ml-2 rounded-full bg-brand-tint px-2 py-0.5 text-xs text-brand">Team leader</span>}
                 </h3>
                 <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
-                    <input type="radio" name={`${baseId}-leader`} checked={i === leaderIndex} onChange={() => setLeaderKey(row.key)} className="accent-violet-500" />
+                  <label className="flex items-center gap-2 text-sm text-ink-soft">
+                    <input type="radio" name={`${baseId}-leader`} checked={i === leaderIndex} onChange={() => setLeaderKey(row.key)} className="accent-brand" />
                     Team leader
                   </label>
                   {rows.length > minMembers && (
@@ -183,7 +183,7 @@ function FormBody({
 
       {questions.length > 0 && (
         <Card>
-          <h2 className="mb-4 text-lg font-semibold text-white">Additional questions</h2>
+          <h2 className="mb-4 text-lg font-semibold text-ink">Additional questions</h2>
           <div className="space-y-4">
             {questions.map((q) => {
               const fname = `answers.${q.id}`;
@@ -198,7 +198,7 @@ function FormBody({
       )}
 
       <div className="flex flex-wrap items-center justify-end gap-3">
-        <p className="text-xs text-slate-400">By registering you agree to the event code of conduct.</p>
+        <p className="text-xs text-muted">By registering you agree to the event code of conduct.</p>
         <SubmitButton disabled={disabled} pendingText="Submitting…">Submit registration</SubmitButton>
       </div>
     </form>

@@ -42,14 +42,14 @@ export default async function AuditPage(props: PageProps<"/staff/audit">) {
         <>
           <Table caption="Audit log">
             <thead><tr><Th>Time</Th><Th>Actor</Th><Th>Action</Th><Th>Entity</Th><Th>Details</Th></tr></thead>
-            <tbody className="divide-y divide-navy-800">
+            <tbody className="divide-y divide-line-soft">
               {data.map((a) => (
                 <tr key={a.id}>
                   <Td className="whitespace-nowrap">{formatDateTime(a.created_at, tz)}</Td>
-                  <Td>{a.actor_id ? names.get(a.actor_id) ?? a.actor_id.slice(0, 8) : <span className="text-slate-500">system / public</span>}<div className="text-xs text-slate-400">{a.actor_role}</div></Td>
+                  <Td>{a.actor_id ? names.get(a.actor_id) ?? a.actor_id.slice(0, 8) : <span className="text-muted">system / public</span>}<div className="text-xs text-muted">{a.actor_role}</div></Td>
                   <Td className="font-mono text-xs">{a.action}</Td>
-                  <Td className="font-mono text-xs">{a.entity_type}{a.entity_id && <div className="text-slate-500">{a.entity_id.slice(0, 13)}</div>}</Td>
-                  <Td><pre className="max-w-xl overflow-x-auto whitespace-pre-wrap break-all text-xs text-slate-400">{JSON.stringify(a.details).slice(0, 500)}</pre></Td>
+                  <Td className="font-mono text-xs">{a.entity_type}{a.entity_id && <div className="text-muted">{a.entity_id.slice(0, 13)}</div>}</Td>
+                  <Td><pre className="max-w-xl overflow-x-auto whitespace-pre-wrap break-all text-xs text-muted">{JSON.stringify(a.details).slice(0, 500)}</pre></Td>
                 </tr>
               ))}
             </tbody>

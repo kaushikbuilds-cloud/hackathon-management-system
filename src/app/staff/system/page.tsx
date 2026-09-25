@@ -23,7 +23,7 @@ export default async function SystemSettingsPage() {
         </Card>
         <Card>
           <CardTitle>Security model</CardTitle>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-300">
+          <ul className="list-disc space-y-1 pl-5 text-sm text-ink-soft">
             <li>No public sign-up: staff join by single-use, expiring invitation; participants activate after registering.</li>
             <li>Only the Super Admin invites Admins; Admins cannot create Admins or raise their own access.</li>
             <li>Permissions are enforced on the server and by database row-level security.</li>

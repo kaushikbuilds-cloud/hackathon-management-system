@@ -72,12 +72,12 @@ export function EventForm({ initial: h, logoUrl, organizerLogoUrl }: { initial: 
 function LogoField({ name, label, url, error }: { name: string; label: string; url: string | null; error?: string }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={name} className="block text-sm font-medium text-slate-200">{label}</label>
+      <label htmlFor={name} className="block text-sm font-medium text-ink">{label}</label>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      {url && <img src={url} alt="" className="h-12 w-auto rounded bg-white/5 p-1" />}
-      <input id={name} name={name} type="file" accept="image/png,image/jpeg" className="block text-sm text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-navy-700 file:px-3 file:py-1.5 file:text-slate-100" />
+      {url && <img src={url} alt="" className="h-12 w-auto rounded bg-surface p-1" />}
+      <input id={name} name={name} type="file" accept="image/png,image/jpeg" className="block text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-paper-2 file:px-3 file:py-1.5 file:text-ink" />
       {url && <Checkbox name={`remove_${name}`} label="Remove current image" />}
-      {error && <p className="text-xs text-red-300" role="alert">{error}</p>}
+      {error && <p className="text-xs text-danger" role="alert">{error}</p>}
     </div>
   );
 }

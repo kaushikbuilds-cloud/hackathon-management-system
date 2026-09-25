@@ -52,11 +52,11 @@ export default async function StaffSupportPage(props: PageProps<"/staff/support"
             <option value="">Status: all</option>
             {SUPPORT_STATUSES.map((s) => <option key={s} value={s}>{supportStatusLabel(s)}</option>)}
           </AutoSubmitSelect>
-          <label className="flex items-center gap-2 text-sm text-slate-300">
-            <input type="checkbox" name="mine" value="1" defaultChecked={mine} className="accent-violet-500" />
+          <label className="flex items-center gap-2 text-sm text-ink-soft">
+            <input type="checkbox" name="mine" value="1" defaultChecked={mine} className="accent-brand" />
             Assigned to me
           </label>
-          <button type="submit" className="text-sm text-violet-300 underline">Apply</button>
+          <button type="submit" className="text-sm text-brand underline">Apply</button>
         </form>
       </Card>
       {!data?.length ? (
@@ -64,14 +64,14 @@ export default async function StaffSupportPage(props: PageProps<"/staff/support"
       ) : (
         <Table caption="Support requests">
           <thead><tr><Th>Subject</Th><Th>Team</Th><Th>Category</Th><Th>Status</Th><Th>Assigned to</Th><Th>Updated</Th></tr></thead>
-          <tbody className="divide-y divide-navy-800">
+          <tbody className="divide-y divide-line-soft">
             {data.map((r) => (
-              <tr key={r.id} className="hover:bg-navy-850/40">
-                <Td><Link className="font-medium text-blue-300 hover:underline" href={`/staff/support/${r.id}`}>{r.subject}</Link></Td>
-                <Td>{r.teams?.name} <span className="font-mono text-xs text-slate-400">{r.teams?.team_code}</span></Td>
+              <tr key={r.id} className="hover:bg-paper">
+                <Td><Link className="font-medium text-brand hover:underline" href={`/staff/support/${r.id}`}>{r.subject}</Link></Td>
+                <Td>{r.teams?.name} <span className="font-mono text-xs text-muted">{r.teams?.team_code}</span></Td>
                 <Td>{supportCategoryLabel(r.category)}</Td>
                 <Td><SupportBadge status={r.status} /></Td>
-                <Td>{r.assignee?.full_name ?? <span className="text-slate-500">Unassigned</span>}</Td>
+                <Td>{r.assignee?.full_name ?? <span className="text-muted">Unassigned</span>}</Td>
                 <Td className="whitespace-nowrap">{formatDateTime(r.updated_at, hackathon?.timezone)}</Td>
               </tr>
             ))}

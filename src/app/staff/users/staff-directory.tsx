@@ -75,17 +75,17 @@ export async function StaffDirectory({ session, role, searchParams }: {
                     {p.full_name ?? p.email}
                   </CardTitle>
                   {p.role === "super_admin" ? (
-                    <p className="text-sm text-slate-400">The Super Admin holds every permission and cannot be modified here.</p>
+                    <p className="text-sm text-muted">The Super Admin holds every permission and cannot be modified here.</p>
                   ) : !manageable ? (
-                    <p className="text-sm text-slate-400">Permissions: {[...held].map(permissionLabel).join(", ") || "none"}</p>
+                    <p className="text-sm text-muted">Permissions: {[...held].map(permissionLabel).join(", ") || "none"}</p>
                   ) : (
                     <details>
-                      <summary className="cursor-pointer text-sm text-violet-300">
+                      <summary className="cursor-pointer text-sm text-brand">
                         Manage · {held.size} permission{held.size === 1 ? "" : "s"}{assignment?.station ? ` · ${assignment.station}` : ""}
                       </summary>
                       <div className="mt-4 grid gap-6 lg:grid-cols-2">
                         <form action={updateStaffPermissions.bind(null, p.id)} className="space-y-3">
-                          <p className="text-sm font-semibold text-slate-200">Permissions</p>
+                          <p className="text-sm font-semibold text-ink">Permissions</p>
                           <PermissionCheckboxes role={p.role as "admin" | "official"} checked={held} granter={granter} />
                           <SubmitButton size="sm">Save permissions</SubmitButton>
                         </form>
@@ -132,13 +132,13 @@ export async function StaffDirectory({ session, role, searchParams }: {
             ) : (
               <Table caption={`${label} invitations`}>
                 <thead><tr><Th>Invitee</Th><Th>Permissions</Th><Th>Status</Th><Th>Expires</Th><Th><span className="sr-only">Actions</span></Th></tr></thead>
-                <tbody className="divide-y divide-navy-800">
+                <tbody className="divide-y divide-line-soft">
                   {invitations.map((inv) => {
                     const st = invitationState(inv);
                     return (
                       <tr key={inv.id}>
-                        <Td>{inv.full_name}<div className="text-xs text-slate-400">{inv.email}</div></Td>
-                        <Td className="text-xs text-slate-300">{inv.permissions.map(permissionLabel).join(", ") || "—"}</Td>
+                        <Td>{inv.full_name}<div className="text-xs text-muted">{inv.email}</div></Td>
+                        <Td className="text-xs text-ink-soft">{inv.permissions.map(permissionLabel).join(", ") || "—"}</Td>
                         <Td><Badge tone={INVITE_TONE[st]}>{st === "pending" ? "invited" : st}</Badge></Td>
                         <Td className="whitespace-nowrap">{formatDateTime(inv.expires_at)}</Td>
                         <Td>{st === "pending" && (

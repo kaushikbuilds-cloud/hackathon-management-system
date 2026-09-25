@@ -28,7 +28,7 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
     <AuthShell
       title={reset ? "Set a new password" : "Activate your account"}
       description={invitation && state === "pending" ? (reset ? `For ${invitation.email}` : `You have been invited as ${invitation.role === "admin" ? "an" : "a"} ${roleLabel} user.`) : undefined}
-      footer={<Link href="/login" className="hover:text-white">Go to sign in</Link>}
+      footer={<Link href="/login" className="hover:text-ink">Go to sign in</Link>}
     >
       {!invitation ? (
         <Alert tone="red" title="Invalid link">This invitation link is not valid. Check that you copied the whole link.</Alert>
@@ -36,13 +36,13 @@ export default async function InvitePage(props: PageProps<"/invite/[token]">) {
         <Alert tone="amber" title="Link not usable">{STATE_TEXT[state as keyof typeof STATE_TEXT]}</Alert>
       ) : (
         <>
-          <dl className="mb-5 space-y-1 rounded-xl bg-navy-850 p-4 text-sm">
-            <div className="flex justify-between gap-3"><dt className="text-slate-400">Email</dt><dd className="break-all text-slate-100">{invitation.email}</dd></div>
-            <div className="flex justify-between gap-3"><dt className="text-slate-400">Access</dt><dd className="text-slate-100">{roleLabel}</dd></div>
-            {invitation.station && <div className="flex justify-between gap-3"><dt className="text-slate-400">Station</dt><dd className="text-slate-100">{invitation.station}</dd></div>}
-            <div className="flex justify-between gap-3"><dt className="text-slate-400">Link expires</dt><dd className="text-slate-100">{formatDateTime(invitation.expires_at)}</dd></div>
+          <dl className="mb-5 space-y-1 rounded-md bg-paper p-4 text-sm">
+            <div className="flex justify-between gap-3"><dt className="text-muted">Email</dt><dd className="break-all text-ink">{invitation.email}</dd></div>
+            <div className="flex justify-between gap-3"><dt className="text-muted">Access</dt><dd className="text-ink">{roleLabel}</dd></div>
+            {invitation.station && <div className="flex justify-between gap-3"><dt className="text-muted">Station</dt><dd className="text-ink">{invitation.station}</dd></div>}
+            <div className="flex justify-between gap-3"><dt className="text-muted">Link expires</dt><dd className="text-ink">{formatDateTime(invitation.expires_at)}</dd></div>
           </dl>
-          <p className="mb-4 text-sm text-slate-400">
+          <p className="mb-4 text-sm text-muted">
             Choose a password (at least {PASSWORD_MIN_LENGTH} characters, using three of: lowercase, uppercase, digits, symbols). This link works once.
           </p>
           <AcceptForm token={token} defaultName={invitation.full_name ?? ""} reset={reset} />

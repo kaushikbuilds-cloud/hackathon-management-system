@@ -27,30 +27,30 @@ export function SupportThread({
             { label: "Created", value: formatDateTime(request.created_at, timeZone) },
             { label: "Contact", value: [request.contact_email, request.contact_phone].filter(Boolean).join(" · ") || "—" },
           ]} />
-          <p className="mt-4 whitespace-pre-wrap rounded-xl bg-navy-850 p-4 text-sm text-slate-200">{request.description}</p>
+          <p className="mt-4 whitespace-pre-wrap rounded-md bg-paper p-4 text-sm text-ink">{request.description}</p>
           {request.attachment_path && (
-            <p className="mt-3 text-sm"><a className="text-blue-300 underline" href={`/api/support/${request.id}/attachment`}>Download attachment</a></p>
+            <p className="mt-3 text-sm"><a className="text-brand underline" href={`/api/support/${request.id}/attachment`}>Download attachment</a></p>
           )}
         </Card>
 
         <Card>
           <CardTitle>Conversation</CardTitle>
           {messages.length === 0 ? (
-            <p className="text-sm text-slate-400">No replies yet.</p>
+            <p className="text-sm text-muted">No replies yet.</p>
           ) : (
             <ol className="space-y-3">
               {messages.map((m) => {
                 const author = m.author_id ? byId.get(m.author_id) : undefined;
                 const fromStaff = author && author.role !== "participant";
                 return (
-                  <li key={m.id} className={`rounded-xl p-4 text-sm ${m.is_internal ? "border border-amber-500/30 bg-amber-500/5" : fromStaff ? "bg-violet-500/10" : "bg-navy-850"}`}>
-                    <p className="mb-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                      <span className="font-semibold text-slate-200">{author?.full_name ?? (fromStaff ? "Organiser" : "Team member")}</span>
+                  <li key={m.id} className={`rounded-md p-4 text-sm ${m.is_internal ? "border-2 border-line bg-warn-tint" : fromStaff ? "bg-brand-tint" : "bg-paper"}`}>
+                    <p className="mb-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                      <span className="font-semibold text-ink">{author?.full_name ?? (fromStaff ? "Organiser" : "Team member")}</span>
                       {fromStaff && <Badge tone="violet">Staff</Badge>}
                       {m.is_internal && <Badge tone="amber">Internal note</Badge>}
                       <span>{formatDateTime(m.created_at, timeZone)}</span>
                     </p>
-                    <p className="whitespace-pre-wrap text-slate-100">{m.body}</p>
+                    <p className="whitespace-pre-wrap text-ink">{m.body}</p>
                   </li>
                 );
               })}
@@ -71,7 +71,7 @@ export function SupportThread({
           {history.map((h) => (
             <li key={h.id} className="flex justify-between gap-2">
               <span>{h.from_status ? `${supportStatusLabel(h.from_status as never)} → ` : ""}{supportStatusLabel(h.to_status as never)}</span>
-              <span className="text-xs text-slate-400">{formatDateTime(h.created_at, timeZone)}</span>
+              <span className="text-xs text-muted">{formatDateTime(h.created_at, timeZone)}</span>
             </li>
           ))}
         </ol>

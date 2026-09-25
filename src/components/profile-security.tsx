@@ -29,7 +29,7 @@ export function ProfileSecurity({ session, extra }: { session: Session; extra?: 
           { label: "Last sign-in", value: formatDateTime(p.last_sign_in_at) },
         ]} />
         <form action="/auth/signout" method="post" className="mt-4">
-          <button type="submit" className="text-sm text-red-300 hover:text-red-200">Sign out</button>
+          <button type="submit" className="text-sm text-danger hover:text-danger">Sign out</button>
         </form>
       </Card>
     </div>

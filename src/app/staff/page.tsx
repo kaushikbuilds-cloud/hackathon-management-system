@@ -53,12 +53,12 @@ async function PlatformDashboard() {
       </div>
       <Card className="mt-6">
         <CardTitle>Recently active</CardTitle>
-        {recent.length === 0 ? <p className="text-sm text-slate-400">No activity yet.</p> : (
-          <ul className="divide-y divide-navy-800 text-sm">
+        {recent.length === 0 ? <p className="text-sm text-muted">No activity yet.</p> : (
+          <ul className="divide-y divide-line-soft text-sm">
             {recent.map((r) => (
               <li key={r.id} className="flex justify-between gap-3 py-2">
-                <Link href={`/staff/hackathons/${r.id}`} className="text-slate-100 hover:underline">{r.name}</Link>
-                <span className="text-xs text-slate-400">{formatDateTime(r.last_activity)}</span>
+                <Link href={`/staff/hackathons/${r.id}`} className="text-ink hover:underline">{r.name}</Link>
+                <span className="text-xs text-muted">{formatDateTime(r.last_activity)}</span>
               </li>
             ))}
           </ul>
@@ -95,9 +95,9 @@ async function Overview({ tz, superAdmin }: { tz: string; superAdmin: boolean })
       {stats.recentActivity.length > 0 && (
         <Card className="mt-6">
           <CardTitle actions={superAdmin && <LinkButton href="/staff/audit" variant="secondary" size="sm">Audit Logs</LinkButton>}>Recent activity</CardTitle>
-          <ul className="divide-y divide-navy-800 text-sm">
+          <ul className="divide-y divide-line-soft text-sm">
             {stats.recentActivity.map((a, i) => (
-              <li key={i} className="flex justify-between gap-3 py-2"><span className="font-mono text-xs text-slate-200">{a.action}</span><span className="text-xs text-slate-400">{formatDateTime(a.at, tz)}</span></li>
+              <li key={i} className="flex justify-between gap-3 py-2"><span className="font-mono text-xs text-ink">{a.action}</span><span className="text-xs text-muted">{formatDateTime(a.at, tz)}</span></li>
             ))}
           </ul>
         </Card>
@@ -142,7 +142,7 @@ async function WorkDashboard({ session, tz }: { session: Session; tz: string }) 
         <div className="flex flex-wrap gap-3">
           {actions.map((a) => <Link key={a.href} href={a.href} className={buttonClass(a.href === "/staff/attendance" ? "primary" : "secondary")}>{a.label}</Link>)}
         </div>
-        <p className="mt-4 text-xs text-slate-400">Times shown in {tz}.</p>
+        <p className="mt-4 text-xs text-muted">Times shown in {tz}.</p>
       </Card>
     </div>
   );

@@ -29,7 +29,7 @@ export function InviteStaffForm({ role, eventName, permissionFields }: { role: "
           )}
         </div>
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium text-slate-200">Permissions</legend>
+          <legend className="text-sm font-medium text-ink">Permissions</legend>
           {permissionFields}
         </fieldset>
         <SubmitButton pendingText="Creating…">Create invitation</SubmitButton>

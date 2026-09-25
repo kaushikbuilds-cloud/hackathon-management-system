@@ -38,7 +38,7 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
       <PageHeader
         back={{ href: "/staff/forms", label: "Form Builder" }}
         title={form.title}
-        description={<span className="inline-flex flex-wrap items-center gap-2"><Badge tone={form.status === "published" ? "green" : form.status === "closed" ? "red" : "neutral"}>{form.status}</Badge>{!availability.open && form.status === "published" && <span className="text-amber-200">{availability.reason}</span>}</span>}
+        description={<span className="inline-flex flex-wrap items-center gap-2"><Badge tone={form.status === "published" ? "green" : form.status === "closed" ? "red" : "neutral"}>{form.status}</Badge>{!availability.open && form.status === "published" && <span className="text-warn">{availability.reason}</span>}</span>}
         actions={
           <>
             <LinkButton href={`/register/${form.slug}`} variant="secondary" target="_blank">Preview</LinkButton>
@@ -52,7 +52,7 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
       <Card className="mb-6">
         <CardTitle>Shareable public URL</CardTitle>
         <div className="flex flex-wrap items-center gap-3">
-          <code className="rounded-lg bg-navy-950 px-3 py-2 text-sm break-all text-slate-100">{url}</code>
+          <code className="rounded-lg bg-paper px-3 py-2 text-sm break-all text-ink">{url}</code>
           <CopyButton value={url} label="Copy link" />
         </div>
       </Card>
@@ -78,8 +78,8 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
           <CardTitle description="Team name, college, and each member's full name and email are always collected and required.">Member fields</CardTitle>
           <div className="grid gap-3 sm:grid-cols-2">
             {OPTIONAL_MEMBER_FIELDS.map((f) => (
-              <fieldset key={f} className="rounded-xl border border-navy-700 p-3">
-                <legend className="px-1 text-sm font-semibold text-slate-200">{OPTIONAL_FIELD_LABEL[f]}</legend>
+              <fieldset key={f} className="rounded-md border-2 border-line p-3">
+                <legend className="px-1 text-sm font-semibold text-ink">{OPTIONAL_FIELD_LABEL[f]}</legend>
                 <div className="flex flex-wrap gap-4">
                   <Checkbox name={`field.${f}.enabled`} label="Collect" defaultChecked={fields[f].enabled} />
                   <Checkbox name={`field.${f}.required`} label="Required" defaultChecked={fields[f].required} />
@@ -93,14 +93,14 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
           <CardTitle description="Leave a label empty to remove a question. Select options are comma-separated.">Custom questions</CardTitle>
           <div className="space-y-3">
             {rows.map((q, i) => (
-              <div key={q?.id ?? `new-${i}`} className="grid gap-3 rounded-xl border border-navy-700 p-3 md:grid-cols-[2fr_1fr_2fr_auto]">
+              <div key={q?.id ?? `new-${i}`} className="grid gap-3 rounded-md border-2 border-line p-3 md:grid-cols-[2fr_1fr_2fr_auto]">
                 <input type="hidden" name={`q.${i}.id`} value={q?.id ?? ""} />
                 <div>
-                  <label htmlFor={`q-${i}-label`} className="text-xs text-slate-400">Question {q ? "" : "(new)"}</label>
+                  <label htmlFor={`q-${i}-label`} className="text-xs text-muted">Question {q ? "" : "(new)"}</label>
                   <input id={`q-${i}-label`} name={`q.${i}.label`} defaultValue={q?.label ?? ""} className={inputClass} maxLength={200} />
                 </div>
                 <div>
-                  <label htmlFor={`q-${i}-type`} className="text-xs text-slate-400">Type</label>
+                  <label htmlFor={`q-${i}-type`} className="text-xs text-muted">Type</label>
                   <select id={`q-${i}-type`} name={`q.${i}.type`} defaultValue={q?.type ?? "text"} className={inputClass}>
                     <option value="text">Short text</option>
                     <option value="textarea">Long text</option>
@@ -108,7 +108,7 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
                   </select>
                 </div>
                 <div>
-                  <label htmlFor={`q-${i}-options`} className="text-xs text-slate-400">Options (dropdown only)</label>
+                  <label htmlFor={`q-${i}-options`} className="text-xs text-muted">Options (dropdown only)</label>
                   <input id={`q-${i}-options`} name={`q.${i}.options`} defaultValue={q?.options?.join(", ") ?? ""} className={inputClass} placeholder="Option A, Option B" />
                 </div>
                 <div className="self-end pb-2"><Checkbox name={`q.${i}.required`} label="Required" defaultChecked={q?.required ?? false} /></div>
@@ -126,14 +126,14 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
         ) : (
           <Table caption="Submissions">
             <thead><tr><Th>Time</Th><Th>Team name</Th><Th>Members</Th><Th>Result</Th><Th>Details</Th></tr></thead>
-            <tbody className="divide-y divide-navy-800">
+            <tbody className="divide-y divide-line-soft">
               {submissions.map((s) => (
                 <tr key={s.id}>
                   <Td className="whitespace-nowrap">{formatDateTime(s.created_at, tz)}</Td>
-                  <Td>{s.team_id ? <Link className="text-blue-300 hover:underline" href={`/staff/teams/${s.team_id}`}>{s.payload?.team_name ?? "—"}</Link> : s.payload?.team_name ?? "—"}</Td>
+                  <Td>{s.team_id ? <Link className="text-brand hover:underline" href={`/staff/teams/${s.team_id}`}>{s.payload?.team_name ?? "—"}</Link> : s.payload?.team_name ?? "—"}</Td>
                   <Td className="tabular-nums">{s.payload?.member_count ?? "—"}</Td>
                   <Td><Badge tone={s.status === "accepted" ? "green" : "red"}>{s.status}</Badge></Td>
-                  <Td className="text-xs text-slate-300">{s.errors ? s.errors.message ?? `${s.errors.code}${s.errors.fields ? `: ${s.errors.fields.join(", ")}` : ""}` : "—"}</Td>
+                  <Td className="text-xs text-ink-soft">{s.errors ? s.errors.message ?? `${s.errors.code}${s.errors.fields ? `: ${s.errors.fields.join(", ")}` : ""}` : "—"}</Td>
                 </tr>
               ))}
             </tbody>

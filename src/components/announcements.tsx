@@ -11,13 +11,13 @@ export function AnnouncementFeed({ items, timeZone, title = "Announcements" }: {
       ) : (
         <ul className="space-y-3">
           {items.map((a) => (
-            <li key={a.id} className={`rounded-xl p-4 ${a.is_important ? "border border-violet-500/40 bg-violet-500/10" : "bg-navy-850"}`}>
-              <p className="flex flex-wrap items-center gap-2 font-semibold text-white">
+            <li key={a.id} className={`rounded-md p-4 ${a.is_important ? "border-2 border-line bg-brand-tint" : "bg-paper"}`}>
+              <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
                 {a.title}
                 {a.is_important && <Badge tone="violet">Important</Badge>}
               </p>
-              <p className="mt-0.5 text-xs text-slate-400">{formatDateTime(a.published_at, timeZone)}</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-slate-200">{a.body}</p>
+              <p className="mt-0.5 text-xs text-muted">{formatDateTime(a.published_at, timeZone)}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-ink">{a.body}</p>
             </li>
           ))}
         </ul>
@@ -34,19 +34,19 @@ export function ScheduleList({ items, timeZone, now }: { items: ScheduleItem[]; 
       {items.length === 0 ? (
         <EmptyState title="Schedule coming soon" />
       ) : (
-        <ol className="relative space-y-4 border-l border-navy-700 pl-5">
+        <ol className="relative space-y-4 border-l border-line pl-5">
           {items.map((s) => {
             const live = new Date(s.starts_at).getTime() <= now && (!s.ends_at || new Date(s.ends_at).getTime() >= now);
             return (
               <li key={s.id} className="relative">
-                <span className={`absolute -left-[1.6rem] top-1.5 size-2.5 rounded-full ${live ? "bg-emerald-400" : "bg-violet-400"}`} aria-hidden="true" />
-                <p className="text-xs font-semibold text-violet-300">
+                <span className={`absolute -left-[1.6rem] top-1.5 size-2.5 rounded-full ${live ? "bg-ok" : "bg-brand"}`} aria-hidden="true" />
+                <p className="text-xs font-semibold text-brand">
                   {formatDateTime(s.starts_at, timeZone)}{s.ends_at && ` – ${formatTime(s.ends_at, timeZone)}`}
-                  {live && <span className="ml-2 text-emerald-300">Now</span>}
+                  {live && <span className="ml-2 text-ok">Now</span>}
                 </p>
-                <p className="font-semibold text-white">{s.title}</p>
-                {s.venue && <p className="text-sm text-slate-400">{s.venue}</p>}
-                {s.description && <p className="text-sm text-slate-300">{s.description}</p>}
+                <p className="font-semibold text-ink">{s.title}</p>
+                {s.venue && <p className="text-sm text-muted">{s.venue}</p>}
+                {s.description && <p className="text-sm text-ink-soft">{s.description}</p>}
               </li>
             );
           })}

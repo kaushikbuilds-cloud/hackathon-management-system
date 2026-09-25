@@ -51,19 +51,19 @@ export default async function AttendanceHistoryPage(props: PageProps<"/staff/att
         <Card>
           <Table caption="Attendance history">
             <thead><tr><Th>Time</Th><Th>Participant</Th><Th>Team</Th><Th>Method</Th>{seeAll && <Th>Recorded by</Th>}<Th>Status</Th>{canCorrect && <Th>Action</Th>}</tr></thead>
-            <tbody className="divide-y divide-navy-800">
+            <tbody className="divide-y divide-line-soft">
               {data.map((r) => {
                 const n = nameBy.get(r.participant_id);
                 return (
                   <tr key={r.id}>
                     <Td className="whitespace-nowrap">{formatDateTime(r.checked_in_at, tz)}</Td>
-                    <Td>{n?.full_name ?? "—"} <span className="font-mono text-xs text-slate-400">{n?.participant_code}</span></Td>
+                    <Td>{n?.full_name ?? "—"} <span className="font-mono text-xs text-muted">{n?.participant_code}</span></Td>
                     <Td>{n?.team_name ?? "—"}</Td>
                     <Td className="text-xs uppercase">{r.method}</Td>
                     {seeAll && <Td>{r.recorder?.full_name ?? "—"}</Td>}
                     <Td>
                       <AttendanceBadge state={r.status === "present" ? "present" : "corrected"} />
-                      {r.status === "corrected" && <p className="mt-1 text-xs text-slate-400">{formatDateTime(r.corrected_at, tz)}: {r.correction_reason}</p>}
+                      {r.status === "corrected" && <p className="mt-1 text-xs text-muted">{formatDateTime(r.corrected_at, tz)}: {r.correction_reason}</p>}
                     </Td>
                     {canCorrect && <Td>{r.status === "present" && <UndoCheckIn attendanceId={r.id} />}</Td>}
                   </tr>

@@ -63,12 +63,12 @@ export default async function ParticipantsPage(props: PageProps<"/staff/particip
             <thead>
               <tr><Th>Participant ID</Th><Th>Name</Th><Th>Team</Th><Th>Role</Th><Th>Email</Th><Th>Phone</Th><Th>College</Th><Th>Attendance</Th></tr>
             </thead>
-            <tbody className="divide-y divide-navy-800">
+            <tbody className="divide-y divide-line-soft">
               {data.map((p) => (
-                <tr key={p.id} className="hover:bg-navy-850/40">
+                <tr key={p.id} className="hover:bg-paper">
                   <Td className="font-mono text-xs whitespace-nowrap">{p.participant_code}</Td>
                   <Td className="font-medium">{p.full_name}</Td>
-                  <Td><Link className="text-blue-300 hover:underline" href={`/staff/teams/${p.team_id}`}>{p.team_name}</Link><div className="font-mono text-xs text-slate-400">{p.team_code}</div></Td>
+                  <Td><Link className="text-brand hover:underline" href={`/staff/teams/${p.team_id}`}>{p.team_name}</Link><div className="font-mono text-xs text-muted">{p.team_code}</div></Td>
                   <Td>{p.role === "leader" ? <Badge tone="violet">Leader</Badge> : "Member"}</Td>
                   <Td className="break-all">{p.email}</Td>
                   <Td className="whitespace-nowrap">{p.phone ?? "—"}</Td>

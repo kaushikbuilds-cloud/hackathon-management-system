@@ -43,9 +43,9 @@ export default async function RegisterPage(props: PageProps<"/register/[slug]">)
             </Alert>
           </div>
         )}
-        <h1 className="text-3xl font-bold tracking-tight text-white">{form.title}</h1>
-        {form.description && <p className="mt-2 whitespace-pre-line text-slate-400">{form.description}</p>}
-        <p className="mt-3 text-sm text-slate-400">
+        <h1 className="text-3xl font-bold tracking-tight text-ink">{form.title}</h1>
+        {form.description && <p className="mt-2 whitespace-pre-line text-muted">{form.description}</p>}
+        <p className="mt-3 text-sm text-muted">
           Team size: {form.min_team_size}–{form.max_team_size} members
           {form.closes_at && <> · Closes {formatDateTime(form.closes_at, tz)}</>}
         </p>

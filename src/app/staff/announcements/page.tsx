@@ -44,7 +44,7 @@ export default async function AnnouncementsPage(props: PageProps<"/staff/announc
       <Flash notice={sp.notice} error={sp.error} />
       <div className="grid gap-6 xl:grid-cols-2">
         <section className="space-y-4" aria-labelledby="ann-h">
-          <h2 id="ann-h" className="text-lg font-semibold text-white">Announcements</h2>
+          <h2 id="ann-h" className="text-lg font-semibold text-ink">Announcements</h2>
           <Card>
             <CardTitle>New announcement</CardTitle>
             <AnnouncementForm />
@@ -58,7 +58,7 @@ export default async function AnnouncementsPage(props: PageProps<"/staff/announc
                 {a.title}
               </CardTitle>
               <details>
-                <summary className="cursor-pointer text-sm text-violet-300">Edit</summary>
+                <summary className="cursor-pointer text-sm text-brand">Edit</summary>
                 <div className="mt-3"><AnnouncementForm item={a} /></div>
                 <form action={deleteAnnouncement.bind(null, a.id)} className="mt-3">
                   <ConfirmSubmit variant="danger" size="sm" message="Delete this announcement?">Delete</ConfirmSubmit>
@@ -68,7 +68,7 @@ export default async function AnnouncementsPage(props: PageProps<"/staff/announc
           ))}
         </section>
         <section className="space-y-4" aria-labelledby="sch-h">
-          <h2 id="sch-h" className="text-lg font-semibold text-white">Schedule</h2>
+          <h2 id="sch-h" className="text-lg font-semibold text-ink">Schedule</h2>
           <Card>
             <CardTitle>New schedule item</CardTitle>
             <ScheduleForm tz={tz} />
@@ -77,7 +77,7 @@ export default async function AnnouncementsPage(props: PageProps<"/staff/announc
             <Card key={s.id}>
               <CardTitle description={`${formatDateTime(s.starts_at, tz)}${s.venue ? ` · ${s.venue}` : ""}`} actions={<Badge>{s.visibility}</Badge>}>{s.title}</CardTitle>
               <details>
-                <summary className="cursor-pointer text-sm text-violet-300">Edit</summary>
+                <summary className="cursor-pointer text-sm text-brand">Edit</summary>
                 <div className="mt-3"><ScheduleForm item={s} tz={tz} /></div>
                 <form action={deleteScheduleItem.bind(null, s.id)} className="mt-3">
                   <ConfirmSubmit variant="danger" size="sm" message="Delete this schedule item?">Delete</ConfirmSubmit>

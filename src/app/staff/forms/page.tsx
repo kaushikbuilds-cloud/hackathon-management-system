@@ -27,10 +27,10 @@ export default async function FormsPage(props: PageProps<"/staff/forms">) {
       ) : (
         <Table caption="Registration forms">
           <thead><tr><Th>Title</Th><Th>Status</Th><Th>Public URL</Th><Th>Team size</Th><Th>Accepted</Th><Th>Rejected</Th><Th>Updated</Th></tr></thead>
-          <tbody className="divide-y divide-navy-800">
+          <tbody className="divide-y divide-line-soft">
             {forms.map((f) => (
               <tr key={f.id}>
-                <Td><Link href={`/staff/forms/${f.id}`} className="font-medium text-blue-300 hover:underline">{f.title}</Link></Td>
+                <Td><Link href={`/staff/forms/${f.id}`} className="font-medium text-brand hover:underline">{f.title}</Link></Td>
                 <Td><Badge tone={f.status === "published" ? "green" : f.status === "closed" ? "red" : "neutral"}>{f.status}</Badge></Td>
                 <Td className="font-mono text-xs break-all">{appUrl()}/register/{f.slug}</Td>
                 <Td>{f.min_team_size}–{f.max_team_size}</Td>

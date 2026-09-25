@@ -40,8 +40,8 @@ export default async function PortalHome() {
               { label: "College", value: team.college },
               { label: "Registered", value: formatDateTime(team.created_at, tz) },
             ]} />
-            {team.status_reason && team.status !== "approved" && <p className="mt-4 text-sm text-amber-200">Note from organisers: {team.status_reason}</p>}
-            {!cards && <p className="mt-4 text-xs text-slate-400">ID cards will be available here once the organisers enable them.</p>}
+            {team.status_reason && team.status !== "approved" && <p className="mt-4 text-sm text-warn">Note from organisers: {team.status_reason}</p>}
+            {!cards && <p className="mt-4 text-xs text-muted">ID cards will be available here once the organisers enable them.</p>}
           </Card>
 
           <Card>
@@ -52,11 +52,11 @@ export default async function PortalHome() {
             {isLeader ? (
               <Table caption="Team members">
                 <thead><tr><Th>Participant ID</Th><Th>Name</Th><Th>Role</Th><Th>Email</Th><Th>Phone</Th><Th>Attendance</Th></tr></thead>
-                <tbody className="divide-y divide-navy-800">
+                <tbody className="divide-y divide-line-soft">
                   {members.map((m) => (
                     <tr key={m.id}>
                       <Td className="font-mono text-xs">{m.participant_code}</Td>
-                      <Td className="font-medium">{m.full_name}{m.id === session.participantId && <span className="ml-1 text-xs text-slate-400">(you)</span>}</Td>
+                      <Td className="font-medium">{m.full_name}{m.id === session.participantId && <span className="ml-1 text-xs text-muted">(you)</span>}</Td>
                       <Td>{m.role === "leader" ? <Badge tone="violet">Leader</Badge> : "Member"}</Td>
                       <Td className="break-all">{m.email}</Td>
                       <Td className="whitespace-nowrap">{m.phone ?? "—"}</Td>
@@ -66,11 +66,11 @@ export default async function PortalHome() {
                 </tbody>
               </Table>
             ) : (
-              <ul className="divide-y divide-navy-800">
+              <ul className="divide-y divide-line-soft">
                 {roster.map((m) => (
                   <li key={m.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                    <span>{m.full_name}{m.id === session.participantId && <span className="ml-1 text-xs text-slate-400">(you)</span>} {m.role === "leader" && <Badge tone="violet">Leader</Badge>}</span>
-                    <span className="font-mono text-xs text-slate-400">{m.participant_code}</span>
+                    <span>{m.full_name}{m.id === session.participantId && <span className="ml-1 text-xs text-muted">(you)</span>} {m.role === "leader" && <Badge tone="violet">Leader</Badge>}</span>
+                    <span className="font-mono text-xs text-muted">{m.participant_code}</span>
                   </li>
                 ))}
               </ul>
@@ -80,7 +80,7 @@ export default async function PortalHome() {
         <div className="space-y-6">
           <AnnouncementFeed items={feed.announcements} timeZone={tz} title="Latest announcements" />
           {hackathon?.support_instructions && (
-            <Card><CardTitle>Need help?</CardTitle><p className="whitespace-pre-line text-sm text-slate-300">{hackathon.support_instructions}</p></Card>
+            <Card><CardTitle>Need help?</CardTitle><p className="whitespace-pre-line text-sm text-ink-soft">{hackathon.support_instructions}</p></Card>
           )}
         </div>
       </div>

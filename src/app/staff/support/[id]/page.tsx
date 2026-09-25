@@ -38,7 +38,7 @@ export default async function StaffSupportDetail(props: PageProps<"/staff/suppor
         <Card>
           <CardTitle>Status</CardTitle>
           {options.length === 0 ? (
-            <p className="text-sm text-slate-400">This request is closed.</p>
+            <p className="text-sm text-muted">This request is closed.</p>
           ) : (
             <form action={updateRequestStatus.bind(null, id)} className="flex flex-wrap items-end gap-3">
               <SelectField label="Move to" name="status" className="min-w-48" options={options.map((s) => ({ value: s, label: supportStatusLabel(s) }))} />

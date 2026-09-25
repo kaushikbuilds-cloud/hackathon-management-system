@@ -23,10 +23,10 @@ export default async function PortalSupportPage() {
       ) : (
         <Table caption="Support requests">
           <thead><tr><Th>Subject</Th><Th>Category</Th><Th>Status</Th><Th>Last update</Th></tr></thead>
-          <tbody className="divide-y divide-navy-800">
+          <tbody className="divide-y divide-line-soft">
             {data.map((r) => (
               <tr key={r.id}>
-                <Td><Link href={`/portal/support/${r.id}`} className="font-medium text-blue-300 hover:underline">{r.subject}</Link></Td>
+                <Td><Link href={`/portal/support/${r.id}`} className="font-medium text-brand hover:underline">{r.subject}</Link></Td>
                 <Td>{supportCategoryLabel(r.category)}</Td>
                 <Td><SupportBadge status={r.status} /></Td>
                 <Td>{formatDateTime(r.updated_at, hackathon?.timezone)}</Td>
