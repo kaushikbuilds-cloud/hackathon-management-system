@@ -43,12 +43,24 @@ export async function createTestDatabase() {
 
 export type Role = "super_admin" | "admin" | "official" | "participant";
 
-/** Inserts an auth user; the on_auth_user_created trigger creates the profile. */
-export async function createUser(pool: pg.Pool, role: Role, extra: Record<string, unknown> = {}) {
+/**
+ * Inserts an auth user (the on_auth_user_created trigger creates the profile)
+ * and, for staff, grants the role's default permissions plus `grants` — the
+ * same thing accepting an invitation does in the app.
+ */
+export async function createUser(pool: pg.Pool, role: Role, extra: Record<string, unknown> = {}, grants: string[] = []) {
   const id = randomUUID();
   await pool.query("insert into auth.users (id, email, raw_app_meta_data) values ($1, $2, $3)", [
     id, `${role}-${id.slice(0, 8)}@test.local`, JSON.stringify({ role, ...extra }),
   ]);
+  if (role === "admin" || role === "official") {
+    await pool.query(
+      `insert into staff_permissions (profile_id, permission)
+       select $1, key from permissions where $2::app_role = any (default_for) or key = any ($3::text[])
+       on conflict do nothing`,
+      [id, role, grants],
+    );
+  }
   return id;
 }
 

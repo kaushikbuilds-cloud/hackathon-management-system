@@ -5,21 +5,21 @@ import { AttendanceBadge, PdfBadge, RegistrationBadge } from "@/components/statu
 import {
   Badge, Card, CardTitle, DescriptionList, EmptyState, Flash, LinkButton, PageHeader, SelectField, Table, Td, TextField, Th,
 } from "@/components/ui";
-import { can, isAdmin, requireStaff } from "@/lib/auth";
+import { can, isSuperAdmin, requirePermission } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { resolveCustomQuestions } from "@/lib/domain/registration";
 import { formatDateTime } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { AuditLog, IdCardJob, ParticipantOverview, Profile, Team } from "@/lib/types";
 import {
-  addParticipant, makeLeader, removeParticipant, rotateQr, setQrRevoked, setTeamStatus, toggleAccount, updateParticipant, updateTeam, uploadPhoto,
+  addParticipant, makeLeader, removeParticipant, rotateQr, setParticipantAccountStatus, setQrRevoked, setTeamStatus, updateParticipant, updateTeam, uploadPhoto,
 } from "./actions";
-import { CredentialActions } from "./credential-actions";
+import { ParticipantLinkButton } from "./credential-actions";
 
 export const metadata: Metadata = { title: "Team details" };
 
 export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]">) {
-  const session = await requireStaff();
+  const session = await requirePermission("view_participants", "edit_registrations", "manage_registrations");
   const { id } = await props.params;
   const sp = await props.searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
@@ -27,8 +27,10 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
   const { data: team } = await supabase.from("teams").select("*, registration_forms(custom_questions, max_team_size)").eq("id", id).maybeSingle<Team & { registration_forms: { custom_questions: unknown; max_team_size: number } | null }>();
   if (!team) notFound();
 
-  const admin = isAdmin(session);
   const canEdit = can(session, "edit_registrations");
+  // Approving registrations and managing participant portal access.
+  const canAccounts = can(session, "manage_registrations");
+  const canHistory = canEdit || isSuperAdmin(session);
   const canPdf = can(session, "generate_pdf");
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";
@@ -36,13 +38,13 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
   const [{ data: members }, { data: jobs }, { data: accounts }] = await Promise.all([
     supabase.from("participant_overview").select("*").eq("team_id", id).order("role").order("participant_code").returns<ParticipantOverview[]>(),
     supabase.from("id_card_jobs").select("*").eq("team_id", id).order("created_at", { ascending: false }).limit(10).returns<IdCardJob[]>(),
-    admin
-      ? supabase.from("profiles").select("id, participant_id, is_active, must_change_password, last_sign_in_at").eq("role", "participant").returns<Pick<Profile, "id" | "participant_id" | "is_active" | "must_change_password" | "last_sign_in_at">[]>()
-      : Promise.resolve({ data: [] as Pick<Profile, "id" | "participant_id" | "is_active" | "must_change_password" | "last_sign_in_at">[] }),
+    canAccounts
+      ? createServiceClient().from("profiles").select("id, participant_id, status, last_sign_in_at").eq("role", "participant").returns<Pick<Profile, "id" | "participant_id" | "status" | "last_sign_in_at">[]>()
+      : Promise.resolve({ data: [] as Pick<Profile, "id" | "participant_id" | "status" | "last_sign_in_at">[] }),
   ]);
   const memberIds = (members ?? []).map((m) => m.id);
   const accountByParticipant = new Map((accounts ?? []).filter((a) => a.participant_id && memberIds.includes(a.participant_id)).map((a) => [a.participant_id!, a]));
-  const { data: history } = admin
+  const { data: history } = canHistory
     ? await supabase.from("audit_logs").select("*").in("entity_id", [id, ...memberIds]).order("created_at", { ascending: false }).limit(30).returns<AuditLog[]>()
     : { data: [] as AuditLog[] };
 
@@ -86,7 +88,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
           )}
         </Card>
 
-        {canEdit && (
+        {canAccounts && (
           <Card>
             <CardTitle description="Approve, reject or flag this registration. Changes are audited.">Review</CardTitle>
             <form action={setTeamStatus.bind(null, id)} className="space-y-3">
@@ -107,7 +109,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
           <Table caption={`Members of ${team.name}`}>
             <thead>
               <tr>
-                <Th>Participant ID</Th><Th>Name</Th><Th>Role</Th><Th>Email</Th><Th>Phone</Th><Th>Department</Th><Th>Year</Th><Th>Attendance</Th>{admin && <Th>Account</Th>}
+                <Th>Participant ID</Th><Th>Name</Th><Th>Role</Th><Th>Email</Th><Th>Phone</Th><Th>Department</Th><Th>Year</Th><Th>Attendance</Th>{canAccounts && <Th>Account</Th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-navy-800">
@@ -123,9 +125,9 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                     <Td>{m.department ?? "—"}</Td>
                     <Td>{m.academic_year ?? "—"}</Td>
                     <Td><AttendanceBadge state={m.attendance_state} /></Td>
-                    {admin && (
+                    {canAccounts && (
                       <Td className="whitespace-nowrap">
-                        {!acct ? <Badge>No account</Badge> : !acct.is_active ? <Badge tone="red">Deactivated</Badge> : acct.must_change_password ? <Badge tone="amber">Temp password</Badge> : <Badge tone="green">Active</Badge>}
+                        {!acct ? <Badge>No account</Badge> : acct.status === "active" ? <Badge tone="green">Active</Badge> : <Badge tone={acct.status === "suspended" ? "amber" : "red"}>{acct.status}</Badge>}
                       </Td>
                     )}
                   </tr>
@@ -135,7 +137,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
           </Table>
         )}
 
-        {(canEdit || admin) && list.length > 0 && (
+        {(canEdit || canAccounts) && list.length > 0 && (
           <div className="mt-6 space-y-3">
             <h3 className="text-sm font-semibold text-slate-200">Manage members</h3>
             {list.map((m) => {
@@ -171,7 +173,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                           <form action={rotateQr.bind(null, id, m.id)}>
                             <ConfirmSubmit variant="secondary" size="sm" message="Issue a new QR code? The printed card stops working until it is reprinted.">Issue new QR</ConfirmSubmit>
                           </form>
-                          {admin && m.role !== "leader" && (
+                          {canAccounts && m.role !== "leader" && (
                             <form action={removeParticipant.bind(null, id, m.id)}>
                               <ConfirmSubmit variant="danger" size="sm" message={`Remove ${m.full_name} from the team? This cannot be undone.`}>Remove member</ConfirmSubmit>
                             </form>
@@ -187,16 +189,22 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                           <SubmitButton variant="secondary" size="sm">Upload</SubmitButton>
                         </form>
                       )}
-                      {admin && (
+                      {canAccounts && (
                         <div className="space-y-2 border-t border-navy-800 pt-4">
-                          <p className="text-sm font-semibold text-slate-200">Portal account</p>
-                          <CredentialActions participantId={m.id} hasAccount={Boolean(acct)} />
+                          <p className="text-sm font-semibold text-slate-200">Team Portal access</p>
+                          <ParticipantLinkButton participantId={m.id} hasAccount={Boolean(acct)} eventName={hackathon?.name ?? "Hackathon"} />
                           {acct && (
-                            <form action={toggleAccount.bind(null, id, acct.id, !acct.is_active)}>
-                              <ConfirmSubmit variant={acct.is_active ? "danger" : "success"} size="sm" message={acct.is_active ? "Deactivate this account?" : "Reactivate this account?"}>
-                                {acct.is_active ? "Deactivate account" : "Reactivate account"}
-                              </ConfirmSubmit>
-                            </form>
+                            <div className="flex flex-wrap gap-2">
+                              {acct.status !== "active" && (
+                                <form action={setParticipantAccountStatus.bind(null, id, acct.id, "active")}><ConfirmSubmit variant="success" size="sm" message="Reactivate this account?">Reactivate</ConfirmSubmit></form>
+                              )}
+                              {acct.status === "active" && (
+                                <form action={setParticipantAccountStatus.bind(null, id, acct.id, "suspended")}><ConfirmSubmit variant="secondary" size="sm" message="Suspend this account? They are signed out immediately.">Suspend</ConfirmSubmit></form>
+                              )}
+                              {acct.status !== "deactivated" && (
+                                <form action={setParticipantAccountStatus.bind(null, id, acct.id, "deactivated")}><ConfirmSubmit variant="danger" size="sm" message="Deactivate this account?">Deactivate</ConfirmSubmit></form>
+                              )}
+                            </div>
                           )}
                           {acct?.last_sign_in_at && <p className="text-xs text-slate-400">Last sign-in {formatDateTime(acct.last_sign_in_at, tz)}</p>}
                         </div>
@@ -247,7 +255,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
             </ul>
           )}
         </Card>
-        {admin && (
+        {canHistory && (
           <Card>
             <CardTitle description="Registration edits, status changes and member changes.">Change history</CardTitle>
             {!history?.length ? (

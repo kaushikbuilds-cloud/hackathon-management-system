@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { guardApi, UUID_RE } from "@/lib/api";
 import { BUCKETS, signedUrl } from "@/lib/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { IdCardJob } from "@/lib/types";
 
 /** Redirects to a short-lived signed URL for the team's latest completed PDF. */
@@ -10,7 +10,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/teams/[id]/
   if (guard.response) return guard.response;
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return NextResponse.json({ error: "Invalid team id" }, { status: 400 });
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data: job } = await supabase
     .from("id_card_jobs").select("*").eq("team_id", id).eq("status", "completed")
     .order("created_at", { ascending: false }).limit(1).maybeSingle<IdCardJob>();

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmSubmit, CopyButton, SubmitButton } from "@/components/client";
 import { Badge, Card, CardTitle, Checkbox, EmptyState, Flash, LinkButton, PageHeader, Table, Td, TextArea, TextField, Th, inputClass } from "@/components/ui";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { formAvailability, getHackathon } from "@/lib/data/event";
 import { appUrl } from "@/lib/env";
 import { OPTIONAL_FIELD_LABEL, OPTIONAL_MEMBER_FIELDS, resolveCustomQuestions, resolveFieldConfig } from "@/lib/domain/registration";
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Edit form" };
 type Submission = { id: string; status: string; created_at: string; payload: { team_name?: string; member_count?: number }; errors: { code?: string; message?: string; fields?: string[] } | null; team_id: string | null };
 
 export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">) {
-  await requireAdmin();
+  await requirePermission("manage_registrations");
   const { id } = await props.params;
   const sp = await props.searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();

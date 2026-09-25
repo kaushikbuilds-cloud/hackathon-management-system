@@ -27,9 +27,8 @@ describe.skipIf(!enabled)("authorization & RLS (database)", () => {
     leaderB = await q("banana1@t.dev");
     ids.superAdmin = await createUser(pool, "super_admin");
     ids.admin = await createUser(pool, "admin");
-    ids.official = await createUser(pool, "official");
-    ids.officialPdf = await createUser(pool, "official");
-    await pool.query("update official_permissions set can_generate_pdf = true, can_edit_registrations = true, can_correct_attendance = true where profile_id = $1", [ids.officialPdf]);
+    ids.official = await createUser(pool, "official", {}, ["manual_checkin"]);
+    ids.officialPdf = await createUser(pool, "official", {}, ["manual_checkin", "generate_pdf", "edit_registrations", "correct_attendance"]);
     ids.leaderA = await createUser(pool, "participant", { participant_id: leaderA });
     ids.memberA = await createUser(pool, "participant", { participant_id: memberA });
     ids.leaderB = await createUser(pool, "participant", { participant_id: leaderB });
@@ -52,15 +51,23 @@ describe.skipIf(!enabled)("authorization & RLS (database)", () => {
   });
 
   describe("team member / leader", () => {
-    it("sees only their own team and teammates", async () => {
+    it("members see only their own team, own record, and a contact-free roster", async () => {
       await as(pool, ids.memberA, async (c) => {
         const teams = await c.query("select id from teams");
         expect(teams.rows.map((r) => r.id)).toEqual([teamA]);
-        const people = await c.query("select team_id from participants");
+        const people = await c.query("select id from participants");
+        expect(people.rows.map((r) => r.id)).toEqual([memberA]); // not the leader's private row
+        const roster = await c.query("select * from my_team_roster()");
+        expect(roster.rowCount).toBe(2);
+        expect(Object.keys(roster.rows[0])).not.toContain("email");
+        expect((await c.query("select * from participants where team_id = $1", [teamB])).rowCount).toBe(0);
+      });
+    });
+    it("the Team Leader sees every member of their own team only", async () => {
+      await as(pool, ids.leaderA, async (c) => {
+        const people = await c.query("select team_id, email from participants");
         expect(people.rowCount).toBe(2);
         expect(people.rows.every((r) => r.team_id === teamA)).toBe(true);
-        expect((await c.query("select * from team_overview")).rowCount).toBe(1);
-        expect((await c.query("select * from participants where team_id = $1", [teamB])).rowCount).toBe(0);
       });
     });
     it("cannot modify registrations, attendance or other profiles", async () => {

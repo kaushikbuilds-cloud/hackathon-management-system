@@ -59,6 +59,11 @@ export function EventForm({ initial: h, logoUrl, organizerLogoUrl }: { initial: 
           <TextArea label="Support instructions" name="support_instructions" defaultValue={h.support_instructions ?? ""} maxLength={2000} className="md:col-span-2" />
         </div>
       </Card>
+      <Card>
+        <CardTitle>Team Portal</CardTitle>
+        <Checkbox name="portal_id_cards" defaultChecked={h.portal_id_cards} label="Let participants download ID cards in the Team Portal"
+          hint="Each participant gets their own card; the Team Leader can also download the whole team's PDF. Turn on once cards are final." />
+      </Card>
       <div className="flex justify-end"><SubmitButton pendingText="Saving…">Save event settings</SubmitButton></div>
     </form>
   );

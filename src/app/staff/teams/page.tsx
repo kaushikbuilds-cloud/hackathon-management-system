@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AutoSubmitSelect } from "@/components/client";
 import { AttendanceBadge, PdfBadge, RegistrationBadge, TeamAttendance } from "@/components/status";
 import { Badge, Card, EmptyState, Flash, LinkButton, PageHeader, Pagination, Table, Td, Th, buttonClass, inputClass } from "@/components/ui";
-import { can, requireStaff } from "@/lib/auth";
+import { can, requirePermission } from "@/lib/auth";
 import { hrefWith, param, type SearchParams } from "@/lib/data/query";
 import { pickEnum, parsePage, sanitizeSearch } from "@/lib/domain/search";
 import { createClient } from "@/lib/supabase/server";
@@ -15,7 +15,7 @@ const PAGE_SIZE = 20;
 const SORTS = ["name", "team_code", "created_at", "member_count", "college", "leader_name"] as const;
 
 export default async function TeamsPage(props: PageProps<"/staff/teams">) {
-  const session = await requireStaff();
+  const session = await requirePermission("view_participants", "edit_registrations", "manage_registrations");
   const sp = (await props.searchParams) as SearchParams;
   const supabase = await createClient();
 

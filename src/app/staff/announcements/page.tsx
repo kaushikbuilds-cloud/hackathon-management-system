@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AnnouncementFeed, ScheduleList } from "@/components/announcements";
 import { ConfirmSubmit, SubmitButton } from "@/components/client";
 import { Badge, Card, CardTitle, Checkbox, EmptyState, Flash, PageHeader, SelectField, TextArea, TextField } from "@/components/ui";
-import { isAdmin, requireStaff } from "@/lib/auth";
+import { can, requireStaff } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { formatDateTime, requestTime, toLocalInput } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -26,7 +26,7 @@ export default async function AnnouncementsPage(props: PageProps<"/staff/announc
     supabase.from("event_schedule").select("*").order("starts_at").returns<ScheduleItem[]>(),
   ]);
 
-  if (!isAdmin(session)) {
+  if (!can(session, "publish_announcements")) {
     return (
       <>
         <PageHeader title="Announcements & Schedule" />

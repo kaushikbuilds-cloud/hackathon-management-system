@@ -3,34 +3,27 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type Counted = { label: string; value: number };
 
-function tally<T>(rows: T[], key: (r: T) => string | null | undefined): Counted[] {
-  const map = new Map<string, number>();
-  for (const r of rows) {
-    const k = key(r)?.trim() || "Unspecified";
-    map.set(k, (map.get(k) ?? 0) + 1);
-  }
-  return [...map.entries()].map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
-}
+type RawStats = {
+  teams: number; participants: number; present: number; pending_approvals: number; staff: number;
+  pending_invitations: number; open_support: number;
+  registration: Record<string, number>; pdf: Record<string, number>; support: Record<string, number>;
+  teams_by_college: Record<string, number>; participants_by_department: Record<string, number>;
+  team_attendance: Record<string, number>; recent_activity: { action: string; at: string }[];
+};
 
-/** Aggregates for the admin dashboard (RLS applies; intended for admins). */
+const toCounted = (m: Record<string, number>): Counted[] =>
+  Object.entries(m ?? {}).map(([label, value]) => ({ label, value: Number(value) })).sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+
+/** Aggregates only (no personal data) via the `dashboard_stats` RPC; requires view_reports. */
 export async function loadDashboardStats(supabase: SupabaseClient) {
-  const [{ data: teams }, { data: people }, { data: support }] = await Promise.all([
-    supabase.from("team_overview").select("status, pdf_status, college, attendance_state, member_count, present_count").returns<{ status: string; pdf_status: string; college: string | null; attendance_state: string; member_count: number; present_count: number }[]>(),
-    supabase.from("participant_overview").select("department, college, attendance_state, role").returns<{ department: string | null; college: string | null; attendance_state: string; role: string }[]>(),
-    supabase.from("support_requests").select("status").returns<{ status: string }[]>(),
-  ]);
-  const t = teams ?? [];
-  const p = people ?? [];
+  const { data, error } = await supabase.rpc("dashboard_stats");
+  if (error || !data) throw new Error(error?.message ?? "Statistics unavailable");
+  const s = data as RawStats;
   return {
-    teams: t.length,
-    participants: p.length,
-    present: p.filter((x) => x.attendance_state === "present").length,
-    registration: tally(t, (x) => x.status),
-    pdf: tally(t, (x) => x.pdf_status),
-    teamAttendance: tally(t, (x) => x.attendance_state),
-    teamsByCollege: tally(t, (x) => x.college),
-    participantsByDepartment: tally(p, (x) => x.department),
-    support: tally(support ?? [], (x) => x.status),
-    openSupport: (support ?? []).filter((x) => !["resolved", "closed"].includes(x.status)).length,
+    teams: s.teams, participants: s.participants, present: s.present, pendingApprovals: s.pending_approvals,
+    staff: s.staff, pendingInvitations: s.pending_invitations, openSupport: s.open_support,
+    registration: toCounted(s.registration), pdf: toCounted(s.pdf), support: toCounted(s.support),
+    teamsByCollege: toCounted(s.teams_by_college), participantsByDepartment: toCounted(s.participants_by_department),
+    teamAttendance: toCounted(s.team_attendance), recentActivity: s.recent_activity ?? [],
   };
 }

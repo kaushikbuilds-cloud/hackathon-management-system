@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { dbErrorMessage, str } from "@/lib/actions";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { fromLocalInput, isValidTimeZone } from "@/lib/format";
 import { BUCKETS, uploadObject, validateUpload } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
@@ -33,7 +33,7 @@ const schema = z
   .refine((d) => d.max_team_size >= d.min_team_size, { path: ["max_team_size"], message: "Must be ≥ minimum size" });
 
 export async function saveEvent(_prev: EventFormState, formData: FormData): Promise<EventFormState> {
-  await requireAdmin();
+  await requirePermission("manage_event");
   const raw = Object.fromEntries(
     ["name", "tagline", "description", "organizer_name", "venue", "timezone", "contact_email", "contact_phone", "support_instructions", "primary_color", "accent_color", "min_team_size", "max_team_size", "id_year"].map((k) => [k, str(formData, k, 5000)]),
   );
@@ -65,6 +65,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
     ...d,
     tagline: d.tagline || null, description: d.description || null, organizer_name: d.organizer_name || null, venue: d.venue || null,
     contact_email: d.contact_email || null, contact_phone: d.contact_phone || null, support_instructions: d.support_instructions || null,
+    portal_id_cards: formData.get("portal_id_cards") === "on",
     ...dates,
   };
 

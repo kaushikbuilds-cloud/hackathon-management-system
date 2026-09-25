@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AutoSubmitSelect } from "@/components/client";
 import { AttendanceBadge } from "@/components/status";
 import { Badge, Card, EmptyState, LinkButton, PageHeader, Pagination, Table, Td, Th, buttonClass, inputClass } from "@/components/ui";
-import { requireStaff } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { hrefWith, param, type SearchParams } from "@/lib/data/query";
 import { parsePage, pickEnum, sanitizeSearch } from "@/lib/domain/search";
 import { createClient } from "@/lib/supabase/server";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Participants" };
 const PAGE_SIZE = 25;
 
 export default async function ParticipantsPage(props: PageProps<"/staff/participants">) {
-  await requireStaff();
+  await requirePermission("view_participants");
   const sp = (await props.searchParams) as SearchParams;
   const q = sanitizeSearch(param(sp, "q"));
   const attendance = pickEnum(param(sp, "attendance"), ["not_checked_in", "present", "corrected"] as const);

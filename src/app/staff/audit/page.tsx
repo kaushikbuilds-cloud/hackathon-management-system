@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Card, EmptyState, LinkButton, PageHeader, Pagination, Table, Td, Th, buttonClass, inputClass } from "@/components/ui";
-import { requireAdmin } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { hrefWith, param, type SearchParams } from "@/lib/data/query";
 import { parsePage, sanitizeSearch } from "@/lib/domain/search";
@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Audit Logs" };
 const PAGE_SIZE = 50;
 
 export default async function AuditPage(props: PageProps<"/staff/audit">) {
-  await requireAdmin();
+  await requireSuperAdmin();
   const sp = (await props.searchParams) as SearchParams;
   const action = sanitizeSearch(param(sp, "action"), 60);
   const page = parsePage(sp.page);

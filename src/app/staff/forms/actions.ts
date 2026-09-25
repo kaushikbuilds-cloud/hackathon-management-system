@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { UUID, bool, dbErrorMessage, flash, str } from "@/lib/actions";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { OPTIONAL_MEMBER_FIELDS, customQuestionSchema, type CustomQuestion, type FieldConfig } from "@/lib/domain/registration";
 import { fromLocalInput } from "@/lib/format";
@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
 const slugSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Slug may contain lowercase letters, numbers and single hyphens").max(60);
 
 export async function createForm(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("manage_registrations");
   const hackathon = await getHackathon();
   if (!hackathon) flash("/staff/forms", { error: "Configure the event first." });
   const title = str(formData, "title", 150);
@@ -55,7 +55,7 @@ function parseQuestions(formData: FormData): { questions: CustomQuestion[]; erro
 
 export async function updateForm(formId: string, formData: FormData) {
   if (!UUID.test(formId)) throw new Error("Invalid id");
-  await requireAdmin();
+  await requirePermission("manage_registrations");
   const back = `/staff/forms/${formId}`;
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";
@@ -95,7 +95,7 @@ export async function updateForm(formId: string, formData: FormData) {
 
 export async function setFormStatus(formId: string, status: "draft" | "published" | "closed") {
   if (!UUID.test(formId)) throw new Error("Invalid id");
-  await requireAdmin();
+  await requirePermission("manage_registrations");
   const supabase = await createClient();
   const { error } = await supabase.from("registration_forms").update({ status }).eq("id", formId);
   const back = `/staff/forms/${formId}`;

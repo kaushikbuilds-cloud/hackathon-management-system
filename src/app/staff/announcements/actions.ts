@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { UUID, bool, dbErrorMessage, flash, str } from "@/lib/actions";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { fromLocalInput } from "@/lib/format";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -27,7 +27,7 @@ async function notifyTeams(actorId: string, title: string) {
 }
 
 export async function saveAnnouncement(formData: FormData) {
-  const session = await requireAdmin();
+  const session = await requirePermission("publish_announcements");
   const id = str(formData, "id", 40);
   if (id && !UUID.test(id)) flash(PATH, { error: "Invalid announcement." });
   const parsed = annSchema.safeParse({ title: str(formData, "title", 200), body: str(formData, "body", 10000), audience: str(formData, "audience") || "all", status: str(formData, "status") || "draft" });
@@ -48,7 +48,7 @@ export async function saveAnnouncement(formData: FormData) {
 }
 
 export async function deleteAnnouncement(id: string) {
-  await requireAdmin();
+  await requirePermission("publish_announcements");
   if (!UUID.test(id)) flash(PATH, { error: "Invalid announcement." });
   const { error } = await (await createClient()).from("announcements").delete().eq("id", id);
   if (error) flash(PATH, { error: dbErrorMessage(error) });
@@ -64,7 +64,7 @@ const scheduleSchema = z.object({
 });
 
 export async function saveScheduleItem(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("publish_announcements");
   const id = str(formData, "id", 40);
   if (id && !UUID.test(id)) flash(PATH, { error: "Invalid schedule item." });
   const parsed = scheduleSchema.safeParse({ title: str(formData, "title", 200), description: str(formData, "description", 2000), venue: str(formData, "venue", 200), visibility: str(formData, "visibility") || "public" });
@@ -84,7 +84,7 @@ export async function saveScheduleItem(formData: FormData) {
 }
 
 export async function deleteScheduleItem(id: string) {
-  await requireAdmin();
+  await requirePermission("publish_announcements");
   if (!UUID.test(id)) flash(PATH, { error: "Invalid schedule item." });
   const { error } = await (await createClient()).from("event_schedule").delete().eq("id", id);
   if (error) flash(PATH, { error: dbErrorMessage(error) });

@@ -1,10 +1,10 @@
 import { SubmitButton } from "@/components/client";
 import { Card, Flash, PageHeader, TextField } from "@/components/ui";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { createForm } from "../actions";
 
 export default async function NewFormPage(props: PageProps<"/staff/forms/new">) {
-  await requireAdmin();
+  await requirePermission("manage_registrations");
   const sp = await props.searchParams;
   return (
     <>

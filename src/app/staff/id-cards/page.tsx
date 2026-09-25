@@ -3,10 +3,10 @@ import Link from "next/link";
 import { SubmitButton } from "@/components/client";
 import { PdfBadge } from "@/components/status";
 import { Alert, Badge, Card, CardTitle, Checkbox, EmptyState, Flash, PageHeader, SelectField, Stat, Table, Td, TextField, Th, buttonClass } from "@/components/ui";
-import { isAdmin, requirePermission } from "@/lib/auth";
+import { can, requirePermission } from "@/lib/auth";
 import { CARD_SIZES, resolveTemplateConfig } from "@/lib/domain/template";
 import { formatDateTime } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { IdCardTemplate, TeamOverview } from "@/lib/types";
 import { publishTemplate } from "./actions";
 import { BulkGenerate } from "./bulk-generate";
@@ -14,9 +14,11 @@ import { BulkGenerate } from "./bulk-generate";
 export const metadata: Metadata = { title: "ID Card Generation" };
 
 export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
-  const session = await requirePermission("generate_pdf");
+  const session = await requirePermission("generate_pdf", "manage_event");
   const sp = await props.searchParams;
-  const supabase = await createClient();
+  // Read with the service client after the permission check: Officials holding
+  // generate_pdf may not read participant rows directly.
+  const supabase = createServiceClient();
   const [{ data: templates }, { data: teams }] = await Promise.all([
     supabase.from("id_card_templates").select("*").order("version", { ascending: false }).returns<IdCardTemplate[]>(),
     supabase.from("team_overview").select("id, name, team_code, pdf_status, member_count, status").order("team_code").returns<Pick<TeamOverview, "id" | "name" | "team_code" | "pdf_status" | "member_count" | "status">[]>(),
@@ -42,7 +44,7 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
       <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
         <Card>
           <CardTitle description="Teams whose PDF is missing, outdated or failed (rejected teams excluded).">Needs generation</CardTitle>
-          <BulkGenerate teams={pending.map((t) => ({ id: t.id, name: t.name }))} />
+          {can(session, "generate_pdf") && <BulkGenerate teams={pending.map((t) => ({ id: t.id, name: t.name }))} />}
           {pending.length === 0 ? (
             <EmptyState title="All team PDFs are up to date" />
           ) : (
@@ -68,8 +70,8 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
         <div className="space-y-6">
           <Card>
             <CardTitle description={active ? `Active: v${active.version} — ${active.name}` : "No active template"}>Card template</CardTitle>
-            {!isAdmin(session) ? (
-              <Alert tone="blue">Only administrators can change the template.</Alert>
+            {!can(session, "manage_event") ? (
+              <Alert tone="blue">Changing the template requires the Event settings permission.</Alert>
             ) : (
               <form action={publishTemplate} className="space-y-4">
                 <TextField label="Version name" name="name" defaultValue={active?.name ?? "Default portrait card"} maxLength={100} />

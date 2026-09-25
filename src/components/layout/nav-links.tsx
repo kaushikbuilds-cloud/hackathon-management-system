@@ -7,10 +7,13 @@ import type { NavItem } from "./nav";
 
 export function NavLinks({ items, root }: { items: NavItem[]; root: string }) {
   const pathname = usePathname();
+  // Highlight only the most specific matching item (e.g. /staff/attendance/manual, not /staff/attendance too).
+  const matches = items.filter((i) => (i.href === root ? pathname === root : pathname === i.href || pathname.startsWith(`${i.href}/`)));
+  const activeHref = matches.sort((a, b) => b.href.length - a.href.length)[0]?.href;
   return (
     <ul className="space-y-0.5">
       {items.map((item) => {
-        const active = item.href === root ? pathname === root : pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const active = item.href === activeHref;
         return (
           <li key={item.href}>
             <Link

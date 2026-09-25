@@ -23,6 +23,7 @@ export type Hackathon = {
   registration_closes_at: string | null;
   min_team_size: number;
   max_team_size: number;
+  portal_id_cards: boolean;
 };
 
 export type Profile = {
@@ -32,21 +33,38 @@ export type Profile = {
   role: AppRole;
   participant_id: string | null;
   is_active: boolean;
+  status: "active" | "suspended" | "deactivated";
+  phone: string | null;
+  job_title: string | null;
   must_change_password: boolean;
   temp_password_expires_at: string | null;
   last_sign_in_at: string | null;
   created_at: string;
 };
 
-export type OfficialPermissions = {
-  profile_id: string;
-  can_edit_registrations: boolean;
-  can_generate_pdf: boolean;
-  can_correct_attendance: boolean;
-  can_manage_all_support: boolean;
+export type { Permission } from "@/lib/permissions";
+
+export type Invitation = {
+  id: string;
+  purpose: "activate" | "reset";
+  role: "admin" | "official" | "participant";
+  email: string;
+  full_name: string | null;
+  phone: string | null;
+  job_title: string | null;
+  participant_id: string | null;
+  profile_id: string | null;
+  permissions: string[];
+  duty: string | null;
+  station: string | null;
+  expires_at: string;
+  accepted_at: string | null;
+  revoked_at: string | null;
+  invited_by: string | null;
+  created_at: string;
 };
 
-export type Permission = "edit_registrations" | "generate_pdf" | "correct_attendance" | "manage_all_support";
+export type OfficialAssignment = { profile_id: string; duty: string | null; station: string | null };
 
 export type RegistrationForm = {
   id: string;

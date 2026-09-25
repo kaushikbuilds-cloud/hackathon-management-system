@@ -2,13 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { bool, dbErrorMessage, flash, str } from "@/lib/actions";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { templateConfigSchema } from "@/lib/domain/template";
 import { createClient } from "@/lib/supabase/server";
 
 /** Publishes a new immutable template version; generated team PDFs become outdated. */
 export async function publishTemplate(formData: FormData) {
-  await requireAdmin();
+  await requirePermission("manage_event");
   const parsed = templateConfigSchema.safeParse({
     cardSize: str(formData, "cardSize", 20),
     pageLayout: str(formData, "pageLayout", 20),

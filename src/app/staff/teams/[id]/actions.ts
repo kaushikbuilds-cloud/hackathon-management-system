@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { issueParticipantTempPassword, sendParticipantActivation, setAccountActive } from "@/lib/accounts";
+import { setAccountStatus } from "@/lib/accounts";
 import { UUID, dbErrorMessage, flash, str } from "@/lib/actions";
-import { requireAdmin, requirePermission } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
+import { createInvitation } from "@/lib/invitations";
 import { cleanTeamName } from "@/lib/domain/normalize";
 import { BUCKETS, uploadObject, validateUpload } from "@/lib/storage";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -35,7 +36,7 @@ export async function updateTeam(teamId: string, formData: FormData) {
 
 export async function setTeamStatus(teamId: string, formData: FormData) {
   assertId(teamId);
-  await requirePermission("edit_registrations");
+  await requirePermission("manage_registrations");
   const status = z.enum(["pending", "approved", "rejected", "flagged"]).safeParse(formData.get("status"));
   if (!status.success) flash(teamPath(teamId), { error: "Invalid status." });
   const reason = str(formData, "reason", 500);
@@ -122,12 +123,12 @@ export async function addParticipant(teamId: string, formData: FormData) {
 export async function removeParticipant(teamId: string, participantId: string) {
   assertId(teamId);
   assertId(participantId);
-  const session = await requireAdmin();
+  const session = await requirePermission("manage_registrations");
   const supabase = await createClient();
   const { data: p } = await supabase.from("participants").select("*").eq("id", participantId).eq("team_id", teamId).single<Participant>();
   if (!p) flash(teamPath(teamId), { error: "Participant not found." });
   if (p.role === "leader") flash(teamPath(teamId), { error: "Assign another team leader before removing this member." });
-  if (p.user_id) await setAccountActive(session, p.user_id, false);
+  if (p.user_id) await setAccountStatus(session, p.user_id, "deactivated");
   const { error } = await supabase.from("participants").delete().eq("id", participantId);
   if (error) flash(teamPath(teamId), { error: dbErrorMessage(error) });
   revalidatePath("/staff/teams");
@@ -180,34 +181,32 @@ export async function uploadPhoto(teamId: string, participantId: string, formDat
   flash(teamPath(teamId), { notice: "Photo uploaded." });
 }
 
-export type CredentialState = { error?: string; message?: string; tempPassword?: string; forName?: string };
+export type LinkState = { error?: string; link?: string; email?: string; name?: string; expiresAt?: string; purpose?: string };
 
-export async function issueTempPassword(participantId: string, _prev: CredentialState, _formData: FormData): Promise<CredentialState> {
+/**
+ * Creates a single-use activation link for a participant (or a password reset
+ * link if they already have an account). Managing participant access is part
+ * of registration management.
+ */
+export async function createParticipantLink(participantId: string, _prev: LinkState, _formData: FormData): Promise<LinkState> {
   assertId(participantId);
-  const session = await requireAdmin();
-  const supabase = await createClient();
-  const { data: p } = await supabase.from("participants").select("id, email, full_name, user_id").eq("id", participantId).single();
+  const session = await requirePermission("manage_registrations");
+  const service = createServiceClient(session.userId);
+  const { data: p } = await service.from("participants").select("id, email, full_name, user_id").eq("id", participantId).single<Pick<Participant, "id" | "email" | "full_name" | "user_id">>();
   if (!p) return { error: "Participant not found." };
-  const res = await issueParticipantTempPassword(session, p);
-  revalidatePath(`/staff/teams`);
-  return res.ok ? { message: res.message, tempPassword: res.tempPassword, forName: p.full_name } : { error: res.error };
+  const invitation = await createInvitation(session, p.user_id
+    ? { role: "participant", purpose: "reset", email: p.email, profileId: p.user_id, participantId: p.id, fullName: p.full_name }
+    : { role: "participant", email: p.email, participantId: p.id, fullName: p.full_name });
+  revalidatePath("/staff/teams");
+  return { link: invitation.url, email: p.email, name: p.full_name, expiresAt: invitation.expiresAt, purpose: invitation.purpose === "reset" ? "password reset" : "account activation" };
 }
 
-export async function sendActivation(participantId: string, _prev: CredentialState, _formData: FormData): Promise<CredentialState> {
-  assertId(participantId);
-  const session = await requireAdmin();
-  const supabase = await createClient();
-  const { data: p } = await supabase.from("participants").select("id, email, full_name, user_id").eq("id", participantId).single();
-  if (!p) return { error: "Participant not found." };
-  const res = await sendParticipantActivation(session, p);
-  return res.ok ? { message: res.message } : { error: res.error };
-}
-
-export async function toggleAccount(teamId: string, userId: string, active: boolean) {
+export async function setParticipantAccountStatus(teamId: string, userId: string, status: "active" | "suspended" | "deactivated") {
   assertId(teamId);
   assertId(userId);
-  const session = await requireAdmin();
-  const res = await setAccountActive(session, userId, active);
+  const session = await requirePermission("manage_registrations");
+  const { data: target } = await createServiceClient().from("profiles").select("role").eq("id", userId).maybeSingle<{ role: string }>();
+  if (target?.role !== "participant") flash(teamPath(teamId), { error: "Account not found." });
+  const res = await setAccountStatus(session, userId, status);
   flash(teamPath(teamId), res.ok ? { notice: res.message } : { error: res.error });
 }
-

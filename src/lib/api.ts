@@ -1,16 +1,19 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { can, getSession, isAdmin, isStaff, type Session } from "@/lib/auth";
+import { canAny, getSession, isStaff, isSuperAdmin, type Session } from "@/lib/auth";
 import type { Permission } from "@/lib/types";
 
 type Guard = { session: Session; response?: never } | { session?: never; response: NextResponse };
 
 /** Auth guard for route handlers: returns a JSON error response instead of redirecting. */
-export async function guardApi(requirement: "staff" | "admin" | Permission): Promise<Guard> {
+export async function guardApi(requirement: "staff" | "super_admin" | Permission | Permission[]): Promise<Guard> {
   const session = await getSession();
   if (!session) return { response: NextResponse.json({ error: "Not signed in" }, { status: 401 }) };
   if (session.profile.must_change_password) return { response: NextResponse.json({ error: "Password change required" }, { status: 403 }) };
-  const ok = requirement === "staff" ? isStaff(session) : requirement === "admin" ? isAdmin(session) : can(session, requirement);
+  const ok =
+    requirement === "staff" ? isStaff(session)
+    : requirement === "super_admin" ? isSuperAdmin(session)
+    : canAny(session, Array.isArray(requirement) ? requirement : [requirement]);
   if (!ok) return { response: NextResponse.json({ error: "Forbidden" }, { status: 403 }) };
   return { session };
 }

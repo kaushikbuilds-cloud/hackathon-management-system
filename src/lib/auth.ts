@@ -2,16 +2,18 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import type { OfficialPermissions, Permission, Profile } from "@/lib/types";
+import { isPermission, type Permission } from "@/lib/permissions";
+import type { Profile } from "@/lib/types";
 
 export type Session = {
   userId: string;
   email: string | null;
   profile: Profile;
-  permissions: OfficialPermissions | null;
+  /** Explicit grants (empty for participants). The Super Admin implicitly holds all. */
+  permissions: ReadonlySet<Permission>;
 };
 
-/** Current user + profile, memoised per request. Returns null when signed out or deactivated. */
+/** Current user + profile + grants, memoised per request. Null when signed out or not active. */
 export const getSession = cache(async (): Promise<Session | null> => {
   const supabase = await createClient();
   const {
@@ -19,15 +21,20 @@ export const getSession = cache(async (): Promise<Session | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle<Profile>();
-  if (!profile || !profile.is_active) return null;
-  let permissions: OfficialPermissions | null = null;
-  if (profile.role === "official") {
-    const { data } = await supabase.from("official_permissions").select("*").eq("profile_id", user.id).maybeSingle<OfficialPermissions>();
-    permissions = data ?? null;
+  if (!profile || profile.status !== "active") return null;
+  let permissions = new Set<Permission>();
+  if (profile.role === "admin" || profile.role === "official") {
+    const { data } = await supabase.from("staff_permissions").select("permission").eq("profile_id", user.id).returns<{ permission: string }[]>();
+    permissions = new Set((data ?? []).map((r) => r.permission).filter(isPermission));
   }
   return { userId: user.id, email: user.email ?? null, profile, permissions };
 });
 
+export function isSuperAdmin(session: Session | null): boolean {
+  return session?.profile.role === "super_admin";
+}
+
+/** Admin or Super Admin (portal identity, not a permission check). */
 export function isAdmin(session: Session | null): boolean {
   return session?.profile.role === "admin" || session?.profile.role === "super_admin";
 }
@@ -36,24 +43,23 @@ export function isStaff(session: Session | null): boolean {
   return isAdmin(session) || session?.profile.role === "official";
 }
 
-/** Mirrors `public.has_permission`: admins hold every permission. */
+/** Mirrors `public.has_permission`. */
 export function can(session: Session | null, permission: Permission): boolean {
   if (!session) return false;
-  if (isAdmin(session)) return true;
-  if (session.profile.role !== "official" || !session.permissions) return false;
-  const p = session.permissions;
-  return {
-    edit_registrations: p.can_edit_registrations,
-    generate_pdf: p.can_generate_pdf,
-    correct_attendance: p.can_correct_attendance,
-    manage_all_support: p.can_manage_all_support,
-  }[permission];
+  if (isSuperAdmin(session)) return true;
+  return isStaff(session) && session.permissions.has(permission);
+}
+
+export function canAny(session: Session | null, permissions: Permission[]): boolean {
+  return permissions.some((p) => can(session, p));
 }
 
 export function homePathFor(role: Profile["role"]): string {
-  if (role === "participant") return "/portal";
-  if (role === "official") return "/staff/attendance";
-  return "/staff";
+  return role === "participant" ? "/portal" : "/staff";
+}
+
+export function portalName(session: Session): string {
+  return { super_admin: "Super Admin Portal", admin: "Admin Portal", official: "Official Portal", participant: "Team Portal" }[session.profile.role];
 }
 
 type RequireOptions = { allowPasswordChange?: boolean };
@@ -71,21 +77,16 @@ export async function requireStaff(): Promise<Session> {
   return session;
 }
 
-export async function requireAdmin(): Promise<Session> {
-  const session = await requireSession();
-  if (!isAdmin(session)) redirect(isStaff(session) ? "/staff/forbidden" : homePathFor(session.profile.role));
-  return session;
-}
-
 export async function requireSuperAdmin(): Promise<Session> {
-  const session = await requireSession();
-  if (session.profile.role !== "super_admin") redirect("/staff/forbidden");
+  const session = await requireStaff();
+  if (!isSuperAdmin(session)) redirect("/staff/forbidden");
   return session;
 }
 
-export async function requirePermission(permission: Permission): Promise<Session> {
+/** Requires at least one of the given permissions. */
+export async function requirePermission(...permissions: Permission[]): Promise<Session> {
   const session = await requireStaff();
-  if (!can(session, permission)) redirect("/staff/forbidden");
+  if (!canAny(session, permissions)) redirect("/staff/forbidden");
   return session;
 }
 

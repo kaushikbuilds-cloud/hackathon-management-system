@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { EmptyState, PageHeader } from "@/components/ui";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { brandingUrls, getHackathon } from "@/lib/data/event";
 import { toLocalInput } from "@/lib/format";
 import { EventForm } from "./event-form";
@@ -8,7 +8,7 @@ import { EventForm } from "./event-form";
 export const metadata: Metadata = { title: "Event Setup" };
 
 export default async function EventSetupPage() {
-  await requireAdmin();
+  await requirePermission("manage_event");
   const h = await getHackathon();
   if (!h) return <EmptyState title="No event configured">Apply the migrations and seed (or insert a hackathon row) first — see README.</EmptyState>;
   const tz = h.timezone;

@@ -161,7 +161,10 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
           {!result && !busy && <p className="text-sm text-slate-400">Scan a participant&apos;s ID card QR code.</p>}
           {result && ui && (
             <div className="space-y-3">
-              <Alert tone={ui.tone} title={ui.title} />
+              <Alert tone={ui.tone} title={ui.title}>
+                {(result.state === "invalid" || result.state === "revoked") &&
+                  "Do not check this person in. Send them to the help desk with a photo ID so the organisers can verify their registration."}
+              </Alert>
               {result.participant && result.team && (
                 <div className="rounded-xl border border-navy-700 bg-navy-850 p-4">
                   <p className="text-lg font-bold text-white">{result.participant.full_name}</p>

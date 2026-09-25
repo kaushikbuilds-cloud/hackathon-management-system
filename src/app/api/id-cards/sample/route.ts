@@ -5,16 +5,16 @@ import { resolveTemplateConfig } from "@/lib/domain/template";
 import { appUrl } from "@/lib/env";
 import { generateTeamIdCardsPdf } from "@/lib/pdf/id-cards";
 import { BUCKETS, downloadObject } from "@/lib/storage";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { IdCardTemplate } from "@/lib/types";
 
 export const runtime = "nodejs";
 
 /** Renders the active template with clearly fake sample people (for template review only). */
 export async function GET() {
-  const guard = await guardApi("generate_pdf");
+  const guard = await guardApi(["generate_pdf", "manage_event"]);
   if (guard.response) return guard.response;
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const [hackathon, { data: template }] = await Promise.all([
     getHackathon(),
     supabase.from("id_card_templates").select("*").eq("is_active", true).maybeSingle<IdCardTemplate>(),

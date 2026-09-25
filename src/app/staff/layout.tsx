@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/layout/app-shell";
 import { staffNav } from "@/components/layout/nav";
-import { isAdmin, requireStaff } from "@/lib/auth";
+import { portalName, requireStaff } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { ROLE_LABEL } from "@/lib/domain/labels";
 import { createClient } from "@/lib/supabase/server";
@@ -19,7 +19,7 @@ export default async function StaffLayout({ children }: LayoutProps<"/staff">) {
     .is("read_at", null);
   return (
     <AppShell
-      portalName={isAdmin(session) ? "Admin Portal" : "Official Portal"}
+      portalName={portalName(session)}
       eventName={hackathon?.name ?? "Hackathon"}
       nav={staffNav(session)}
       root="/staff"

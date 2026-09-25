@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, EmptyState, Flash, LinkButton, PageHeader, Table, Td, Th } from "@/components/ui";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { appUrl } from "@/lib/env";
 import { formatDateTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -10,7 +10,7 @@ import type { RegistrationForm } from "@/lib/types";
 export const metadata: Metadata = { title: "Form Builder" };
 
 export default async function FormsPage(props: PageProps<"/staff/forms">) {
-  await requireAdmin();
+  await requirePermission("manage_registrations");
   const sp = await props.searchParams;
   const supabase = await createClient();
   const [{ data: forms }, { data: subs }] = await Promise.all([

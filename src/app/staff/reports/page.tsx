@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { BarList } from "@/components/bar-list";
 import { Card, CardTitle, PageHeader, buttonClass } from "@/components/ui";
-import { requireAdmin } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { loadDashboardStats } from "@/lib/data/stats";
 import { createClient } from "@/lib/supabase/server";
 
@@ -18,7 +18,7 @@ const EXPORTS = [
 ];
 
 export default async function ReportsPage() {
-  await requireAdmin();
+  await requirePermission("view_reports");
   const stats = await loadDashboardStats(await createClient());
   return (
     <>

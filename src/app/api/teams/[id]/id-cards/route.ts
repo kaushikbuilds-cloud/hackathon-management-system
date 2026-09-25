@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { guardApi, UUID_RE } from "@/lib/api";
 import { generateAndStoreTeamPdf, loadTeamCardContext } from "@/lib/id-cards";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -13,7 +13,7 @@ export async function POST(_request: Request, ctx: RouteContext<"/api/teams/[id]
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return NextResponse.json({ error: "Invalid team id" }, { status: 400 });
 
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const context = await loadTeamCardContext(supabase, id);
   if (!context) return NextResponse.json({ error: "Team not found" }, { status: 404 });
   if (context.validation.errors.length) {

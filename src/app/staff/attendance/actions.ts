@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { UUID } from "@/lib/actions";
-import { requirePermission, requireStaff } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { extractQrToken } from "@/lib/domain/ids";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +17,7 @@ export type CheckInResult = { ok: boolean; code?: string; message?: string; chec
 
 /** Resolves a scanned QR payload server-side. Scanning alone never records attendance. */
 export async function verifyScan(scanned: string): Promise<VerifyResult> {
-  await requireStaff();
+  await requirePermission("record_attendance", "manual_checkin");
   const token = extractQrToken(String(scanned ?? "").slice(0, 500));
   if (!token) return { state: "invalid" };
   const supabase = await createClient();
@@ -28,12 +28,12 @@ export async function verifyScan(scanned: string): Promise<VerifyResult> {
 
 /** Explicit, confirmed check-in (QR or manual). Duplicate check-ins are rejected by a DB constraint. */
 export async function confirmCheckIn(participantId: string, method: "qr" | "manual"): Promise<CheckInResult> {
-  await requireStaff();
   if (!UUID.test(participantId) || !["qr", "manual"].includes(method)) return { ok: false, message: "Invalid request." };
+  await requirePermission(method === "qr" ? "record_attendance" : "manual_checkin");
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("check_in", { p_participant_id: participantId, p_method: method });
   if (error || !data) return { ok: false, message: "Check-in failed. Please retry." };
-  revalidatePath("/staff/attendance");
+  revalidatePath("/staff/attendance", "layout");
   return data as CheckInResult;
 }
 
@@ -43,6 +43,6 @@ export async function undoCheckIn(attendanceId: string, reason: string): Promise
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("undo_check_in", { p_attendance_id: attendanceId, p_reason: String(reason ?? "").slice(0, 500) });
   if (error || !data) return { ok: false, message: "Correction failed." };
-  revalidatePath("/staff/attendance");
+  revalidatePath("/staff/attendance", "layout");
   return data as CheckInResult;
 }

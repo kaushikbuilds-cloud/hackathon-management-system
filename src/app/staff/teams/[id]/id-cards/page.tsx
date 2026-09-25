@@ -6,7 +6,7 @@ import { requirePermission } from "@/lib/auth";
 import { loadTeamCardContext } from "@/lib/id-cards";
 import { CARD_SIZES } from "@/lib/domain/template";
 import { formatDateTime } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { IdCardJob, Profile } from "@/lib/types";
 import { CardPreview } from "./card-preview";
 import { GeneratePanel } from "./generate-panel";
@@ -17,7 +17,7 @@ export default async function TeamIdCardsPage(props: PageProps<"/staff/teams/[id
   await requirePermission("generate_pdf");
   const { id } = await props.params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const ctx = await loadTeamCardContext(supabase, id);
   if (!ctx) notFound();
   const { data: last } = await supabase
@@ -30,7 +30,7 @@ export default async function TeamIdCardsPage(props: PageProps<"/staff/teams/[id
   return (
     <>
       <PageHeader
-        back={{ href: `/staff/teams/${id}`, label: ctx.team.name }}
+        back={{ href: "/staff/id-cards", label: "ID Card Generation" }}
         title="ID Card PDF"
         description="One single-sided portrait card per member, one card per page."
       />

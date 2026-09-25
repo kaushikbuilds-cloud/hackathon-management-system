@@ -48,10 +48,12 @@ export function appUrl(): string {
 }
 
 export const settings = {
-  /** Hours a temporary password remains valid before it must be re-issued. */
-  tempPasswordTtlHours: Number(process.env.TEMP_PASSWORD_TTL_HOURS || 72),
-  /** Send Supabase invite emails to each member after a successful registration. */
-  autoInviteOnRegistration: process.env.AUTO_INVITE_ON_REGISTRATION === "true",
+  /** Hours a staff (Admin/Official) invitation or reset link stays valid. */
+  staffInviteTtlHours: Number(process.env.STAFF_INVITE_TTL_HOURS || 72),
+  /** Hours a participant activation link stays valid. */
+  participantInviteTtlHours: Number(process.env.PARTICIPANT_INVITE_TTL_HOURS || 168),
   /** Signed URL lifetime for private files (PDFs, attachments). */
   signedUrlSeconds: Number(process.env.SIGNED_URL_TTL_SECONDS || 300),
+  /** One-time token that allows creating the first Super Admin at /setup. */
+  setupToken: process.env.SETUP_TOKEN || "",
 };
