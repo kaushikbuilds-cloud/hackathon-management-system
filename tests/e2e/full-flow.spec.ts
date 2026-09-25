@@ -39,13 +39,14 @@ test("public registration creates a team with generated IDs", async ({ page }) =
   await page.getByRole("button", { name: "Submit registration" }).click();
 
   await expect(page.getByText("Registration received!")).toBeVisible();
-  teamCode = (await page.getByText(/^[A-Z0-9]{2,10}-T\d{4,}$/).innerText()).trim();
-  // Portal credentials are only on the ID cards, never on the public page.
-  await expect(page.getByText(/-P\d{4,}$/)).toHaveCount(0);
-  await expect(page.getByText(/activation code for the\s+student portal/)).toBeVisible();
+  // IDs and portal credentials are only on the ID cards, never on the public page.
+  await expect(page.getByText(/-[TP]\d{4,}$/)).toHaveCount(0);
+  await expect(page.getByText(/printed only on the ID card/)).toBeVisible();
   const lead = await cardCredentials(leader.email);
   const mem = await cardCredentials(member.email);
   leaderPid = lead.participantCode;
+  teamCode = lead.teamCode;
+  expect(teamCode).toMatch(/^[A-Z0-9]{2,10}-T\d{4,}$/);
   leaderCode = lead.code;
   expect(leaderPid).toMatch(new RegExp(`^${teamCode.split("-T")[0]}-P\\d{4,}$`));
   expect(leaderCode).toMatch(/^[A-HJ-KM-NP-Z2-9]{8}$/);

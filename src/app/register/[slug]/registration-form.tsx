@@ -35,24 +35,19 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
           <Alert tone="green" title="Registration received!">
             Team <strong>{state.result.team_name}</strong> is registered.
           </Alert>
-          <div className="rounded-md border-2 border-line bg-paper p-4">
-            <p className="text-xs uppercase tracking-wide text-muted">Team ID</p>
-            <p className="mt-1 font-mono text-xl font-bold text-ink">{state.result.team_code}</p>
-          </div>
           {state.result.payment && (state.result.payment.stored ? (
             <Alert tone="amber" title={`Payment of ${formatRupees(state.result.payment.amount)} submitted`}>
               The organisers will verify it.
             </Alert>
           ) : (
             <Alert tone="red" title="Your team is registered, but the payment proof could not be saved">
-              Please contact the organisers with your Team ID and UPI transaction ID.
+              Please contact the organisers with your team name and UPI transaction ID.
             </Alert>
           ))}
           <div className="rounded-md border-2 border-line bg-brand-tint p-4 text-sm">
             <p className="font-semibold text-ink">What happens next</p>
             <p className="mt-1 text-ink-soft">
-              Each member receives an ID card from the organisers. The card carries their Participant ID, a one-time activation code for the
-              student portal and the QR code used for attendance.
+              Each member receives an ID card from the organisers. Your Team ID, each member&rsquo;s Participant ID and the one-time activation code for the student portal are printed only on the ID card, along with the QR code used for attendance.
             </p>
           </div>
         </div>

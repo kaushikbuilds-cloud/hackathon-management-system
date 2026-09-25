@@ -19,7 +19,6 @@ export type RegisterState = {
   /** Re-shown after a validation error (the screenshot must be chosen again). */
   utr?: string;
   result?: {
-    team_code: string;
     team_name: string;
     payment?: { amount: number; stored: boolean };
   };
@@ -139,7 +138,7 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
 
   return {
     status: "success",
-    result: { team_code: result.team_code, team_name: result.team_name, payment },
+    result: { team_name: result.team_name, payment },
   };
 }
 
