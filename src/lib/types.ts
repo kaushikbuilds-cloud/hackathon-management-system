@@ -306,6 +306,9 @@ export type FoodOrder = {
   total: number;
   note: string | null;
   reject_reason?: string | null;
+  accepted_at?: string | null;
+  ready_at?: string | null;
+  collected_at?: string | null;
   created_at: string;
   updated_at: string;
 };

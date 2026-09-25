@@ -86,7 +86,8 @@ test("a team picks a shop, sees its menu and orders; the free meal limit holds",
   await expect(page.getByRole("button", { name: "One more Lunch" })).toBeDisabled(); // limit 1
   await page.getByRole("button", { name: "Place order" }).click();
   await expect(page.getByText(/Order #\d{4} sent to the shop/)).toBeVisible();
-  await expect(page.getByText("Waiting for the shop to accept").first()).toBeVisible();
+  await expect(page.getByText(/Waiting for them to accept it/).first()).toBeVisible();
+  await expect(page.getByRole("list", { name: "Order progress" }).first()).toContainText("Order placed");
 
   await page.getByRole("link", { name: new RegExp(paidShop) }).click();
   await page.getByLabel("Who is this order for?").selectOption({ label: "Hungry Leader" });
@@ -119,12 +120,13 @@ test("the shop accepts the order, marks it ready, and the team sees it", async (
   const team = await browser.newPage();
   await signIn(team, teamLogin, password);
   await team.goto("/portal/food");
-  await expect(team.getByText("Accepted, preparing").first()).toBeVisible();
+  await expect(team.getByText(/accepted your order and is preparing it/).first()).toBeVisible();
 
   await page.getByRole("article").filter({ hasText: "Masala chai" }).getByRole("button", { name: "Mark ready" }).click();
   await expect(page.getByText("Order marked ready to collect.")).toBeVisible();
   await team.reload();
-  await expect(team.getByText("Your food is ready. Show this order number at the counter.")).toBeVisible();
+  await expect(team.getByText(/Your food is ready! Show #\d{4} at/)).toBeVisible();
+  await expect(team.locator("[aria-current=step]").filter({ hasText: "Ready to collect" })).toBeVisible();
   await team.close();
 
   await page.getByRole("article").filter({ hasText: "Masala chai" }).getByRole("button", { name: "Collected" }).click();
