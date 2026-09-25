@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractQrToken, formatCode, isParticipantCode, isQrToken, isTeamCode, normalizeIdInput, teamIdInsteadOfParticipantId } from "@/lib/domain/ids";
+import { extractQrToken, formatCode, isParticipantCode, isQrToken, isTeamCode, normalizeIdInput, participantIdInsteadOfTeamId } from "@/lib/domain/ids";
 
 describe("formatCode", () => {
   it("joins the hackathon prefix, kind and a four-digit number", () => {
@@ -59,10 +59,10 @@ describe("typed IDs", () => {
     expect(normalizeIdInput("ROBO-P0I02")).toBe("ROBO-P0102");
     expect(normalizeIdInput("PRT-2026-0001")).toBe("PRT-2026-0001");
   });
-  it("explains when a Team ID is used as a Participant ID", () => {
-    expect(teamIdInsteadOfParticipantId("SAMPLE1-T0OO1")).toBe(
-      "SAMPLE1-T0001 is your Team ID. Use your own Participant ID instead: it is printed on your ID card and looks like SAMPLE1-P0001.");
-    expect(teamIdInsteadOfParticipantId("TEAM-2026-0001")).toMatch(/^TEAM-2026-0001 is your Team ID/);
-    expect(teamIdInsteadOfParticipantId("SAMPLE1-P0001")).toBeNull();
+  it("explains that teams sign in with the Team ID, not a Participant ID", () => {
+    expect(participantIdInsteadOfTeamId("sample1-p0oo1")).toBe(
+      "SAMPLE1-P0001 is a Participant ID. Your team signs in with its Team ID (it looks like SAMPLE1-T0001), printed on every member's ID card.");
+    expect(participantIdInsteadOfTeamId("PRT-2026-0001")).toMatch(/^PRT-2026-0001 is a Participant ID/);
+    expect(participantIdInsteadOfTeamId("SAMPLE1-T0001")).toBeNull();
   });
 });

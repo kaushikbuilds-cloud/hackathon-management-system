@@ -483,11 +483,11 @@ async function drawCard(
   valueBox("TEAM ID", team.teamCode, "user");
   const host = input.verifyBaseUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
   let note: [string, string, string];
-  if (member.activated) {
-    note = ["Account active. Sign in at", host, "with your email or Participant ID."];
-  } else if (member.activationCode) {
-    valueBox("ACTIVATION CODE", member.activationCode, "lock");
-    note = ["Activate your account at", `${host}/activate`, "with your Participant ID and this one-time code, then set your password."];
+  if (member.activationCode) {
+    valueBox("TEAM LOGIN CODE", member.activationCode, "lock");
+    note = ["Activate your team login at", `${host}/activate`, "with the Team ID and this one-time code. One password for the whole team."];
+  } else if (member.activated) {
+    note = ["Team login active. Sign in at", host, "with your Team ID and team password."];
   } else {
     note = ["Participant portal:", host, ""];
   }

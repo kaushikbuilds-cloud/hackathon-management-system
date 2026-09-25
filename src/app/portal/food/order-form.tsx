@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { SubmitButton } from "@/components/client";
-import { TextField } from "@/components/ui";
+import { SelectField, TextField } from "@/components/ui";
 import { formatRupees } from "@/lib/domain/fees";
 
 type MenuItem = { id: string; name: string; description: string | null; price: number; isVeg: boolean; available: boolean; limit: number | null };
 
 /** Menu with quantity steppers and a running total; the database re-checks every line. */
-export function OrderForm({ action, items, free, shopName }: { action: (formData: FormData) => void; items: MenuItem[]; free: boolean; shopName: string }) {
+export function OrderForm({ action, items, free, shopName, members }: {
+  action: (formData: FormData) => void; items: MenuItem[]; free: boolean; shopName: string; members: { id: string; name: string }[] | null;
+}) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const set = (id: string, n: number, max: number) => setQty((q) => ({ ...q, [id]: Math.max(0, Math.min(n, max)) }));
   const count = Object.values(qty).reduce((a, b) => a + b, 0);
@@ -16,6 +18,10 @@ export function OrderForm({ action, items, free, shopName }: { action: (formData
 
   return (
     <form action={action} className="space-y-4">
+      {members && (
+        <SelectField label="Who is this order for?" name="member" id={`member-${shopName}`} required defaultValue=""
+          options={[{ value: "", label: "Choose a team member" }, ...members.map((m) => ({ value: m.id, label: m.name }))]} />
+      )}
       <ul className="divide-y-2 divide-line-soft rounded-md border-2 border-line">
         {items.map((i) => {
           const max = Math.min(i.limit ?? 20, 20);

@@ -11,13 +11,16 @@ const PATH = "/portal/food";
 type PlaceResult = { ok: true; order_no: number } | { ok: false; code: string; message: string };
 
 export async function placeFoodOrder(shopId: string, formData: FormData) {
-  await requireParticipant();
+  const session = await requireParticipant();
   if (!UUID.test(shopId)) flash(PATH, { error: "Invalid shop." });
+  // The team login says who the order is for; older per-member accounts order for themselves.
+  const member = str(formData, "member", 40) || session.participantId || "";
+  if (!UUID.test(member)) flash(PATH, { error: "Choose which team member this order is for." });
   const supabase = await createClient();
   const { data: items } = await supabase.from("food_items").select("id").eq("shop_id", shopId);
   const cart = cartFromForm(formData, new Set((items ?? []).map((i) => i.id as string)));
   if (!cart.length) flash(PATH, { error: "Choose at least one item." });
-  const { data, error } = await supabase.rpc("place_food_order", { p_shop: shopId, p_items: cart, p_note: str(formData, "note", 200) || null });
+  const { data, error } = await supabase.rpc("place_food_order", { p_shop: shopId, p_items: cart, p_note: str(formData, "note", 200) || null, p_member: member });
   if (error || !data) flash(PATH, { error: dbErrorMessage(error, "Your order could not be placed. Please try again.") });
   const result = data as PlaceResult;
   if (!result.ok) flash(PATH, { error: result.message });

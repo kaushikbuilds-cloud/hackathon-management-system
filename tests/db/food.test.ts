@@ -28,6 +28,12 @@ describe.skipIf(!enabled)("food ordering (database)", () => {
     const [p1, p2] = (await pool.query("select id from participants where email in ('f1@food.dev', 'f2@food.dev') order by email")).rows.map((r) => r.id);
     u.p1 = await createUser(pool, "participant", { participant_id: p1 });
     u.p2 = await createUser(pool, "participant", { participant_id: p2 });
+    await register(pool, payload("Other Eaters", ["o1@food.dev", "o2@food.dev"]));
+    const o1 = (await pool.query("select id from participants where email = 'o1@food.dev'")).rows[0].id;
+    u.other = await createUser(pool, "participant", { participant_id: o1 });
+    // The shared team login of "Hungry Coders".
+    u.team = await createUser(pool, "participant");
+    await pool.query("update profiles set team_id = (select team_id from participants where id = $1) where id = $2", [p1, u.team]);
     u.admin = await createUser(pool, "admin");
     u.counter = await createUser(pool, "official", {}, ["manage_food"]);
     u.gate = await createUser(pool, "official");
@@ -88,30 +94,50 @@ describe.skipIf(!enabled)("food ordering (database)", () => {
       "insert into food_shops (hackathon_id, name) values ($1, 'Fake')", [hA])))).toBe("42501");
   });
 
-  it("participants see only their own orders; counter staff see all of them", async () => {
-    const mine = await as(pool, u.p1, async (c) => (await c.query("select participant_id from food_orders")).rows);
-    expect(mine.length).toBeGreaterThan(0);
-    const p1 = (await pool.query("select participant_id from profiles where id = $1", [u.p1])).rows[0].participant_id;
-    expect(mine.every((r) => r.participant_id === p1)).toBe(true);
+  it("a team sees its own members' orders only; counter staff see all of them", async () => {
+    const teamOf = async (userId: string) => (await as(pool, userId, async (c) => (await c.query("select my_team_id() as t")).rows[0].t)) as string;
+    const team = await teamOf(u.p1);
+    expect(await teamOf(u.team)).toBe(team);
+    for (const who of [u.p1, u.p2, u.team]) {
+      const rows = await as(pool, who, async (c) => (await c.query("select p.team_id from food_orders o join participants p on p.id = o.participant_id")).rows);
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.every((r) => r.team_id === team)).toBe(true);
+    }
+    expect(await as(pool, u.other, async (c) => (await c.query("select 1 from food_orders")).rowCount)).toBe(0);
     const all = await as(pool, u.counter, async (c) => (await c.query("select 1 from food_orders")).rowCount);
     expect(all).toBe((await pool.query("select 1 from food_orders")).rowCount);
     expect(await as(pool, u.gate, async (c) => (await c.query("select 1 from food_orders")).rowCount)).toBe(0);
   });
 
-  it("moves orders through the counter workflow and lets participants cancel only new orders", async () => {
+  it("the team login orders for a chosen member, and limits stay per person", async () => {
+    const order4 = (member: string | null, items: { item_id: string; qty: number }[]) =>
+      as(pool, u.team, async (c) => (await c.query("select place_food_order($1, $2, null, $3) as r", [items[0].item_id === lunch ? freeShop : paidShop, JSON.stringify(items), member])).rows[0].r as OrderResult);
+    const [p1, p2] = (await pool.query("select id from participants where email in ('f1@food.dev', 'f2@food.dev') order by email")).rows.map((r) => r.id);
+    const o1 = (await pool.query("select id from participants where email = 'o1@food.dev'")).rows[0].id;
+    expect(await order4(null, [{ item_id: chai, qty: 1 }])).toMatchObject({ ok: false, code: "choose_member" });
+    expect(await order4(o1, [{ item_id: chai, qty: 1 }])).toMatchObject({ ok: false, code: "choose_member" });
+    expect(await order4(p1, [{ item_id: lunch, qty: 1 }])).toMatchObject({ ok: false, code: "limit_reached" }); // p1 had lunch
+    const extra = await pool.query("select count(*) from food_orders where participant_id = $1", [p2]);
+    expect(Number(extra.rows[0].count)).toBeGreaterThan(0);
+    // A member of another team cannot order for this team either.
+    expect(await as(pool, u.other, async (c) => (await c.query("select place_food_order($1, $2, null, $3) as r",
+      [paidShop, JSON.stringify([{ item_id: chai, qty: 1 }]), p1])).rows[0].r)).toMatchObject({ ok: false, code: "choose_member" });
+  });
+
+  it("moves orders through the counter workflow; only the same team can cancel, and only new orders", async () => {
     const r = await order(u.p2, paidShop, [{ item_id: chai, qty: 1 }]);
     const set = (id: string, s: string) => as(pool, id, async (c) => (await c.query("select set_food_order_status($1, $2) as ok", [r.order_id, s])).rows[0].ok as boolean);
     expect(await pgErrorCode(set(u.gate, "preparing"))).toBe("42501");
     expect(await set(u.counter, "collected")).toBe(false); // must be ready first
     expect(await set(u.counter, "preparing")).toBe(true);
-    const cancel = () => as(pool, u.p2, async (c) => (await c.query("select cancel_food_order($1) as ok", [r.order_id])).rows[0].ok as boolean);
-    expect(await cancel()).toBe(false); // already being prepared
+    const cancel = (who: string, id: string) => as(pool, who, async (c) => (await c.query("select cancel_food_order($1) as ok", [id])).rows[0].ok as boolean);
+    expect(await cancel(u.p2, r.order_id!)).toBe(false); // already being prepared
     expect(await set(u.counter, "ready")).toBe(true);
     expect(await set(u.counter, "collected")).toBe(true);
     expect(await set(u.counter, "cancelled")).toBe(false);
     const other = await order(u.p2, paidShop, [{ item_id: chai, qty: 1 }]);
-    expect(await as(pool, u.p1, async (c) => (await c.query("select cancel_food_order($1) as ok", [other.order_id])).rows[0].ok)).toBe(false);
-    expect(await as(pool, u.p2, async (c) => (await c.query("select cancel_food_order($1) as ok", [other.order_id])).rows[0].ok)).toBe(true);
+    expect(await cancel(u.other, other.order_id!)).toBe(false);
+    expect(await cancel(u.team, other.order_id!)).toBe(true);
   });
 
   it("limits open orders to three and numbers orders per hackathon", async () => {

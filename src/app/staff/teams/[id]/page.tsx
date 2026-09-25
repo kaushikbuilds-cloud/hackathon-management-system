@@ -4,7 +4,7 @@ import { ConfirmSubmit, SubmitButton } from "@/components/client";
 import { AttendanceBadge, PaymentBadge, PdfBadge, RegistrationBadge } from "@/components/status";
 import { formatRupees } from "@/lib/domain/fees";
 import {
-  Badge, buttonClass, Card, CardTitle, DescriptionList, EmptyState, Flash, LinkButton, PageHeader, SelectField, Table, Td, TextField, Th,
+  Alert, Badge, buttonClass, Card, CardTitle, DescriptionList, EmptyState, Flash, LinkButton, PageHeader, SelectField, Table, Td, TextField, Th,
 } from "@/components/ui";
 import { can, isSuperAdmin, requirePermission } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
@@ -13,9 +13,8 @@ import { formatDateTime } from "@/lib/format";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { AuditLog, IdCardJob, ParticipantOverview, Profile, Team } from "@/lib/types";
 import {
-  addParticipant, makeLeader, removeParticipant, reviewPayment, rotateQr, setParticipantAccountStatus, setQrRevoked, setTeamStatus, updateParticipant, updateTeam, uploadPhoto,
+  addParticipant, issueNewTeamCode, makeLeader, removeParticipant, reviewPayment, rotateQr, setParticipantAccountStatus, setQrRevoked, setTeamStatus, updateParticipant, updateTeam, uploadPhoto,
 } from "./actions";
-import { ParticipantLinkButton } from "./credential-actions";
 
 export const metadata: Metadata = { title: "Team details" };
 
@@ -43,6 +42,12 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
       ? createServiceClient().from("profiles").select("id, participant_id, status, last_sign_in_at").eq("role", "participant").eq("hackathon_id", session.hackathonId ?? "").returns<Pick<Profile, "id" | "participant_id" | "status" | "last_sign_in_at">[]>()
       : Promise.resolve({ data: [] as Pick<Profile, "id" | "participant_id" | "status" | "last_sign_in_at">[] }),
   ]);
+  const [{ data: teamAccount }, { data: teamCode }] = canAccounts
+    ? await Promise.all([
+        createServiceClient().from("profiles").select("id, status, last_sign_in_at").eq("team_id", id).maybeSingle<Pick<Profile, "id" | "status" | "last_sign_in_at">>(),
+        createServiceClient().from("team_activation_codes").select("used_at").eq("team_id", id).maybeSingle<{ used_at: string | null }>(),
+      ])
+    : [{ data: null }, { data: null }];
   const memberIds = (members ?? []).map((m) => m.id);
   const accountByParticipant = new Map((accounts ?? []).filter((a) => a.participant_id && memberIds.includes(a.participant_id)).map((a) => [a.participant_id!, a]));
   const { data: history } = canHistory
@@ -112,6 +117,33 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                 </div>
               </form>
             )}
+          </Card>
+        )}
+
+        {canAccounts && (
+          <Card>
+            <CardTitle
+              description="The whole team signs in with its Team ID and one shared password. The one-time code to set it is printed on every member's ID card."
+              actions={<Badge tone={teamAccount ? (teamAccount.status === "active" ? "green" : "red") : "neutral"}>{teamAccount ? (teamAccount.status === "active" ? "Active" : teamAccount.status) : "Not activated yet"}</Badge>}
+            >
+              Team login
+            </CardTitle>
+            <div className="space-y-3 text-sm">
+              {teamAccount?.last_sign_in_at && <p className="text-muted">Last sign-in {formatDateTime(teamAccount.last_sign_in_at, tz)}</p>}
+              {teamCode && !teamCode.used_at && teamAccount && <Alert tone="amber">A new code is waiting. Reprint the team&apos;s ID cards so they can set a new password.</Alert>}
+              <form action={issueNewTeamCode.bind(null, id)}>
+                <ConfirmSubmit variant="secondary" size="sm" message="Create a new team login code? The old code stops working, and the team sets a new password with the new one.">
+                  {teamAccount ? "Forgot password: new code" : "New code"}
+                </ConfirmSubmit>
+              </form>
+              {teamAccount && (
+                <div className="flex flex-wrap gap-2">
+                  {teamAccount.status === "active"
+                    ? <form action={setParticipantAccountStatus.bind(null, id, teamAccount.id, "suspended")}><ConfirmSubmit variant="secondary" size="sm" message="Suspend the team login? Everyone using it is signed out.">Suspend login</ConfirmSubmit></form>
+                    : <form action={setParticipantAccountStatus.bind(null, id, teamAccount.id, "active")}><ConfirmSubmit variant="success" size="sm" message="Reactivate the team login?">Reactivate login</ConfirmSubmit></form>}
+                </div>
+              )}
+            </div>
           </Card>
         )}
 
@@ -216,24 +248,21 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                           <SubmitButton variant="secondary" size="sm">Upload</SubmitButton>
                         </form>
                       )}
-                      {canAccounts && (
+                      {canAccounts && acct && (
                         <div className="space-y-2 border-t border-line pt-4">
-                          <p className="text-sm font-semibold text-ink">Team Portal access</p>
-                          <ParticipantLinkButton participantId={m.id} hasAccount={Boolean(acct)} eventName={hackathon?.name ?? "Hackathon"} />
-                          {acct && (
-                            <div className="flex flex-wrap gap-2">
-                              {acct.status !== "active" && (
-                                <form action={setParticipantAccountStatus.bind(null, id, acct.id, "active")}><ConfirmSubmit variant="success" size="sm" message="Reactivate this account?">Reactivate</ConfirmSubmit></form>
-                              )}
-                              {acct.status === "active" && (
-                                <form action={setParticipantAccountStatus.bind(null, id, acct.id, "suspended")}><ConfirmSubmit variant="secondary" size="sm" message="Suspend this account? They are signed out immediately.">Suspend</ConfirmSubmit></form>
-                              )}
-                              {acct.status !== "deactivated" && (
-                                <form action={setParticipantAccountStatus.bind(null, id, acct.id, "deactivated")}><ConfirmSubmit variant="danger" size="sm" message="Deactivate this account?">Deactivate</ConfirmSubmit></form>
-                              )}
-                            </div>
-                          )}
-                          {acct?.last_sign_in_at && <p className="text-xs text-muted">Last sign-in {formatDateTime(acct.last_sign_in_at, tz)}</p>}
+                          <p className="text-sm font-semibold text-ink">Personal portal account (older sign-in)</p>
+                          <div className="flex flex-wrap gap-2">
+                            {acct.status !== "active" && (
+                              <form action={setParticipantAccountStatus.bind(null, id, acct.id, "active")}><ConfirmSubmit variant="success" size="sm" message="Reactivate this account?">Reactivate</ConfirmSubmit></form>
+                            )}
+                            {acct.status === "active" && (
+                              <form action={setParticipantAccountStatus.bind(null, id, acct.id, "suspended")}><ConfirmSubmit variant="secondary" size="sm" message="Suspend this account? They are signed out immediately.">Suspend</ConfirmSubmit></form>
+                            )}
+                            {acct.status !== "deactivated" && (
+                              <form action={setParticipantAccountStatus.bind(null, id, acct.id, "deactivated")}><ConfirmSubmit variant="danger" size="sm" message="Deactivate this account?">Deactivate</ConfirmSubmit></form>
+                            )}
+                          </div>
+                          {acct.last_sign_in_at && <p className="text-xs text-muted">Last sign-in {formatDateTime(acct.last_sign_in_at, tz)}</p>}
                         </div>
                       )}
                     </div>

@@ -28,20 +28,21 @@ export async function openHackathon(page: Page, name: string | RegExp) {
 }
 
 /**
- * Portal credentials as printed on a member's ID card. The registration page
- * no longer shows them, so tests read (or issue, as printing would) the
- * one-time activation code straight from the database.
+ * The team's portal login as printed on its ID cards: Team ID and the
+ * one-time code. Tests read (or issue, as printing would) the code straight
+ * from the database.
  */
-export async function cardCredentials(email: string): Promise<{ participantCode: string; teamCode: string; code: string }> {
+export async function teamCredentials(memberEmail: string): Promise<{ teamCode: string; participantCode: string; code: string }> {
   const { default: pg } = await import("pg");
   const pool = new pg.Pool({ connectionString: process.env.E2E_DATABASE_URL });
   try {
-    const { rows: [p] } = await pool.query("select p.id, p.participant_code, t.team_code from participants p join teams t on t.id = p.team_id where lower(p.email) = lower($1)", [email]);
+    const { rows: [p] } = await pool.query(
+      "select p.participant_code, t.id as team_id, t.team_code from participants p join teams t on t.id = p.team_id where lower(p.email) = lower($1)", [memberEmail]);
     const fresh = Array.from({ length: 8 }, () => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]).join("");
     const { rows: [c] } = await pool.query(
-      `insert into participant_activation_codes (participant_id, code) values ($1, $2)
-       on conflict (participant_id) do update set code = participant_activation_codes.code returning code`, [p.id, fresh]);
-    return { participantCode: p.participant_code, teamCode: p.team_code, code: c.code };
+      `insert into team_activation_codes (team_id, code) values ($1, $2)
+       on conflict (team_id) do update set code = team_activation_codes.code returning code`, [p.team_id, fresh]);
+    return { teamCode: p.team_code, participantCode: p.participant_code, code: c.code };
   } finally {
     await pool.end();
   }

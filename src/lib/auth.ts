@@ -113,9 +113,14 @@ export function requireHackathon<S extends Session>(session: S): S & { hackathon
   return session as S & { hackathonId: string };
 }
 
-export async function requireParticipant(): Promise<Session & { participantId: string }> {
+/**
+ * A team member in the portal. Teams share one login (`isTeamAccount`, no
+ * participantId); older per-member accounts carry their participantId.
+ */
+export async function requireParticipant(): Promise<Session & { participantId: string | null; isTeamAccount: boolean }> {
   const session = await requireSession();
   if (session.profile.role !== "participant") redirect(homePathFor(session.profile.role));
-  if (!session.profile.participant_id) redirect("/login?error=no_team");
-  return { ...session, participantId: session.profile.participant_id };
+  const isTeamAccount = Boolean(session.profile.team_id);
+  if (!session.profile.participant_id && !isTeamAccount) redirect("/login?error=no_team");
+  return { ...session, participantId: session.profile.participant_id, isTeamAccount };
 }

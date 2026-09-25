@@ -5,8 +5,8 @@ import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { homePathFor, getSession } from "@/lib/auth";
 import { recordCredentialEvent } from "@/lib/accounts";
-import { emailForParticipantCode } from "@/lib/activation";
-import { teamIdInsteadOfParticipantId } from "@/lib/domain/ids";
+import { emailForParticipantCode, emailForTeamCode } from "@/lib/activation";
+import { isParticipantCode, normalizeIdInput } from "@/lib/domain/ids";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { appUrl } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
@@ -30,12 +30,16 @@ const loginSchema = z.object({
 export async function signIn(_prev: AuthState, formData: FormData): Promise<AuthState> {
   const email = String(formData.get("email") ?? "").trim().slice(0, 254);
   // Participants may sign in with the Participant ID printed on their card.
-  const teamId = email.includes("@") ? null : teamIdInsteadOfParticipantId(email);
-  if (teamId) return { error: teamId, email };
-  const loginEmail = email.includes("@") ? email : (await emailForParticipantCode(email)) ?? email;
+  // Teams sign in with their Team ID; older per-member accounts with a Participant ID.
+  const loginEmail = email.includes("@")
+    ? email
+    : ((await emailForTeamCode(email)) ?? (await emailForParticipantCode(email)) ?? email);
+  if (!email.includes("@") && loginEmail === email && isParticipantCode(normalizeIdInput(email))) {
+    return { error: "Your team signs in with its Team ID (…-T0001), printed on every member's ID card.", email };
+  }
   const parsed = loginSchema.safeParse({ email: loginEmail, password: formData.get("password") });
   if (!parsed.success) {
-    return { error: email.includes("@") ? "Enter a valid email and password." : "Invalid Participant ID or password.", email };
+    return { error: email.includes("@") ? "Enter a valid email and password." : "Invalid Team ID or password.", email };
   }
 
   const ip = await clientIp();
@@ -47,7 +51,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
   if (error || !data.user) {
     await audit(null, "auth.sign_in_failed", { type: "auth" }, { email_hash: hashKey(parsed.data.email), reason: error?.code ?? "unknown" });
-    return { error: email.includes("@") ? "Invalid email or password." : "Invalid Participant ID or password.", email };
+    return { error: email.includes("@") ? "Invalid email or password." : "Invalid Team ID or password.", email };
   }
 
   const service = createServiceClient(data.user.id);
@@ -60,7 +64,7 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     await supabase.auth.signOut();
     return { error: "Your temporary password has expired. Ask the organisers to issue a new one.", email };
   }
-  if (profile.role === "participant" && !profile.participant_id) {
+  if (profile.role === "participant" && !profile.participant_id && !profile.team_id) {
     await supabase.auth.signOut();
     return { error: "This account is not linked to a team yet. Contact the organisers.", email };
   }

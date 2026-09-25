@@ -149,4 +149,27 @@ describe.skipIf(!enabled)("roles & permissions v2 (database)", () => {
     }
     expect(await pgErrorCode(pool.query("insert into participant_activation_codes (participant_id, code) values ($1, 'bad0code')", [leaderId]))).toBe("23514");
   });
+  it("team login codes are invisible to everyone, and only the server links a login to a team", async () => {
+    await pool.query("insert into team_activation_codes (team_id, code) values ($1, 'X7K9M2Q4') on conflict do nothing", [teamId]);
+    for (const who of [u.superAdmin, u.admin, u.official, null]) {
+      expect(await pgErrorCode(as(pool, who, (c) => c.query("select * from team_activation_codes")))).toBe("42501");
+    }
+    expect(await pgErrorCode(pool.query("insert into team_activation_codes (team_id, code) values ($1, 'bad0code') on conflict (team_id) do update set code = excluded.code", [teamId]))).toBe("23514");
+
+    const teamLogin = await createUser(pool, "participant");
+    await pool.query("update profiles set team_id = $1 where id = $2", [teamId, teamLogin]);
+    const { rows: [prof] } = await pool.query("select hackathon_id from profiles where id = $1", [teamLogin]);
+    expect(prof.hackathon_id).toBe((await pool.query("select hackathon_id from teams where id = $1", [teamId])).rows[0].hackathon_id);
+    // One login per team, never also tied to a single participant.
+    const second = await createUser(pool, "participant");
+    expect(await pgErrorCode(pool.query("update profiles set team_id = $1 where id = $2", [teamId, second]))).toBe("23505");
+    expect(await pgErrorCode(pool.query("update profiles set participant_id = $1 where id = $2", [leaderId, teamLogin]))).toBe("23514");
+    // The team login acts as the team: whole roster, leader rights; it cannot move itself to another team.
+    await as(pool, teamLogin, async (c) => {
+      expect((await c.query("select my_team_id() as t")).rows[0].t).toBe(teamId);
+      expect((await c.query("select is_team_leader() as l")).rows[0].l).toBe(true);
+      expect((await c.query("select 1 from participants")).rowCount).toBe(2);
+    });
+    expect(await pgErrorCode(as(pool, teamLogin, (c) => c.query("update profiles set team_id = null where id = auth.uid()")))).toBe("42501");
+  });
 });

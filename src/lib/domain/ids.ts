@@ -23,12 +23,12 @@ export function normalizeIdInput(value: string): string {
   return m ? m[1] + m[2].replace(/O/g, "0").replace(/[IL]/g, "1") : v;
 }
 
-/** Message for someone who typed their Team ID where a Participant ID is needed. */
-export function teamIdInsteadOfParticipantId(value: string): string | null {
+/** Message for someone who typed a Participant ID where the Team ID is needed (logins are per team). */
+export function participantIdInsteadOfTeamId(value: string): string | null {
   const v = normalizeIdInput(value);
-  if (!isTeamCode(v)) return null;
-  const example = v.match(/^([A-Z0-9]{2,10})-T/)?.[1];
-  return `${v} is your Team ID. Use your own Participant ID instead: it is printed on your ID card${example ? ` and looks like ${example}-P0001` : ""}.`;
+  if (!isParticipantCode(v)) return null;
+  const prefix = v.match(/^([A-Z0-9]{2,10})-P\d/)?.[1];
+  return `${v} is a Participant ID. Your team signs in with its Team ID${prefix ? ` (it looks like ${prefix}-T0001)` : ""}, printed on every member's ID card.`;
 }
 
 export function isTeamCode(value: string): boolean {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { cardCredentials, creds, signIn } from "./helpers";
+import { creds, signIn, teamCredentials } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!creds.admin.password || !process.env.E2E_DATABASE_URL, "Set E2E_ADMIN_PASSWORD and E2E_DATABASE_URL (see README).");
@@ -58,7 +58,7 @@ test("teams see the amount and UPI QR, and must submit proof to register", async
   await page.setInputFiles("#payment_proof", { name: "paid.png", mimeType: "image/png", buffer: PNG });
   await page.getByRole("button", { name: "Submit registration" }).click();
   await expect(page.getByText("Payment of ₹400 submitted")).toBeVisible();
-  ({ participantCode: leaderPid, code: leaderCode } = await cardCredentials(`lead.${run}@e2e.test`));
+  ({ teamCode: leaderPid, code: leaderCode } = await teamCredentials(`lead.${run}@e2e.test`));
 });
 
 test("the same UPI transaction cannot pay for a second team", async ({ page }) => {
@@ -92,7 +92,7 @@ test("staff see the payment to verify and reject it with a reason", async ({ pag
 test("the Team Leader resubmits and staff mark it paid", async ({ page }) => {
   const password = `Payer-${run}-Pass1!`;
   await page.goto("/activate");
-  await page.getByLabel("Participant ID").fill(leaderPid);
+  await page.getByLabel("Team ID").fill(leaderPid);
   await page.getByLabel("Activation code").fill(leaderCode);
   await page.getByLabel("New password").fill(password);
   await page.getByLabel("Confirm password").fill(password);

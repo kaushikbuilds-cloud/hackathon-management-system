@@ -2,37 +2,37 @@
 
 import { redirect } from "next/navigation";
 import { audit } from "@/lib/audit";
-import { redeemActivationCode } from "@/lib/activation";
-import { normalizeIdInput, teamIdInsteadOfParticipantId } from "@/lib/domain/ids";
+import { redeemTeamCode } from "@/lib/activation";
+import { normalizeIdInput, participantIdInsteadOfTeamId } from "@/lib/domain/ids";
 import { checkPasswordStrength } from "@/lib/domain/password";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Profile } from "@/lib/types";
 
-export type ActivateState = { error?: string; participantCode?: string };
+export type ActivateState = { error?: string; teamCode?: string };
 
 export async function activateAccount(_prev: ActivateState, formData: FormData): Promise<ActivateState> {
-  const participantCode = normalizeIdInput(String(formData.get("participant_code") ?? "").slice(0, 40)).slice(0, 30);
+  const teamCode = normalizeIdInput(String(formData.get("team_code") ?? "").slice(0, 40)).slice(0, 30);
   const code = String(formData.get("code") ?? "").slice(0, 30);
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
-  if (!participantCode || !code) return { error: "Enter your Participant ID and activation code from your ID card.", participantCode };
-  const teamId = teamIdInsteadOfParticipantId(participantCode);
-  if (teamId) return { error: teamId, participantCode };
+  if (!teamCode || !code) return { error: "Enter your Team ID and activation code from your ID card.", teamCode };
+  const wrongId = participantIdInsteadOfTeamId(teamCode);
+  if (wrongId) return { error: wrongId, teamCode };
   const weak = checkPasswordStrength(password);
-  if (weak) return { error: weak, participantCode };
-  if (password !== confirm) return { error: "Passwords do not match.", participantCode };
+  if (weak) return { error: weak, teamCode };
+  if (password !== confirm) return { error: "Passwords do not match.", teamCode };
 
-  // Limit guesses per participant and per network.
+  // Limit guesses per team and per network.
   const ip = await clientIp();
-  const allowed = (await rateLimit("activation", `pid|${participantCode}`)) && (await rateLimit("activation", `ip|${ip}`));
-  if (!allowed) return { error: "Too many attempts. Please wait 15 minutes and try again, or ask the help desk.", participantCode };
+  const allowed = (await rateLimit("activation", `team|${teamCode}`)) && (await rateLimit("activation", `ip|${ip}`));
+  if (!allowed) return { error: "Too many attempts. Please wait 15 minutes and try again, or ask the help desk.", teamCode };
 
-  const result = await redeemActivationCode({ participantCode, code, password });
+  const result = await redeemTeamCode({ teamCode, code, password });
   if (!result.ok) {
-    await audit(null, "auth.activation_failed", { type: "auth" }, { participant_code: participantCode });
-    return { error: result.error, participantCode };
+    await audit(null, "auth.activation_failed", { type: "auth" }, { team_code: teamCode });
+    return { error: result.error, teamCode };
   }
 
   const supabase = await createClient();

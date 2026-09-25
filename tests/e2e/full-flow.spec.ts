@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
-import { FORM_SLUG, cardCredentials, creds, signIn, signOut } from "./helpers";
+import { FORM_SLUG, creds, signIn, signOut, teamCredentials } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -42,15 +42,15 @@ test("public registration creates a team with generated IDs", async ({ page }) =
   // IDs and portal credentials are only on the ID cards, never on the public page.
   await expect(page.getByText(/-[TP]\d{4,}$/)).toHaveCount(0);
   await expect(page.getByText(/printed only on the ID card/)).toBeVisible();
-  const lead = await cardCredentials(leader.email);
-  const mem = await cardCredentials(member.email);
+  const lead = await teamCredentials(leader.email);
+  const mem = await teamCredentials(member.email);
   leaderPid = lead.participantCode;
   teamCode = lead.teamCode;
   expect(teamCode).toMatch(/^[A-Z0-9]{2,10}-T\d{4,}$/);
   leaderCode = lead.code;
   expect(leaderPid).toMatch(new RegExp(`^${teamCode.split("-T")[0]}-P\\d{4,}$`));
   expect(leaderCode).toMatch(/^[A-HJ-KM-NP-Z2-9]{8}$/);
-  expect(mem.code).not.toBe(leaderCode);
+  expect(mem).toEqual({ ...lead, participantCode: mem.participantCode }); // one login per team
 });
 
 test("duplicate team names are rejected and entered data is preserved", async ({ page }) => {
@@ -97,13 +97,12 @@ test("admin sees one row per team, expands members and opens details", async ({ 
   await expect(page.getByRole("table", { name: `Members of ${teamName}` })).toContainText("Team Leader");
 });
 
-test("admin can create a single-use activation link for a member", async ({ page }) => {
+test("the team page shows the shared team login", async ({ page }) => {
   await signIn(page, creds.admin.email, creds.admin.password);
   await page.goto(teamUrl);
-  await page.locator("summary").filter({ hasText: member.name }).click();
-  await page.getByRole("button", { name: "Create activation link" }).click();
-  await expect(page.getByText(`Link created for ${member.email}`)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Share on WhatsApp" })).toBeVisible();
+  const card = page.locator("section").filter({ has: page.getByRole("heading", { name: "Team login", exact: true }) }).last();
+  await expect(card).toContainText("Not activated yet");
+  await expect(card).not.toContainText(leaderCode); // codes are only printed on the ID cards
 });
 
 test("team PDF: one page per member, correct filename, status updates", async ({ page }) => {
@@ -151,30 +150,38 @@ test("official checks in a participant once; duplicates are blocked; admin areas
   }
 });
 
-test("team leader activates with the code from registration, sees only their team and raises support", async ({ page }) => {
+test("the team activates its shared login, sees only its team and raises support", async ({ page }) => {
   expect(leaderCode).not.toBe("");
+  // A Participant ID is not a login any more.
   await page.goto("/activate");
-  await page.getByLabel("Participant ID").fill(leaderPid);
+  await page.getByLabel("Team ID").fill(leaderPid);
+  await page.getByLabel("Activation code").fill(leaderCode);
+  await page.getByLabel("New password").fill(`Rocket-${run}-Pass!`);
+  await page.getByLabel("Confirm password").fill(`Rocket-${run}-Pass!`);
+  await page.getByRole("button", { name: "Activate account" }).click();
+  await expect(page.getByText(`${leaderPid} is a Participant ID. Your team signs in with its Team ID`)).toBeVisible();
+
+  await page.getByLabel("Team ID").fill(teamCode);
   await page.getByLabel("Activation code").fill(leaderCode);
   await page.getByLabel("New password").fill(`Rocket-${run}-Pass!`);
   await page.getByLabel("Confirm password").fill(`Rocket-${run}-Pass!`);
   await page.getByRole("button", { name: "Activate account" }).click();
   await expect(page).toHaveURL(/\/portal$/);
   await expect(page.getByRole("heading", { name: teamName })).toBeVisible();
-  await expect(page.getByText("Team Leader dashboard")).toBeVisible();
+  await expect(page.getByText("Team dashboard")).toBeVisible();
   await expect(page.getByRole("table", { name: "Team members" })).toContainText(member.email);
   await expect(page.getByText("Code Ninjas")).toHaveCount(0);
 
   // The code is single-use.
   await page.context().clearCookies();
   await page.goto("/activate");
-  await page.getByLabel("Participant ID").fill(leaderPid);
+  await page.getByLabel("Team ID").fill(teamCode);
   await page.getByLabel("Activation code").fill(leaderCode);
   await page.getByLabel("New password").fill(`Rocket-${run}-Pass!`);
   await page.getByLabel("Confirm password").fill(`Rocket-${run}-Pass!`);
   await page.getByRole("button", { name: "Activate account" }).click();
-  await expect(page.getByText("already has an account")).toBeVisible();
-  await signIn(page, leader.email, `Rocket-${run}-Pass!`);
+  await expect(page.getByText("Your team has already activated its login")).toBeVisible();
+  await signIn(page, teamCode.toLowerCase(), `Rocket-${run}-Pass!`);
 
   // Staff areas are closed to participants.
   await page.goto("/staff/teams");
@@ -205,7 +212,7 @@ test("admin assigns and progresses support; the team sees the update", async ({ 
   await expect(page.getByText("A technician is on the way.")).toBeVisible();
 
   await signOut(page);
-  await signIn(page, leader.email, `Rocket-${run}-Pass!`);
+  await signIn(page, teamCode, `Rocket-${run}-Pass!`);
   await page.goto("/portal/support");
   await expect(page.getByRole("row").filter({ hasText: "Projector not working" })).toContainText("In progress");
   await page.goto("/portal/notifications");

@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { setAccountStatus } from "@/lib/accounts";
+import { recordCredentialEvent, setAccountStatus } from "@/lib/accounts";
+import { reissueTeamCode } from "@/lib/activation";
 import { UUID, dbErrorMessage, flash, str } from "@/lib/actions";
 import { requirePermission } from "@/lib/auth";
-import { createInvitation } from "@/lib/invitations";
 import { cleanTeamName } from "@/lib/domain/normalize";
 import { BUCKETS, uploadObject, validateUpload } from "@/lib/storage";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -181,25 +181,6 @@ export async function uploadPhoto(teamId: string, participantId: string, formDat
   flash(teamPath(teamId), { notice: "Photo uploaded." });
 }
 
-export type LinkState = { error?: string; link?: string; email?: string; name?: string; expiresAt?: string; purpose?: string };
-
-/**
- * Creates a single-use activation link for a participant (or a password reset
- * link if they already have an account). Managing participant access is part
- * of registration management.
- */
-export async function createParticipantLink(participantId: string, _prev: LinkState, _formData: FormData): Promise<LinkState> {
-  assertId(participantId);
-  const session = await requirePermission("manage_registrations");
-  const service = createServiceClient(session.userId);
-  const { data: p } = await service.from("participants").select("id, email, full_name, user_id").eq("id", participantId).eq("hackathon_id", session.hackathonId).maybeSingle<Pick<Participant, "id" | "email" | "full_name" | "user_id">>();
-  if (!p) return { error: "Participant not found." };
-  const invitation = await createInvitation(session, p.user_id
-    ? { role: "participant", purpose: "reset", email: p.email, profileId: p.user_id, participantId: p.id, fullName: p.full_name }
-    : { role: "participant", email: p.email, participantId: p.id, fullName: p.full_name });
-  revalidatePath("/staff/teams");
-  return { link: invitation.url, email: p.email, name: p.full_name, expiresAt: invitation.expiresAt, purpose: invitation.purpose === "reset" ? "password reset" : "account activation" };
-}
 
 export async function setParticipantAccountStatus(teamId: string, userId: string, status: "active" | "suspended" | "deactivated") {
   assertId(teamId);
@@ -209,6 +190,24 @@ export async function setParticipantAccountStatus(teamId: string, userId: string
   if (target?.role !== "participant") flash(teamPath(teamId), { error: "Account not found." });
   const res = await setAccountStatus(session, userId, status);
   flash(teamPath(teamId), res.ok ? { notice: res.message } : { error: res.error });
+}
+
+/**
+ * The team lost its shared password: a new one-time code replaces the old
+ * one. Reprinted ID cards carry it; using it sets a new team password.
+ */
+export async function issueNewTeamCode(teamId: string) {
+  assertId(teamId);
+  const session = await requirePermission("manage_registrations");
+  const service = createServiceClient(session.userId);
+  const { data: team } = await service.from("teams").select("id").eq("id", teamId).eq("hackathon_id", session.hackathonId).maybeSingle();
+  if (!team) flash(teamPath(teamId), { error: "Team not found." });
+  await reissueTeamCode(teamId);
+  await service.from("teams").update({ pdf_status: "outdated" }).eq("id", teamId).eq("pdf_status", "generated");
+  const { data: account } = await service.from("profiles").select("id").eq("team_id", teamId).maybeSingle<{ id: string }>();
+  await recordCredentialEvent(session, "activation_code_used", { profileId: account?.id ?? null }, "New team login code issued");
+  revalidatePath(teamPath(teamId));
+  flash(teamPath(teamId), { notice: "New team login code created. Regenerate and reprint the team's ID cards: the code is printed on them." });
 }
 
 /** Payment review: confirm a submitted UPI payment, or reject it with a reason the team will see. */

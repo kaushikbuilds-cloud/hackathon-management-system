@@ -5,7 +5,7 @@ import { audit } from "@/lib/audit";
 import type { Session } from "@/lib/auth";
 import { teamPdfFileName } from "@/lib/domain/normalize";
 import { pageCount, resolveTemplateConfig, type TemplateConfig } from "@/lib/domain/template";
-import { activationInfoFor } from "@/lib/activation";
+import { teamLoginInfo } from "@/lib/activation";
 import { CardValidationError, generateTeamIdCardsPdf, validateCardInput, type CardInput, type CardValidation } from "@/lib/pdf/id-cards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { BUCKETS, downloadObject, signedUrl, uploadObject } from "@/lib/storage";
@@ -62,12 +62,12 @@ function toCardMember(p: Participant) {
 }
 
 /**
- * `activation`: print one-time account activation codes. Only for staff who
- * may print cards; never for portal downloads (a Team Leader must not receive
- * teammates' codes).
+ * `activation`: print the team's one-time login code (the same on every
+ * member's card). Only for staff who may print cards; never for portal
+ * downloads.
  */
 async function buildCardInput(ctx: TeamCardContext, opts: { activation: boolean }): Promise<CardInput> {
-  const activation = opts.activation ? await activationInfoFor(ctx.members.map((m) => m.id)) : null;
+  const login = opts.activation ? await teamLoginInfo(ctx.team.id) : null;
   return {
     event: {
       name: ctx.hackathon.name,
@@ -84,8 +84,8 @@ async function buildCardInput(ctx: TeamCardContext, opts: { activation: boolean 
     team: { name: ctx.team.name, teamCode: ctx.team.team_code },
     members: ctx.members.map((m) => ({
       ...toCardMember(m),
-      activated: activation?.get(m.id)?.activated ?? false,
-      activationCode: activation?.get(m.id)?.code ?? null,
+      activated: login?.activated ?? false,
+      activationCode: login?.code ?? null,
     })),
     template: ctx.templateConfig,
     templateVersion: ctx.template?.version ?? 0,

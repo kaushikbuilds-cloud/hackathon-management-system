@@ -47,7 +47,7 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
           <div className="rounded-md border-2 border-line bg-brand-tint p-4 text-sm">
             <p className="font-semibold text-ink">What happens next</p>
             <p className="mt-1 text-ink-soft">
-              Each member receives an ID card from the organisers. Your Team ID, each member&rsquo;s Participant ID and the one-time activation code for the student portal are printed only on the ID card, along with the QR code used for attendance.
+              Each member receives an ID card from the organisers. The Team ID and the team&rsquo;s one-time login code are printed only on the ID card, along with each member&rsquo;s Participant ID and attendance QR code. The whole team shares one login for the student portal.
             </p>
           </div>
         </div>

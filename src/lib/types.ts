@@ -38,6 +38,8 @@ export type Profile = {
   full_name: string | null;
   role: AppRole;
   participant_id: string | null;
+  /** Set on a team's shared portal login (then participant_id is null). */
+  team_id?: string | null;
   /** The hackathon this person belongs to (null for the Super Admin). */
   hackathon_id: string | null;
   is_active: boolean;

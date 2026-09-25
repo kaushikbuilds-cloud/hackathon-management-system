@@ -8,8 +8,8 @@ export const metadata: Metadata = { title: "Activate your account", robots: { in
 export default function ActivatePage() {
   return (
     <AuthShell
-      title="Activate your account"
-      description="Use the Participant ID and one-time activation code printed on your ID card, then choose your password."
+      title="Activate your team login"
+      description="Use the Team ID and one-time activation code printed on your ID card, then choose a password to share with your team."
       footer={<>Already activated? <Link href="/login" className="text-brand hover:text-brand">Sign in</Link></>}
     >
       <ActivateForm />

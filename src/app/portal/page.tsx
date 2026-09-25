@@ -12,7 +12,7 @@ import { resubmitPayment } from "./payment-actions";
 export default async function PortalHome(props: PageProps<"/portal">) {
   const sp = await props.searchParams;
   const session = await requireParticipant();
-  const [data, hackathon, feed] = await Promise.all([loadMyTeam(session.participantId), getHackathon(), loadAnnouncementsAndSchedule(5)]);
+  const [data, hackathon, feed] = await Promise.all([loadMyTeam(session.participantId, session.isTeamAccount), getHackathon(), loadAnnouncementsAndSchedule(5)]);
   if (!data) return <EmptyState title="Team not found">Your account is not linked to a team. Contact the organisers.</EmptyState>;
   const { team, roster, me, isLeader, members } = data;
   const tz = hackathon?.timezone ?? "UTC";
@@ -22,9 +22,9 @@ export default async function PortalHome(props: PageProps<"/portal">) {
     <>
       <PageHeader
         title={team.name}
-        description={<span><span className="font-mono">{team.team_code}</span> · {isLeader ? "Team Leader dashboard" : "Participant dashboard"}</span>}
+        description={<span><span className="font-mono">{team.team_code}</span> · {session.isTeamAccount ? "Team dashboard" : isLeader ? "Team Leader dashboard" : "Participant dashboard"}</span>}
         actions={<>
-          {cards && <a href="/api/portal/id-card?scope=me" className={buttonClass("secondary")}>My ID card</a>}
+          {cards && !session.isTeamAccount && <a href="/api/portal/id-card?scope=me" className={buttonClass("secondary")}>My ID card</a>}
           {cards && isLeader && <a href="/api/portal/id-card?scope=team" className={buttonClass("secondary")}>Team ID cards PDF</a>}
           <LinkButton href="/portal/support/new">Get help</LinkButton>
         </>}

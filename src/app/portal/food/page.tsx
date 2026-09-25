@@ -14,18 +14,24 @@ import { OrderForm } from "./order-form";
 export const metadata: Metadata = { title: "Food" };
 
 type MyOrder = FoodOrder & { food_order_items: FoodOrderLine[]; food_shops: { name: string; location: string | null } | null };
+type RosterRow = { id: string; full_name: string };
 
 export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
-  await requireParticipant();
+  const session = await requireParticipant();
   const sp = await props.searchParams;
   const hackathon = await getHackathon();
   const supabase = await createClient();
-  const [{ data: shops }, { data: items }, { data: orders }] = await Promise.all([
+  const [{ data: shops }, { data: items }, { data: orders }, { data: roster }] = await Promise.all([
     supabase.from("food_shops").select("*").eq("is_open", true).order("name").returns<FoodShop[]>(),
     supabase.from("food_items").select("*").order("sort_order").order("name").returns<FoodItem[]>(),
     supabase.from("food_orders").select("*, food_order_items(name, price, qty), food_shops(name, location)")
       .order("created_at", { ascending: false }).limit(30).returns<MyOrder[]>(),
+    supabase.rpc("my_team_roster"),
   ]);
+  const team = (roster ?? []) as RosterRow[];
+  const names = new Map(team.map((m) => [m.id, m.full_name]));
+  // The shared team login picks a member for each order; per-member accounts order for themselves.
+  const members = session.isTeamAccount ? team.map((m) => ({ id: m.id, name: m.full_name })) : null;
   const open = (orders ?? []).filter((o) => OPEN_FOOD_STATUSES.includes(o.status));
   const past = (orders ?? []).filter((o) => !OPEN_FOOD_STATUSES.includes(o.status));
 
@@ -42,7 +48,7 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
         <section aria-labelledby="open-orders" className="mb-8">
           <h2 id="open-orders" className="mb-3 text-lg font-bold text-ink">Your open orders</h2>
           <div className="grid gap-4 md:grid-cols-2">
-            {open.map((o) => <OrderSummary key={o.id} order={o} tz={hackathon?.timezone} />)}
+            {open.map((o) => <OrderSummary key={o.id} order={o} tz={hackathon?.timezone} forName={names.get(o.participant_id)} />)}
           </div>
         </section>
       )}
@@ -66,6 +72,7 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
                   action={placeFoodOrder.bind(null, shop.id)}
                   free={shop.is_free}
                   shopName={shop.id}
+                  members={members}
                   items={menu.map((i) => ({ id: i.id, name: i.name, description: i.description, price: shop.is_free ? 0 : Number(i.price), isVeg: i.is_veg, available: i.is_available, limit: i.limit_per_person }))}
                 />
               )}
@@ -80,7 +87,7 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
           <ul className="divide-y-2 divide-line-soft rounded-md border-2 border-line bg-surface text-sm">
             {past.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
-                <span><span className="font-mono font-bold">{orderLabel(o.order_no)}</span> · {o.food_shops?.name} · {o.food_order_items.map((l) => `${l.qty} × ${l.name}`).join(", ")}</span>
+                <span><span className="font-mono font-bold">{orderLabel(o.order_no)}</span>{names.get(o.participant_id) ? ` · ${names.get(o.participant_id)}` : ""} · {o.food_shops?.name} · {o.food_order_items.map((l) => `${l.qty} × ${l.name}`).join(", ")}</span>
                 <Badge tone={FOOD_STATUS_TONE[o.status]}>{FOOD_STATUS_LABEL[o.status]}</Badge>
               </li>
             ))}
@@ -91,7 +98,7 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
   );
 }
 
-function OrderSummary({ order: o, tz }: { order: MyOrder; tz?: string }) {
+function OrderSummary({ order: o, tz, forName }: { order: MyOrder; tz?: string; forName?: string }) {
   return (
     <article className={`rounded-md border-2 border-line p-4 shadow-brutal-sm ${o.status === "ready" ? "bg-pop" : "bg-surface"}`} aria-label={`Order ${orderLabel(o.order_no)}`}>
       <div className="flex items-start justify-between gap-2">
@@ -101,6 +108,7 @@ function OrderSummary({ order: o, tz }: { order: MyOrder; tz?: string }) {
         </div>
         <Badge tone={FOOD_STATUS_TONE[o.status]}>{FOOD_STATUS_LABEL[o.status]}</Badge>
       </div>
+      {forName && <p className="mt-2 text-sm text-ink">For <strong>{forName}</strong></p>}
       <p className="mt-2 text-sm font-bold text-ink">{o.food_shops?.name}{o.food_shops?.location ? ` · ${o.food_shops.location}` : ""}</p>
       <ul className="mt-1 text-sm text-ink">
         {o.food_order_items.map((l, i) => <li key={i}>{l.qty} × {l.name}</li>)}

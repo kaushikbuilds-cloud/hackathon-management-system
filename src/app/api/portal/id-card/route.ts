@@ -12,10 +12,10 @@ export const runtime = "nodejs";
  */
 export async function GET(request: NextRequest) {
   const session = await getSession();
-  if (!session || session.profile.role !== "participant" || !session.profile.participant_id) {
+  if (!session || session.profile.role !== "participant" || (!session.profile.participant_id && !session.profile.team_id)) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
-  const scope = request.nextUrl.searchParams.get("scope") === "team" ? "team" : "me";
+  const scope = request.nextUrl.searchParams.get("scope") === "team" || !session.profile.participant_id ? "team" : "me";
   const supabase = await createClient();
   const [{ data: hackathon }, { data: teamId }, { data: leader }] = await Promise.all([
     supabase.from("hackathons").select("portal_id_cards").eq("id", session.hackathonId ?? "").maybeSingle<{ portal_id_cards: boolean }>(),
