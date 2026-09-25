@@ -26,6 +26,7 @@ export function staffNav(session: Session): NavItem[] {
     { href: "/staff/attendance/history", label: "Attendance History", icon: "history", show: ev(canAny(session, ["record_attendance", "manual_checkin", "view_attendance"])) },
     { href: "/staff/food", label: "Food Orders", icon: "food", show: ev(can(session, "manage_food")) },
     { href: "/staff/announcements", label: official ? "Announcements & Instructions" : "Announcements & Schedule", icon: "megaphone", show: inEvent },
+    { href: "/staff/faq", label: "FAQ", icon: "help", show: ev(can(session, "publish_announcements")) },
     { href: "/staff/support", label: official ? "Assigned Help Desk" : "Support Requests", icon: "help", show: inEvent },
     { href: "/staff/reports", label: "Reports & Export", icon: "chart", show: ev(can(session, "view_reports")) },
     { href: "/staff/audit", label: "Audit Logs", icon: "audit", show: sa },

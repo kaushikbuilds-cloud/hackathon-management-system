@@ -1,3 +1,4 @@
+import { FaqList } from "@/components/faq";
 import { PublicShell } from "@/components/layout/public-shell";
 import { Card, LinkButton, Badge } from "@/components/ui";
 import { notFound } from "next/navigation";
@@ -5,7 +6,7 @@ import { brandingUrls, formAvailability, getHackathonBySlug } from "@/lib/data/e
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatTime } from "@/lib/format";
 import { formatEventDates } from "@/lib/pdf/id-cards";
-import type { RegistrationForm, ScheduleItem } from "@/lib/types";
+import type { Faq, RegistrationForm, ScheduleItem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +20,11 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
   const hackathon = await getHackathonBySlug((await props.params).slug);
   if (!hackathon || hackathon.status === "archived") notFound();
   const supabase = await createClient();
-  const [{ data: forms }, { data: schedule }] = await Promise.all([
+  const [{ data: forms }, { data: schedule }, { data: faqs }] = await Promise.all([
     supabase.from("registration_forms").select("*").eq("hackathon_id", hackathon.id).eq("status", "published").order("published_at", { ascending: false }).returns<RegistrationForm[]>(),
     supabase.from("event_schedule").select("*").eq("hackathon_id", hackathon.id).eq("visibility", "public").order("starts_at").limit(20).returns<ScheduleItem[]>(),
+    supabase.from("hackathon_faqs").select("*").eq("hackathon_id", hackathon.id).eq("is_published", true).eq("audience", "public")
+      .order("sort_order").order("created_at").returns<Faq[]>(),
   ]);
   const form = forms?.[0];
   const availability = form ? formAvailability(form) : { open: false };
@@ -81,6 +84,14 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
               </li>
             ))}
           </ol>
+        </section>
+      )}
+      {faqs && faqs.length > 0 && (
+        <section className="mx-auto max-w-3xl px-4 pb-20" aria-labelledby="faq-heading">
+          <h2 id="faq-heading" className="mb-4 text-2xl font-bold text-ink">Frequently asked questions</h2>
+          <FaqList items={faqs} footer={hackathon.contact_email ? (
+            <p className="text-sm text-ink-soft">Still have a question? Email <a className="font-bold text-brand underline-offset-4 hover:underline" href={`mailto:${hackathon.contact_email}`}>{hackathon.contact_email}</a>.</p>
+          ) : undefined} />
         </section>
       )}
     </PublicShell>

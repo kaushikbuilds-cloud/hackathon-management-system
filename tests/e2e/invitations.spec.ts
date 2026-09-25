@@ -73,6 +73,7 @@ test("the invitation cannot be reused and suspension blocks access", async ({ pa
   await page.getByLabel("Email").fill(official.email);
   await page.getByLabel("Password").fill(official.password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  // Next.js also renders an empty role="alert" route announcer; match the form's message.
+  await expect(page.getByRole("alert").filter({ hasText: /\w/ })).toBeVisible();
   await expect(page).toHaveURL(/\/login/);
 });

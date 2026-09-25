@@ -306,3 +306,16 @@ export type FoodOrder = {
 };
 
 export type FoodOrderLine = { name: string; price: number; qty: number };
+
+export type Faq = {
+  id: string;
+  hackathon_id: string;
+  question: string;
+  answer: string;
+  category: string | null;
+  audience: "public" | "participants";
+  is_published: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};

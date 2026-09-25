@@ -16,7 +16,7 @@ export const PERMISSIONS = [
   { key: "correct_attendance", label: "Correct attendance", description: "Undo/correct check-ins with a reason (audited).", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
   { key: "view_attendance", label: "Attendance dashboard", description: "See everyone's attendance, not just own check-ins.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
   { key: "manage_officials", label: "Manage Officials", description: "Invite, suspend and set permissions for Officials.", grantableTo: ["admin"], defaultFor: [] },
-  { key: "publish_announcements", label: "Announcements & schedule", description: "Create, publish and archive announcements and schedule items.", grantableTo: ["admin"], defaultFor: ["admin"] },
+  { key: "publish_announcements", label: "Announcements, schedule & FAQ", description: "Create, publish and archive announcements, schedule items and FAQ answers.", grantableTo: ["admin"], defaultFor: ["admin"] },
   { key: "manage_all_support", label: "All support requests", description: "See, assign and handle every support request.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
   { key: "view_reports", label: "Reports & exports", description: "Dashboard statistics and CSV exports.", grantableTo: ["admin"], defaultFor: ["admin"] },
   { key: "manage_food", label: "Food orders", description: "Manage food shops and menus, and handle orders at the counter.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },

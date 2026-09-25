@@ -47,3 +47,23 @@ export async function teamCredentials(memberEmail: string): Promise<{ teamCode: 
     await pool.end();
   }
 }
+
+/** Registers a two-member team through the public form (names must be letters only). */
+export async function registerTeam(page: Page, teamName: string, members: [string, string][]) {
+  await page.goto(`/register/${FORM_SLUG}`);
+  await page.getByLabel("Team name").fill(teamName);
+  await page.getByLabel("College / institution").fill("Test College");
+  const phoneBase = String(Date.now()).slice(-7);
+  for (const [i, [name, email]] of members.entries()) {
+    const card = page.locator("section").filter({ has: page.getByRole("heading", { name: new RegExp(`^Member ${i + 1}`) }) });
+    await card.getByLabel("Full name").fill(name);
+    await card.getByLabel("Email").fill(email);
+    await card.getByLabel("Phone number").fill(`+91 9${phoneBase}${i}${Math.floor(Math.random() * 10)}`);
+    await card.getByLabel("Department").fill("CSE");
+    await card.getByLabel("Academic year").fill("2nd Year");
+  }
+  const track = page.getByLabel(/Which track/);
+  if (await track.count()) await track.selectOption({ index: 1 });
+  await page.getByRole("button", { name: "Submit registration" }).click();
+  await expect(page.getByText("Registration received!")).toBeVisible();
+}

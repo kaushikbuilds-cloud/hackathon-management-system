@@ -88,3 +88,12 @@ describe("food cart parsing", () => {
     expect(cartFromForm(zero, new Set([a]))).toEqual([]);
   });
 });
+
+describe("FAQ grouping", () => {
+  it("puts uncategorised answers first and keeps each group's order", async () => {
+    const { groupFaqs } = await import("@/components/faq");
+    const f = (id: string, category: string | null) => ({ id, category }) as import("@/lib/types").Faq;
+    const groups = groupFaqs([f("1", "Food"), f("2", null), f("3", "Food"), f("4", "Portal"), f("5", " ")]);
+    expect(groups.map((g) => [g.category, g.items.map((i) => i.id)])).toEqual([[null, ["2", "5"]], ["Food", ["1", "3"]], ["Portal", ["4"]]]);
+  });
+});
