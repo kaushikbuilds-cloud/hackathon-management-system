@@ -53,6 +53,24 @@ function parseQuestions(formData: FormData): { questions: CustomQuestion[]; erro
   return { questions };
 }
 
+/** Registration fee settings. Returns an error message, or the columns to save. */
+function parseFee(formData: FormData) {
+  const enabled = bool(formData, "fee_enabled");
+  const amountRaw = str(formData, "fee_amount", 12);
+  const amount = amountRaw ? Number(amountRaw) : null;
+  const basis = str(formData, "fee_basis", 10) === "member" ? "member" : "team";
+  const upi = str(formData, "fee_upi_id", 129).trim();
+  const payee = str(formData, "fee_payee_name", 100).trim();
+  const instructions = str(formData, "fee_instructions", 1000).trim();
+  if (amount !== null && (!Number.isFinite(amount) || amount <= 0 || amount > 100000)) return "Enter a fee between ₹1 and ₹1,00,000.";
+  if (upi && !/^[A-Za-z0-9._-]{2,64}@[A-Za-z0-9.-]{2,64}$/.test(upi)) return "Enter a valid UPI ID, like name@okaxis.";
+  if (enabled && (!amount || !upi)) return "To collect a fee, enter the amount and your UPI ID.";
+  return {
+    fee_enabled: enabled, fee_amount: amount ? Math.round(amount * 100) / 100 : null, fee_basis: basis,
+    fee_upi_id: upi || null, fee_payee_name: payee || null, fee_instructions: instructions || null,
+  };
+}
+
 export async function updateForm(formId: string, formData: FormData) {
   if (!UUID.test(formId)) throw new Error("Invalid id");
   await requirePermission("manage_registrations");
@@ -79,6 +97,9 @@ export async function updateForm(formId: string, formData: FormData) {
   const { questions, error: qError } = parseQuestions(formData);
   if (qError) flash(back, { error: qError });
 
+  const fee = parseFee(formData);
+  if (typeof fee === "string") flash(back, { error: fee });
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("registration_forms")
@@ -86,6 +107,7 @@ export async function updateForm(formId: string, formData: FormData) {
       title, slug: slug.data, description: str(formData, "description", 5000) || null,
       min_team_size: min, max_team_size: max, requires_approval: bool(formData, "requires_approval"),
       opens_at: opensAt, closes_at: closesAt, field_config: fieldConfig, custom_questions: questions,
+      ...fee,
     })
     .eq("id", formId);
   if (error) flash(back, { error: error.code === "23505" ? "That URL slug is already used." : dbErrorMessage(error) });

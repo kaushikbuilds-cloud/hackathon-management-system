@@ -13,8 +13,8 @@ const REPORTS: Record<string, Report> = {
     async build(sb) {
       const { data } = await sb.from("team_overview").select("*").order("team_code");
       return {
-        headers: ["Team ID", "Team name", "College", "Leader", "Leader email", "Members", "Present", "Registration status", "PDF status", "Registered at"],
-        rows: (data ?? []).map((t) => [t.team_code, t.name, t.college, t.leader_name, t.leader_email, t.member_count, t.present_count, t.status, t.pdf_status, t.created_at]),
+        headers: ["Team ID", "Team name", "College", "Leader", "Leader email", "Members", "Present", "Registration status", "Payment status", "Fee amount", "UPI transaction ID", "PDF status", "Registered at"],
+        rows: (data ?? []).map((t) => [t.team_code, t.name, t.college, t.leader_name, t.leader_email, t.member_count, t.present_count, t.status, t.payment_status, t.payment_amount, t.payment_utr, t.pdf_status, t.created_at]),
       };
     },
   },

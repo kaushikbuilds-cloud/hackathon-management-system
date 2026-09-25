@@ -61,6 +61,9 @@ export default async function RegisterPage(props: PageProps<"/register/[slug]">)
               maxMembers={form.max_team_size}
               fieldConfig={resolveFieldConfig(form.field_config)}
               questions={resolveCustomQuestions(form.custom_questions)}
+              fee={form.fee_enabled && form.fee_amount && form.fee_upi_id
+                ? { amount: Number(form.fee_amount), basis: form.fee_basis, upiId: form.fee_upi_id, payee: form.fee_payee_name, instructions: form.fee_instructions }
+                : null}
               disabled={isPreview || !availability.open}
             />
           )}

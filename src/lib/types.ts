@@ -88,6 +88,12 @@ export type RegistrationForm = {
   opens_at: string | null;
   closes_at: string | null;
   published_at: string | null;
+  fee_enabled: boolean;
+  fee_amount: number | null;
+  fee_basis: "team" | "member";
+  fee_upi_id: string | null;
+  fee_payee_name: string | null;
+  fee_instructions: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -102,9 +108,19 @@ export type Team = {
   status_reason: string | null;
   pdf_status: PdfStatus;
   custom_answers: Record<string, string>;
+  payment_status: PaymentStatus;
+  payment_amount: number | null;
+  payment_utr: string | null;
+  payment_proof_path: string | null;
+  payment_submitted_at: string | null;
+  payment_verified_by: string | null;
+  payment_verified_at: string | null;
+  payment_note: string | null;
   created_at: string;
   updated_at: string;
 };
+
+export type PaymentStatus = "not_required" | "submitted" | "verified" | "rejected";
 
 export type TeamOverview = {
   id: string;
@@ -120,6 +136,9 @@ export type TeamOverview = {
   member_count: number;
   present_count: number;
   attendance_state: TeamAttendanceState;
+  payment_status: PaymentStatus;
+  payment_amount: number | null;
+  payment_utr: string | null;
 };
 
 export type Participant = {

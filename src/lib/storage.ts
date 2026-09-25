@@ -7,6 +7,7 @@ export const BUCKETS = {
   photos: "participant-photos",
   idCards: "id-cards",
   attachments: "support-attachments",
+  paymentProofs: "payment-proofs",
 } as const;
 
 type AllowedType = "image/png" | "image/jpeg" | "application/pdf" | "text/plain";

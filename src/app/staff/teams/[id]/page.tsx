@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ConfirmSubmit, SubmitButton } from "@/components/client";
-import { AttendanceBadge, PdfBadge, RegistrationBadge } from "@/components/status";
+import { AttendanceBadge, PaymentBadge, PdfBadge, RegistrationBadge } from "@/components/status";
+import { formatRupees } from "@/lib/domain/fees";
 import {
-  Badge, Card, CardTitle, DescriptionList, EmptyState, Flash, LinkButton, PageHeader, SelectField, Table, Td, TextField, Th,
+  Badge, buttonClass, Card, CardTitle, DescriptionList, EmptyState, Flash, LinkButton, PageHeader, SelectField, Table, Td, TextField, Th,
 } from "@/components/ui";
 import { can, isSuperAdmin, requirePermission } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
@@ -12,7 +13,7 @@ import { formatDateTime } from "@/lib/format";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { AuditLog, IdCardJob, ParticipantOverview, Profile, Team } from "@/lib/types";
 import {
-  addParticipant, makeLeader, removeParticipant, rotateQr, setParticipantAccountStatus, setQrRevoked, setTeamStatus, updateParticipant, updateTeam, uploadPhoto,
+  addParticipant, makeLeader, removeParticipant, reviewPayment, rotateQr, setParticipantAccountStatus, setQrRevoked, setTeamStatus, updateParticipant, updateTeam, uploadPhoto,
 } from "./actions";
 import { ParticipantLinkButton } from "./credential-actions";
 
@@ -87,6 +88,32 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
             </details>
           )}
         </Card>
+
+        {(team.payment_status ?? "not_required") !== "not_required" && (
+          <Card className={canAccounts ? "xl:col-start-3" : undefined}>
+            <CardTitle description="Check the screenshot and that the UTR appears in your UPI app's history before verifying.">Registration fee</CardTitle>
+            <DescriptionList items={[
+              { label: "Status", value: <PaymentBadge status={team.payment_status} /> },
+              { label: "Amount", value: team.payment_amount != null ? formatRupees(Number(team.payment_amount)) : "—" },
+              { label: "UTR / transaction ID", value: <span className="font-mono">{team.payment_utr ?? "—"}</span> },
+              { label: "Submitted", value: formatDateTime(team.payment_submitted_at, tz) },
+              ...(team.payment_note ? [{ label: "Note", value: team.payment_note }] : []),
+              ...(team.payment_verified_at ? [{ label: "Reviewed", value: formatDateTime(team.payment_verified_at, tz) }] : []),
+            ]} />
+            {team.payment_proof_path && canAccounts && (
+              <a href={`/api/teams/${id}/payment-proof`} target="_blank" rel="noopener" className={buttonClass("secondary", "sm", "mt-4")}>View payment screenshot</a>
+            )}
+            {canAccounts && (
+              <form action={reviewPayment.bind(null, id)} className="mt-4 space-y-3 border-t-2 border-line-soft pt-4">
+                <TextField label="Note to the team" name="note" maxLength={500} hint="Required when rejecting, e.g. 'Amount received was ₹200, expected ₹400'." />
+                <div className="flex flex-wrap gap-2">
+                  <SubmitButton size="sm" variant="success" name="decision" value="verified">Mark as paid</SubmitButton>
+                  <SubmitButton size="sm" variant="danger" name="decision" value="rejected">Reject payment</SubmitButton>
+                </div>
+              </form>
+            )}
+          </Card>
+        )}
 
         {canAccounts && (
           <Card>

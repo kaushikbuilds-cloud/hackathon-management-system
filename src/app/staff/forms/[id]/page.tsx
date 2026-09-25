@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmSubmit, CopyButton, SubmitButton } from "@/components/client";
-import { Badge, Card, CardTitle, Checkbox, EmptyState, Flash, LinkButton, PageHeader, Table, Td, TextArea, TextField, Th, inputClass } from "@/components/ui";
+import { Badge, Card, CardTitle, Checkbox, EmptyState, Flash, LinkButton, PageHeader, SelectField, Table, Td, TextArea, TextField, Th, inputClass } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { formAvailability, getHackathon } from "@/lib/data/event";
 import { appUrl } from "@/lib/env";
@@ -70,6 +70,20 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
             <TextField label={`Closes (${tz})`} name="closes_at" type="datetime-local" defaultValue={toLocalInput(form.closes_at, tz)} />
             <div className="md:col-span-2">
               <Checkbox name="requires_approval" defaultChecked={form.requires_approval} label="Require admin approval" hint="New teams start as Pending instead of Approved." />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <CardTitle description="Teams pay by UPI from any app, then enter the transaction ID (UTR) and upload a screenshot. You verify each payment on the team page.">Registration fee</CardTitle>
+          <div className="space-y-4">
+            <Checkbox name="fee_enabled" defaultChecked={form.fee_enabled} label="Collect a registration fee" hint="When on, teams must submit payment proof to register." />
+            <div className="grid gap-4 md:grid-cols-2">
+              <TextField label="Fee amount (₹)" name="fee_amount" type="number" min={1} max={100000} step="1" inputMode="numeric" defaultValue={form.fee_amount ?? ""} />
+              <SelectField label="Charged" name="fee_basis" defaultValue={form.fee_basis} options={[{ value: "team", label: "Per team (fixed amount)" }, { value: "member", label: "Per member (amount × team size)" }]} />
+              <TextField label="UPI ID" name="fee_upi_id" defaultValue={form.fee_upi_id ?? ""} maxLength={129} placeholder="yourname@okaxis" hint="Payments go to this UPI ID. A QR code is generated from it automatically." />
+              <TextField label="Payee name" name="fee_payee_name" defaultValue={form.fee_payee_name ?? ""} maxLength={100} placeholder="e.g. XYZ College Tech Club" />
+              <TextArea label="Payment instructions (optional)" name="fee_instructions" defaultValue={form.fee_instructions ?? ""} maxLength={1000} className="md:col-span-2" placeholder="e.g. Fee is non-refundable. Contact 98xxxxxx for payment issues." />
             </div>
           </div>
         </Card>

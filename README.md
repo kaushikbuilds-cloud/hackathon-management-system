@@ -247,6 +247,7 @@ npm run test:e2e             # Playwright end-to-end (needs a running app + Supa
   ```bash
   npm run seed:users   # note the admin/official passwords
   E2E_BASE_URL=http://localhost:3000 E2E_ADMIN_PASSWORD=... E2E_OFFICIAL_PASSWORD=... E2E_SUPER_ADMIN_PASSWORD=... E2E_DATABASE_URL=postgres://... npm run test:e2e
+  # The suite signs in many times; start the app under test with RATE_LIMIT_SCALE=20 so the login limit is not hit.
   ```
 
   Sign-in is rate-limited (10 per 15 minutes per IP + email). If you run the suite repeatedly, clear it with `truncate public.rate_limits;` on your **local** database.

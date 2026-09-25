@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AutoRefresh, AutoSubmitSelect } from "@/components/client";
-import { AttendanceBadge, PdfBadge, RegistrationBadge, TeamAttendance } from "@/components/status";
+import { AttendanceBadge, PaymentBadge, PdfBadge, RegistrationBadge, TeamAttendance } from "@/components/status";
 import { Badge, Card, EmptyState, Flash, LinkButton, PageHeader, Pagination, Table, Td, Th, buttonClass, inputClass } from "@/components/ui";
 import { can, requirePermission } from "@/lib/auth";
 import { hrefWith, param, type SearchParams } from "@/lib/data/query";
@@ -23,6 +23,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
   const status = pickEnum(param(sp, "status"), ["pending", "approved", "rejected", "flagged"] as const);
   const pdf = pickEnum(param(sp, "pdf"), ["not_generated", "generated", "outdated", "failed"] as const);
   const attendance = pickEnum(param(sp, "attendance"), ["none", "partial", "full"] as const);
+  const payment = pickEnum(param(sp, "payment"), ["not_required", "submitted", "verified", "rejected"] as const);
   const college = param(sp, "college").slice(0, 150);
   const sort = pickEnum(param(sp, "sort"), SORTS) ?? "created_at";
   const dir = param(sp, "dir") === "asc" ? "asc" : param(sp, "dir") === "desc" ? "desc" : sort === "created_at" ? "desc" : "asc";
@@ -39,6 +40,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
   if (status) query = query.eq("status", status);
   if (pdf) query = query.eq("pdf_status", pdf);
   if (attendance) query = query.eq("attendance_state", attendance);
+  if (payment) query = query.eq("payment_status", payment);
   if (college) query = query.eq("college", college);
   query = query.order(sort, { ascending: dir === "asc" }).order("team_code").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
@@ -61,7 +63,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
       {sort === key && <span aria-hidden="true">{dir === "asc" ? "▲" : "▼"}</span>}
     </Link>
   );
-  const hasFilters = Boolean(q || status || pdf || attendance || college);
+  const hasFilters = Boolean(q || status || pdf || attendance || college || payment);
 
   return (
     <>
@@ -72,12 +74,13 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
       />
       <Flash notice={sp.notice} error={sp.error} />
       <Card className="mb-4 p-4">
-        <form className="grid gap-3 md:grid-cols-[2fr_repeat(4,1fr)_auto]" role="search" aria-label="Filter teams">
+        <form className="grid gap-3 md:grid-cols-3 xl:grid-cols-[2fr_repeat(5,1fr)_auto]" role="search" aria-label="Filter teams">
           <label className="sr-only" htmlFor="q">Search</label>
           <input id="q" name="q" defaultValue={param(sp, "q")} placeholder="Search team, Team ID, leader, college, participant ID…" className={inputClass} />
           <FilterSelect name="status" label="Status" value={status} options={[["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["flagged", "Flagged"]]} />
           <FilterSelect name="college" label="College" value={college} options={colleges.map((c) => [c, c])} />
           <FilterSelect name="attendance" label="Attendance" value={attendance} options={[["none", "None present"], ["partial", "Partially present"], ["full", "All present"]]} />
+          <FilterSelect name="payment" label="Payment" value={payment} options={[["submitted", "To verify"], ["verified", "Paid"], ["rejected", "Rejected"], ["not_required", "No fee"]]} />
           <FilterSelect name="pdf" label="PDF" value={pdf} options={[["not_generated", "Not generated"], ["generated", "Generated"], ["outdated", "Outdated"], ["failed", "Failed"]]} />
           <div className="flex gap-2">
             <button type="submit" className={buttonClass("primary")}>Search</button>
@@ -104,6 +107,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
                 <Th>{sortLabel("member_count", "Members")}</Th>
                 <Th>{sortLabel("college", "College")}</Th>
                 <Th>Registration</Th>
+                <Th>Payment</Th>
                 <Th>Attendance</Th>
                 <Th>ID Card PDF</Th>
               </tr>
@@ -155,6 +159,7 @@ function TeamRows({ team: t, open, members, canPdf, toggleHref }: { team: TeamOv
         <Td className="tabular-nums">{t.member_count}</Td>
         <Td className="max-w-48 truncate" title={t.college ?? ""}>{t.college ?? "—"}</Td>
         <Td><RegistrationBadge status={t.status} /></Td>
+        <Td><PaymentBadge status={t.payment_status ?? "not_required"} /></Td>
         <Td><TeamAttendance state={t.attendance_state} present={t.present_count} total={t.member_count} /></Td>
         <Td>
           <div className="flex items-center gap-2 whitespace-nowrap">
@@ -175,7 +180,7 @@ function TeamRows({ team: t, open, members, canPdf, toggleHref }: { team: TeamOv
       </tr>
       {open && (
         <tr id={`members-${t.id}`} className="bg-paper">
-          <td colSpan={9} className="px-3 pb-4">
+          <td colSpan={10} className="px-3 pb-4">
             {members.length === 0 ? (
               <p className="py-3 text-sm text-muted">No members.</p>
             ) : (

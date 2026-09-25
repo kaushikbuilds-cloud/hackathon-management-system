@@ -210,3 +210,31 @@ export async function setParticipantAccountStatus(teamId: string, userId: string
   const res = await setAccountStatus(session, userId, status);
   flash(teamPath(teamId), res.ok ? { notice: res.message } : { error: res.error });
 }
+
+/** Payment review: confirm a submitted UPI payment, or reject it with a reason the team will see. */
+export async function reviewPayment(teamId: string, formData: FormData) {
+  assertId(teamId);
+  const session = await requirePermission("manage_registrations");
+  const decision = formData.get("decision") === "verified" ? "verified" : "rejected";
+  const note = str(formData, "note", 500);
+  if (decision === "rejected" && note.length < 3) flash(teamPath(teamId), { error: "Give the team a reason when rejecting a payment." });
+  const { data, error } = await createServiceClient(session.userId)
+    .from("teams")
+    .update({
+      payment_status: decision, payment_note: note || null,
+      payment_verified_by: session.userId, payment_verified_at: new Date().toISOString(),
+    })
+    .eq("id", teamId)
+    .eq("hackathon_id", session.hackathonId)
+    .in("payment_status", ["submitted", "verified", "rejected"])
+    .select("id");
+  if (error || !data?.length) flash(teamPath(teamId), { error: error ? dbErrorMessage(error) : "No payment to review for this team." });
+  if (decision === "rejected") {
+    await createServiceClient(session.userId).from("notifications").insert({
+      team_id: teamId, title: "Payment not accepted", body: note, link: "/portal",
+    });
+  }
+  revalidatePath(teamPath(teamId));
+  revalidatePath("/staff/teams");
+  flash(teamPath(teamId), { notice: decision === "verified" ? "Payment verified." : "Payment rejected. The team was notified and can resubmit." });
+}

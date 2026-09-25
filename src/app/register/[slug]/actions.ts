@@ -3,6 +3,8 @@
 import { randomUUID } from "node:crypto";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { activationInfoFor } from "@/lib/activation";
+import { UTR_RE, feeFor, normalizeUtr } from "@/lib/domain/fees";
+import { BUCKETS, uploadObject, validateUpload, type UploadCheck } from "@/lib/storage";
 import { clientIp } from "@/lib/request";
 import { rateLimit } from "@/lib/rate-limit";
 import {
@@ -15,12 +17,15 @@ export type RegisterState = {
   message?: string;
   fieldErrors?: Record<string, string>;
   values?: RegistrationDraft;
+  /** Re-shown after a validation error (the screenshot must be chosen again). */
+  utr?: string;
   result?: {
     team_code: string;
     team_name: string;
     participant_codes: string[];
     /** Portal login details for every member: Participant ID + one-time activation code. */
     logins: { full_name: string; participant_code: string; role: "leader" | "member"; activation_code: string | null }[];
+    payment?: { amount: number; stored: boolean };
   };
   /** Changes on every response so the client form remounts with the submitted values. */
   nonce?: string;
@@ -61,6 +66,32 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
 
   const payload = parsed.data;
   const service = createServiceClient();
+
+  // Registration fee: UTR + screenshot are required and checked before anything is saved.
+  const utr = normalizeUtr(String(formData.get("payment_utr") ?? "")).slice(0, 40);
+  let proof: Extract<UploadCheck, { ok: true }> | null = null;
+  const feeRequired = form.fee_enabled && form.fee_amount && form.fee_upi_id;
+  if (feeRequired) {
+    const fieldErrors: Record<string, string> = {};
+    if (!UTR_RE.test(utr)) fieldErrors.payment_utr = "Enter the UPI transaction ID (6–35 letters or digits).";
+    const file = formData.get("payment_proof");
+    if (!(file instanceof File) || file.size === 0) fieldErrors.payment_proof = "Upload a screenshot of the payment.";
+    else {
+      const check = await validateUpload(file, ["image/png", "image/jpeg", "application/pdf"], 5 * 1024 * 1024);
+      if (!check.ok) fieldErrors.payment_proof = check.error;
+      else proof = check;
+    }
+    if (!fieldErrors.payment_utr) {
+      const { data: used } = await service.from("teams").select("id").eq("hackathon_id", form.hackathon_id).ilike("payment_utr", utr).limit(1);
+      if (used?.length) fieldErrors.payment_utr = "This transaction ID was already used for another team.";
+    }
+    if (Object.keys(fieldErrors).length) {
+      return {
+        nonce: randomUUID(), status: "error", values, utr, fieldErrors,
+        message: "Please check the payment details." + (fieldErrors.payment_proof ? "" : " Choose the screenshot again before resubmitting."),
+      };
+    }
+  }
 
   // Phone numbers must be unique across all teams (the database enforces it too).
   const phoneKeys = payload.members.map((m) => phoneKey(m.phone)).filter((k): k is string => Boolean(k));
@@ -103,9 +134,27 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
     full_name: m.full_name, participant_code: m.participant_code, role: m.role, activation_code: info.get(m.id)?.code ?? null,
   }));
 
+  let payment: { amount: number; stored: boolean } | undefined;
+  if (feeRequired && proof && !result.replayed) {
+    const amount = feeFor({ amount: Number(form.fee_amount), basis: form.fee_basis }, payload.members.length);
+    const path = `${form.hackathon_id}/${result.team_id}/proof-${Date.now()}.${proof.extension}`;
+    let stored = false;
+    try {
+      await uploadObject(BUCKETS.paymentProofs, path, proof.bytes, proof.contentType);
+      const { error: payError } = await service.from("teams").update({
+        payment_status: "submitted", payment_amount: amount, payment_utr: utr, payment_proof_path: path, payment_submitted_at: new Date().toISOString(),
+      }).eq("id", result.team_id);
+      stored = !payError;
+      if (payError) console.error("payment save failed", payError.message);
+    } catch (e) {
+      console.error("payment proof upload failed", e instanceof Error ? e.message : e);
+    }
+    payment = { amount, stored };
+  }
+
   return {
     status: "success",
-    result: { team_code: result.team_code, team_name: result.team_name, participant_codes: result.participant_codes, logins },
+    result: { team_code: result.team_code, team_name: result.team_name, participant_codes: result.participant_codes, logins, payment },
   };
 }
 

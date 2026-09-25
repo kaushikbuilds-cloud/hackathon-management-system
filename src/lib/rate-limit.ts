@@ -15,8 +15,15 @@ export const LIMITS = {
  * instances). Returns true when the request is allowed. Fails open if the
  * limiter itself errors so a DB hiccup does not lock everybody out.
  */
+/** Test environments may raise all limits (e.g. RATE_LIMIT_SCALE=20 for the E2E suite). Default 1. */
+function scale(): number {
+  const n = Number(process.env.RATE_LIMIT_SCALE ?? "1");
+  return Number.isFinite(n) ? Math.min(100, Math.max(1, Math.floor(n))) : 1;
+}
+
 export async function rateLimit(scope: keyof typeof LIMITS, identifier: string): Promise<boolean> {
-  const { limit, windowSeconds } = LIMITS[scope];
+  const { windowSeconds } = LIMITS[scope];
+  const limit = LIMITS[scope].limit * scale();
   try {
     const { data, error } = await createServiceClient().rpc("check_rate_limit", {
       p_key: `${scope}:${hashKey(identifier)}`,

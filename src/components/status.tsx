@@ -4,6 +4,16 @@ import {
   type AttendanceState, type PdfStatus, type RegistrationStatus, type TeamAttendanceState,
 } from "@/lib/domain/labels";
 import { supportStatusLabel, type SupportStatus } from "@/lib/domain/support";
+import type { PaymentStatus } from "@/lib/types";
+
+export const PAYMENT_STATUS_LABEL: Record<PaymentStatus, string> = {
+  not_required: "No fee", submitted: "To verify", verified: "Paid", rejected: "Payment rejected",
+};
+
+export function PaymentBadge({ status }: { status: PaymentStatus }) {
+  const tone = { not_required: "neutral", submitted: "amber", verified: "green", rejected: "red" } as const;
+  return <Badge tone={tone[status]}>{PAYMENT_STATUS_LABEL[status]}</Badge>;
+}
 
 export function RegistrationBadge({ status }: { status: RegistrationStatus }) {
   const tone = { pending: "amber", approved: "green", rejected: "red", flagged: "violet" } as const;

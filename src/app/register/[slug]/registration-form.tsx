@@ -3,7 +3,9 @@
 import { useActionState, useId, useState } from "react";
 import { SubmitButton } from "@/components/client";
 import { Alert, Button, Card, SelectField, TextArea, TextField, buttonClass } from "@/components/ui";
+import { formatRupees, type FeeSettings } from "@/lib/domain/fees";
 import type { CustomQuestion, FieldConfig, RegistrationDraft } from "@/lib/domain/registration";
+import { FeeStep } from "./fee-step";
 import { registerTeam, type RegisterState } from "./actions";
 
 type Props = {
@@ -12,6 +14,7 @@ type Props = {
   maxMembers: number;
   fieldConfig: FieldConfig;
   questions: CustomQuestion[];
+  fee?: FeeSettings | null;
   disabled?: boolean;
 };
 
@@ -21,7 +24,7 @@ function newKey() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConfig, questions, disabled }: Props) {
+export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConfig, questions, fee, disabled }: Props) {
   const [state, formAction] = useActionState<RegisterState, FormData>(registerTeam.bind(null, slug), { status: "idle" });
   const [idempotencyKey] = useState(newKey);
 
@@ -36,6 +39,15 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
             <p className="text-xs uppercase tracking-wide text-muted">Team ID</p>
             <p className="mt-1 font-mono text-xl font-bold text-ink">{state.result.team_code}</p>
           </div>
+          {state.result.payment && (state.result.payment.stored ? (
+            <Alert tone="amber" title={`Payment of ${formatRupees(state.result.payment.amount)} submitted`}>
+              The organisers will verify it. You can see the status in the student portal after activating your account.
+            </Alert>
+          ) : (
+            <Alert tone="red" title="Your team is registered, but the payment proof could not be saved">
+              Please contact the organisers with your Team ID and UPI transaction ID.
+            </Alert>
+          ))}
           <div className="overflow-x-auto rounded-md border-2 border-line bg-brand-tint">
             <table className="w-full text-left text-sm" aria-label="Portal login details">
               <caption className="px-4 pt-4 text-left">
@@ -83,13 +95,14 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
       maxMembers={maxMembers}
       fieldConfig={fieldConfig}
       questions={questions}
+      fee={fee}
       disabled={disabled}
     />
   );
 }
 
 function FormBody({
-  state, formAction, idempotencyKey, minMembers, maxMembers, fieldConfig, questions, disabled,
+  state, formAction, idempotencyKey, minMembers, maxMembers, fieldConfig, questions, fee, disabled,
 }: Omit<Props, "slug"> & { state: RegisterState; formAction: (fd: FormData) => void; idempotencyKey: string }) {
   const values: RegistrationDraft | undefined = state.values;
   const initialMembers = values?.members.length
@@ -196,6 +209,8 @@ function FormBody({
           </div>
         </Card>
       )}
+
+      {fee && <FeeStep fee={fee} members={rows.length} errors={errors} utr={state.utr} />}
 
       <div className="flex flex-wrap items-center justify-end gap-3">
         <p className="text-xs text-muted">By registering you agree to the event code of conduct.</p>
