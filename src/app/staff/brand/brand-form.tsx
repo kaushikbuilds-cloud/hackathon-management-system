@@ -7,6 +7,7 @@ import { Alert, Card, CardTitle, Checkbox } from "@/components/ui";
 import { saveBrandKit, type BrandState } from "./actions";
 
 type Props = {
+  codePrefix: string;
   primary: string;
   accent: string;
   logoUrl: string | null;
@@ -122,7 +123,7 @@ export function BrandForm(p: Props) {
             <div className="grid aspect-square place-items-center rounded bg-white text-[10px] font-bold text-ink">QR</div>
             <div className="space-y-1.5 text-[9px] font-bold">
               <p>TEAM ID</p>
-              <p className="rounded px-1.5 py-1" style={{ background: accent, color: onAccent }}>TEAM-2026-0015</p>
+              <p className="rounded px-1.5 py-1" style={{ background: accent, color: onAccent }}>{p.codePrefix}-T0015</p>
               <p>ACTIVATION CODE</p>
               <p className="rounded px-1.5 py-1" style={{ background: accent, color: onAccent }}>X7K9M2Q4</p>
             </div>

@@ -2,25 +2,33 @@ import { describe, expect, it } from "vitest";
 import { extractQrToken, formatCode, isParticipantCode, isQrToken, isTeamCode } from "@/lib/domain/ids";
 
 describe("formatCode", () => {
-  it("pads to four digits", () => {
-    expect(formatCode("TEAM", 2026, 1)).toBe("TEAM-2026-0001");
-    expect(formatCode("PRT", 2026, 42)).toBe("PRT-2026-0042");
+  it("joins the hackathon prefix, kind and a four-digit number", () => {
+    expect(formatCode("SAMPLE1", "T", 1)).toBe("SAMPLE1-T0001");
+    expect(formatCode("KH2026", "P", 42)).toBe("KH2026-P0042");
   });
   it("never truncates large sequence values", () => {
-    expect(formatCode("TEAM", 2026, 12345)).toBe("TEAM-2026-12345");
+    expect(formatCode("SIH", "T", 12345)).toBe("SIH-T12345");
   });
   it("rejects invalid sequence values", () => {
-    expect(() => formatCode("TEAM", 2026, 0)).toThrow();
-    expect(() => formatCode("TEAM", 2026, 1.5)).toThrow();
+    expect(() => formatCode("SIH", "T", 0)).toThrow();
+    expect(() => formatCode("SIH", "T", 1.5)).toThrow();
   });
   it("produces unique codes for unique sequence values", () => {
-    const codes = Array.from({ length: 2000 }, (_, i) => formatCode("PRT", 2026, i + 1));
+    const codes = Array.from({ length: 2000 }, (_, i) => formatCode("SIH", "P", i + 1));
     expect(new Set(codes).size).toBe(2000);
   });
 });
 
 describe("code validation", () => {
-  it("recognises valid codes", () => {
+  it("recognises prefixed codes", () => {
+    expect(isTeamCode("SAMPLE1-T0001")).toBe(true);
+    expect(isParticipantCode("kh2026-p10000")).toBe(true);
+    expect(isTeamCode("SAMPLE1-P0001")).toBe(false);
+    expect(isParticipantCode("SAMPLE1-T0001")).toBe(false);
+    expect(isParticipantCode("S-P0001")).toBe(false);
+    expect(isParticipantCode("SAMPLE 1-P0001")).toBe(false);
+  });
+  it("still accepts IDs issued before prefixes existed", () => {
     expect(isTeamCode("TEAM-2026-0001")).toBe(true);
     expect(isParticipantCode("PRT-2026-10000")).toBe(true);
     expect(isTeamCode("PRT-2026-0001")).toBe(false);

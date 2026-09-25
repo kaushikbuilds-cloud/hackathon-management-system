@@ -51,7 +51,7 @@ test("the new Admin activates and sees only their own, empty hackathon", async (
 
 test("the first hackathon's Admin cannot see the new hackathon's staff", async ({ page }) => {
   await signIn(page, creds.admin.email, creds.admin.password);
-  await page.goto("/staff/teams");
+  await page.goto("/staff/teams?q=Code%20Ninjas");
   await expect(page.getByText("Code Ninjas").first()).toBeVisible();
   await page.goto("/staff/users/officials");
   await expect(page.getByText(organiser.email)).toHaveCount(0);

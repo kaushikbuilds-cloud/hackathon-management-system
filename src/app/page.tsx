@@ -60,7 +60,7 @@ export default async function HomePage() {
           <div className="rotate-2 rounded-lg border-2 border-line bg-surface p-5 pb-20 shadow-brutal-lg">
             <p className="font-heading text-sm font-bold tracking-wide uppercase">Teams · live</p>
             <ul className="mt-3 divide-y-2 divide-line-soft text-sm">
-              {[["Code Warriors", "TEAM-2026-0015", "bg-ok-tint", "Approved"], ["Byte Brigade", "TEAM-2026-0016", "bg-warn-tint", "Pending"], ["Pixel Pioneers", "TEAM-2026-0017", "bg-ok-tint", "Approved"]].map(([t, id, c, s]) => (
+              {[["Code Warriors", "KH2026-T0015", "bg-ok-tint", "Approved"], ["Byte Brigade", "KH2026-T0016", "bg-warn-tint", "Pending"], ["Pixel Pioneers", "KH2026-T0017", "bg-ok-tint", "Approved"]].map(([t, id, c, s]) => (
                 <li key={id} className="flex items-center justify-between gap-3 py-2.5">
                   <span className="font-bold">{t}<span className="block font-mono text-xs font-normal text-muted">{id}</span></span>
                   <span className={`rounded-sm border-2 border-line px-2 py-0.5 text-xs font-bold ${c}`}>{s}</span>

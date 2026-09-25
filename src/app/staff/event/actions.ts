@@ -24,14 +24,14 @@ const schema = z
     support_instructions: z.string().max(2000),
     min_team_size: z.coerce.number().int().min(1).max(20),
     max_team_size: z.coerce.number().int().min(1).max(20),
-    id_year: z.coerce.number().int().min(2000).max(2999),
+    code_prefix: z.string().transform((v) => v.trim().toUpperCase()).refine((v) => v === "" || /^[A-Z0-9]{2,10}$/.test(v), "Use 2–10 letters or digits, no spaces"),
   })
   .refine((d) => d.max_team_size >= d.min_team_size, { path: ["max_team_size"], message: "Must be ≥ minimum size" });
 
 export async function saveEvent(_prev: EventFormState, formData: FormData): Promise<EventFormState> {
   const session = await requirePermission("manage_event");
   const raw = Object.fromEntries(
-    ["name", "tagline", "description", "organizer_name", "venue", "timezone", "contact_email", "contact_phone", "support_instructions", "min_team_size", "max_team_size", "id_year"].map((k) => [k, str(formData, k, 5000)]),
+    ["name", "tagline", "description", "organizer_name", "venue", "timezone", "contact_email", "contact_phone", "support_instructions", "min_team_size", "max_team_size", "code_prefix"].map((k) => [k, str(formData, k, 5000)]),
   );
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
@@ -50,15 +50,20 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
   if (dates.starts_at && dates.ends_at && dates.ends_at < dates.starts_at) return { error: "The event must end after it starts.", fieldErrors: { ends_at: "End must be after start" } };
 
   const supabase = await createClient();
-  const { data: existing } = await supabase.from("hackathons").select("id, id_year").eq("id", session.hackathonId).maybeSingle<{ id: string; id_year: number }>();
+  const { data: existing } = await supabase.from("hackathons").select("*").eq("id", session.hackathonId).maybeSingle<{ id: string; code_prefix?: string }>();
   if (!existing) return { error: "Hackathon not found." };
-  const { count: teamCount } = await supabase.from("teams").select("id", { count: "exact", head: true });
-  if ((teamCount ?? 0) > 0 && d.id_year !== existing.id_year) {
-    return { error: "The ID year cannot change after teams have registered (IDs are immutable).", fieldErrors: { id_year: "Locked" } };
+  const { code_prefix, ...rest } = d;
+  const prefixChanged = existing.code_prefix !== undefined && code_prefix !== "" && code_prefix !== existing.code_prefix;
+  if (prefixChanged) {
+    const { count: teamCount } = await supabase.from("teams").select("id", { count: "exact", head: true });
+    if ((teamCount ?? 0) > 0) {
+      return { error: "The ID prefix cannot change after teams have registered (IDs are permanent).", fieldErrors: { code_prefix: "Locked" } };
+    }
   }
 
   const update: Record<string, unknown> = {
-    ...d,
+    ...rest,
+    ...(prefixChanged ? { code_prefix } : {}),
     tagline: d.tagline || null, description: d.description || null, organizer_name: d.organizer_name || null, venue: d.venue || null,
     contact_email: d.contact_email || null, contact_phone: d.contact_phone || null, support_instructions: d.support_instructions || null,
     portal_id_cards: formData.get("portal_id_cards") === "on",
@@ -66,6 +71,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
   };
 
   const { error } = await supabase.from("hackathons").update(update).eq("id", existing.id);
+  if (error?.code === "23505" && prefixChanged) return { error: "Please fix the highlighted fields.", fieldErrors: { code_prefix: "Another hackathon already uses this prefix" } };
   if (error) return { error: dbErrorMessage(error) };
   revalidatePath("/", "layout");
   return { ok: true, message: "Event settings saved. Generated ID card PDFs were marked outdated if card details changed." };

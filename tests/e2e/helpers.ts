@@ -26,3 +26,23 @@ export async function openHackathon(page: Page, name: string | RegExp) {
   await page.getByRole("row").filter({ hasText: name }).getByRole("button", { name: "Open" }).click();
   await expect(page.getByText("as the platform owner")).toBeVisible();
 }
+
+/**
+ * Portal credentials as printed on a member's ID card. The registration page
+ * no longer shows them, so tests read (or issue, as printing would) the
+ * one-time activation code straight from the database.
+ */
+export async function cardCredentials(email: string): Promise<{ participantCode: string; code: string }> {
+  const { default: pg } = await import("pg");
+  const pool = new pg.Pool({ connectionString: process.env.E2E_DATABASE_URL });
+  try {
+    const { rows: [p] } = await pool.query("select id, participant_code from participants where lower(email) = lower($1)", [email]);
+    const fresh = Array.from({ length: 8 }, () => "ABCDEFGHJKMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 31)]).join("");
+    const { rows: [c] } = await pool.query(
+      `insert into participant_activation_codes (participant_id, code) values ($1, $2)
+       on conflict (participant_id) do update set code = participant_activation_codes.code returning code`, [p.id, fresh]);
+    return { participantCode: p.participant_code, code: c.code };
+  } finally {
+    await pool.end();
+  }
+}

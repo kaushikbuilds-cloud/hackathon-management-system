@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
-import { creds, signIn } from "./helpers";
+import { cardCredentials, creds, signIn } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
-test.skip(!creds.admin.password, "Set E2E_ADMIN_PASSWORD (see README).");
+test.skip(!creds.admin.password || !process.env.E2E_DATABASE_URL, "Set E2E_ADMIN_PASSWORD and E2E_DATABASE_URL (see README).");
 
 const run = Date.now().toString(36);
 const slug = `fee-${run}`;
@@ -58,9 +58,7 @@ test("teams see the amount and UPI QR, and must submit proof to register", async
   await page.setInputFiles("#payment_proof", { name: "paid.png", mimeType: "image/png", buffer: PNG });
   await page.getByRole("button", { name: "Submit registration" }).click();
   await expect(page.getByText("Payment of ₹400 submitted")).toBeVisible();
-  const row = page.getByRole("table", { name: "Portal login details" }).getByRole("row").filter({ hasText: "Lead Payer" });
-  leaderPid = (await row.getByRole("cell").nth(1).innerText()).trim();
-  leaderCode = (await row.getByRole("cell").nth(2).innerText()).trim();
+  ({ participantCode: leaderPid, code: leaderCode } = await cardCredentials(`lead.${run}@e2e.test`));
 });
 
 test("the same UPI transaction cannot pay for a second team", async ({ page }) => {

@@ -2,7 +2,6 @@
 
 import { randomUUID } from "node:crypto";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { activationInfoFor } from "@/lib/activation";
 import { UTR_RE, feeFor, normalizeUtr } from "@/lib/domain/fees";
 import { BUCKETS, uploadObject, validateUpload, type UploadCheck } from "@/lib/storage";
 import { clientIp } from "@/lib/request";
@@ -22,9 +21,6 @@ export type RegisterState = {
   result?: {
     team_code: string;
     team_name: string;
-    participant_codes: string[];
-    /** Portal login details for every member: Participant ID + one-time activation code. */
-    logins: { full_name: string; participant_code: string; role: "leader" | "member"; activation_code: string | null }[];
     payment?: { amount: number; stored: boolean };
   };
   /** Changes on every response so the client form remounts with the submitted values. */
@@ -123,17 +119,6 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
     return { nonce: randomUUID(), status: "error", values, fieldErrors, message: result.message };
   }
 
-  // Every member gets portal login details straight away: their Participant ID
-  // and a one-time activation code (the same code is printed on the ID card).
-  const { data: members } = await service
-    .from("participants").select("id, full_name, participant_code, role").eq("team_id", result.team_id)
-    .order("role").order("participant_code")
-    .returns<{ id: string; full_name: string; participant_code: string; role: "leader" | "member" }[]>();
-  const info = await activationInfoFor((members ?? []).map((m) => m.id));
-  const logins = (members ?? []).map((m) => ({
-    full_name: m.full_name, participant_code: m.participant_code, role: m.role, activation_code: info.get(m.id)?.code ?? null,
-  }));
-
   let payment: { amount: number; stored: boolean } | undefined;
   if (feeRequired && proof && !result.replayed) {
     const amount = feeFor({ amount: Number(form.fee_amount), basis: form.fee_basis }, payload.members.length);
@@ -154,7 +139,7 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
 
   return {
     status: "success",
-    result: { team_code: result.team_code, team_name: result.team_name, participant_codes: result.participant_codes, logins, payment },
+    result: { team_code: result.team_code, team_name: result.team_name, payment },
   };
 }
 

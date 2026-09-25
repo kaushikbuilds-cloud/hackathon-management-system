@@ -45,7 +45,7 @@ export function EventForm({ initial: h }: { initial: Initial }) {
         <div className="grid gap-4 md:grid-cols-3">
           <TextField label="Default min team size" name="min_team_size" type="number" min={1} max={20} defaultValue={h.min_team_size} error={e.min_team_size} />
           <TextField label="Default max team size" name="max_team_size" type="number" min={1} max={20} defaultValue={h.max_team_size} error={e.max_team_size} />
-          <TextField label="ID year" name="id_year" type="number" min={2000} max={2999} defaultValue={h.id_year} error={e.id_year} hint="Used in TEAM-YYYY-0001 / PRT-YYYY-0001. Locked once teams exist." />
+          <TextField label="ID prefix" name="code_prefix" required={h.code_prefix !== undefined} minLength={2} maxLength={10} pattern="[A-Za-z0-9]{2,10}" autoCapitalize="characters" defaultValue={h.code_prefix ?? ""} error={e.code_prefix} hint={`Team IDs look like ${(h.code_prefix || "PREFIX").toUpperCase()}-T0001, Participant IDs ${(h.code_prefix || "PREFIX").toUpperCase()}-P0001. Locked once teams exist.`} />
         </div>
       </Card>
       <Card>

@@ -16,6 +16,7 @@ export default async function BrandKitPage() {
     <>
       <PageHeader title="Brand Kit" description="Your hackathon's logos and colours. Every ID card is generated with them, and your event page and registration form show them too." />
       <BrandForm
+        codePrefix={h.code_prefix ?? "TEAM"}
         primary={h.primary_color}
         accent={h.accent_color}
         logoUrl={logo}

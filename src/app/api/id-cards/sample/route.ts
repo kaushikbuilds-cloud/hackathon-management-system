@@ -20,6 +20,7 @@ export async function GET() {
     supabase.from("id_card_templates").select("*").eq("hackathon_id", guard.session.hackathonId).eq("is_active", true).maybeSingle<IdCardTemplate>(),
   ]);
   if (!hackathon) return NextResponse.json({ error: "Event not configured" }, { status: 400 });
+  const prefix = hackathon.code_prefix ?? "SAMPLE";
   const token = (n: number) => `${"0".repeat(63)}${n}`;
   const pdf = await generateTeamIdCardsPdf({
     event: {
@@ -28,10 +29,10 @@ export async function GET() {
       organizerLogo: await downloadObject(BUCKETS.branding, hackathon.organizer_logo_path),
       brand: { background: hackathon.primary_color, accent: hackathon.accent_color },
     },
-    team: { name: "Sample Team", teamCode: `TEAM-${hackathon.id_year}-0000` },
+    team: { name: "Sample Team", teamCode: `${prefix}-T0001` },
     members: [
-      { participantCode: `PRT-${hackathon.id_year}-0000`, fullName: "Sample Leader", role: "leader", college: hackathon.organizer_name ?? "Sample College", department: "Computer Science", academicYear: "3rd Year", qrToken: token(1) },
-      { participantCode: `PRT-${hackathon.id_year}-0001`, fullName: "Sample Member With A Longer Name", role: "member", college: "Another College of Engineering", department: "Electronics", academicYear: "2nd Year", qrToken: token(2) },
+      { participantCode: `${prefix}-P0001`, fullName: "Sample Leader", role: "leader", college: hackathon.organizer_name ?? "Sample College", department: "Computer Science", academicYear: "3rd Year", qrToken: token(1) },
+      { participantCode: `${prefix}-P0002`, fullName: "Sample Member With A Longer Name", role: "member", college: "Another College of Engineering", department: "Electronics", academicYear: "2nd Year", qrToken: token(2) },
     ],
     template: resolveTemplateConfig(template?.config),
     templateVersion: template?.version ?? 0,

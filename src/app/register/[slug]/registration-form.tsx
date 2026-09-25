@@ -33,7 +33,7 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
       <Card>
         <div className="space-y-4" role="status" aria-live="polite">
           <Alert tone="green" title="Registration received!">
-            Team <strong>{state.result.team_name}</strong> is registered. Keep these identifiers for your records.
+            Team <strong>{state.result.team_name}</strong> is registered.
           </Alert>
           <div className="rounded-md border-2 border-line bg-paper p-4">
             <p className="text-xs uppercase tracking-wide text-muted">Team ID</p>
@@ -41,45 +41,20 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
           </div>
           {state.result.payment && (state.result.payment.stored ? (
             <Alert tone="amber" title={`Payment of ${formatRupees(state.result.payment.amount)} submitted`}>
-              The organisers will verify it. You can see the status in the student portal after activating your account.
+              The organisers will verify it.
             </Alert>
           ) : (
             <Alert tone="red" title="Your team is registered, but the payment proof could not be saved">
               Please contact the organisers with your Team ID and UPI transaction ID.
             </Alert>
           ))}
-          <div className="overflow-x-auto rounded-md border-2 border-line bg-brand-tint">
-            <table className="w-full text-left text-sm" aria-label="Portal login details">
-              <caption className="px-4 pt-4 text-left">
-                <span className="block font-semibold text-ink">Student portal login for every member</span>
-                <span className="mt-1 block text-ink-soft">
-                  Each member activates their own account once with their Participant ID and activation code, then signs in with their email or Participant ID.
-                  Save or screenshot this now — the codes are also printed on the ID cards.
-                </span>
-              </caption>
-              <thead>
-                <tr className="text-xs uppercase tracking-wide text-muted">
-                  <th scope="col" className="px-4 py-2 font-medium">Member</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Participant ID</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Activation code</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.result.logins.map((m) => (
-                  <tr key={m.participant_code} className="border-t border-line">
-                    <td className="px-4 py-2 text-ink">{m.full_name}{m.role === "leader" && <span className="ml-2 text-xs text-brand">Leader</span>}</td>
-                    <td className="px-4 py-2 font-mono text-ink">{m.participant_code}</td>
-                    <td className="px-4 py-2 font-mono text-lg font-bold tracking-wider text-ink">{m.activation_code ?? "Ask the organisers"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="flex flex-wrap gap-2 p-4">
-              <a href="/activate" className={buttonClass("primary")}>Activate an account</a>
-              <button type="button" onClick={() => window.print()} className={buttonClass("secondary")}>Print / save as PDF</button>
-            </div>
+          <div className="rounded-md border-2 border-line bg-brand-tint p-4 text-sm">
+            <p className="font-semibold text-ink">What happens next</p>
+            <p className="mt-1 text-ink-soft">
+              Each member receives an ID card from the organisers. The card carries their Participant ID, a one-time activation code for the
+              student portal and the QR code used for attendance.
+            </p>
           </div>
-          <p className="text-sm text-muted">Codes work once. If a code is lost, the organisers can issue a new activation link.</p>
         </div>
       </Card>
     );

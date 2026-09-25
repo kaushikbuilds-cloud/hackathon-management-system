@@ -16,9 +16,11 @@ describe.skipIf(!enabled)("registration (database)", () => {
   it("creates team and members atomically with generated IDs", async () => {
     const r = await register(pool, payload("Alpha Squad", ["a1@t.dev", "a2@t.dev", "a3@t.dev"]));
     expect(r.ok).toBe(true);
-    expect(r.team_code).toMatch(/^TEAM-2026-\d{4,}$/);
+    const { rows: [h] } = await pool.query("select code_prefix from hackathons limit 1");
+    expect(h.code_prefix).toMatch(/^[A-Z0-9]{2,10}$/);
+    expect(r.team_code).toMatch(new RegExp(`^${h.code_prefix}-T\\d{4,}$`));
     expect(r.participant_codes).toHaveLength(3);
-    for (const c of r.participant_codes!) expect(c).toMatch(/^PRT-2026-\d{4,}$/);
+    for (const c of r.participant_codes!) expect(c).toMatch(new RegExp(`^${h.code_prefix}-P\\d{4,}$`));
     const { rows } = await pool.query("select role, qr_token from participants where team_id = $1 order by participant_code", [r.team_id]);
     expect(rows.filter((x) => x.role === "leader")).toHaveLength(1);
     expect(new Set(rows.map((x) => x.qr_token)).size).toBe(3);
@@ -32,6 +34,14 @@ describe.skipIf(!enabled)("registration (database)", () => {
     const prtCodes = results.flatMap((r) => r.participant_codes!);
     expect(new Set(teamCodes).size).toBe(teamCodes.length);
     expect(new Set(prtCodes).size).toBe(prtCodes.length);
+  });
+
+  it("locks the ID prefix once teams exist and keeps prefixes unique", async () => {
+    const { rows: [h] } = await pool.query("select id, code_prefix from hackathons limit 1");
+    expect(await pgErrorCode(pool.query("update hackathons set code_prefix = 'OTHER' where id = $1", [h.id]))).toBe("23514");
+    const { rows: [other] } = await pool.query("insert into hackathons (name) values ($1) returning code_prefix", [h.code_prefix]);
+    expect(other.code_prefix).not.toBe(h.code_prefix);
+    expect(other.code_prefix.startsWith(h.code_prefix.slice(0, 8))).toBe(true);
   });
 
   it("makes Team and Participant IDs immutable", async () => {

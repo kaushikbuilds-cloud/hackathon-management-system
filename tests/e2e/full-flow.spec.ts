@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { PDFDocument } from "pdf-lib";
 import { readFile } from "node:fs/promises";
-import { FORM_SLUG, creds, signIn, signOut } from "./helpers";
+import { FORM_SLUG, cardCredentials, creds, signIn, signOut } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 
@@ -17,7 +17,7 @@ let leaderCode = "";
 // Phone numbers must be unique across teams, so each run uses its own.
 const phoneBase = String(Date.now()).slice(-8);
 
-test.skip(!creds.admin.password || !creds.official.password, "Set E2E_ADMIN_PASSWORD and E2E_OFFICIAL_PASSWORD (see README).");
+test.skip(!creds.admin.password || !creds.official.password || !process.env.E2E_DATABASE_URL, "Set E2E_ADMIN_PASSWORD, E2E_OFFICIAL_PASSWORD and E2E_DATABASE_URL (see README).");
 
 async function fillMember(page: import("@playwright/test").Page, index: number, m: { name: string; email: string }, phoneSlot = index) {
   const card = page.locator("section").filter({ has: page.getByRole("heading", { name: new RegExp(`^Member ${index + 1}`) }) });
@@ -39,18 +39,17 @@ test("public registration creates a team with generated IDs", async ({ page }) =
   await page.getByRole("button", { name: "Submit registration" }).click();
 
   await expect(page.getByText("Registration received!")).toBeVisible();
-  teamCode = (await page.getByText(/^TEAM-\d{4}-\d{4,}$/).innerText()).trim();
-  expect(teamCode).toMatch(/^TEAM-\d{4}-\d{4,}$/);
-  // Every member gets portal login details straight away.
-  const logins = page.getByRole("table", { name: "Portal login details" });
-  await expect(logins.getByText(/^PRT-\d{4}-\d{4,}$/)).toHaveCount(2);
-  const leaderRow = logins.getByRole("row").filter({ hasText: leader.name });
-  leaderPid = (await leaderRow.getByRole("cell").nth(1).innerText()).trim();
-  leaderCode = (await leaderRow.getByRole("cell").nth(2).innerText()).trim();
+  teamCode = (await page.getByText(/^[A-Z0-9]{2,10}-T\d{4,}$/).innerText()).trim();
+  // Portal credentials are only on the ID cards, never on the public page.
+  await expect(page.getByText(/-P\d{4,}$/)).toHaveCount(0);
+  await expect(page.getByText(/activation code for the\s+student portal/)).toBeVisible();
+  const lead = await cardCredentials(leader.email);
+  const mem = await cardCredentials(member.email);
+  leaderPid = lead.participantCode;
+  leaderCode = lead.code;
+  expect(leaderPid).toMatch(new RegExp(`^${teamCode.split("-T")[0]}-P\\d{4,}$`));
   expect(leaderCode).toMatch(/^[A-HJ-KM-NP-Z2-9]{8}$/);
-  const memberCode = (await logins.getByRole("row").filter({ hasText: member.name }).getByRole("cell").nth(2).innerText()).trim();
-  expect(memberCode).toMatch(/^[A-HJ-KM-NP-Z2-9]{8}$/);
-  expect(memberCode).not.toBe(leaderCode);
+  expect(mem.code).not.toBe(leaderCode);
 });
 
 test("duplicate team names are rejected and entered data is preserved", async ({ page }) => {

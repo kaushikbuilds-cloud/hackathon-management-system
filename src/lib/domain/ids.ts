@@ -3,12 +3,14 @@
  * triggers, see `public.format_code`); these helpers mirror the format for
  * validation and display only — never generate IDs client-side.
  */
-export const TEAM_CODE_PATTERN = /^TEAM-\d{4}-\d{4,}$/;
-export const PARTICIPANT_CODE_PATTERN = /^PRT-\d{4}-\d{4,}$/;
+/** Current form: the hackathon's prefix + T/P + a per-hackathon number (SAMPLE1-T0001). Older IDs keep TEAM-YYYY-NNNN / PRT-YYYY-NNNN. */
+export const TEAM_CODE_PATTERN = /^(?:[A-Z0-9]{2,10}-T\d{4,}|TEAM-\d{4}-\d{4,})$/;
+export const PARTICIPANT_CODE_PATTERN = /^(?:[A-Z0-9]{2,10}-P\d{4,}|PRT-\d{4}-\d{4,})$/;
+export const CODE_PREFIX_PATTERN = /^[A-Z0-9]{2,10}$/;
 
-export function formatCode(prefix: "TEAM" | "PRT", year: number, n: number): string {
+export function formatCode(prefix: string, kind: "T" | "P", n: number): string {
   if (!Number.isInteger(n) || n < 1) throw new Error("Sequence value must be a positive integer");
-  return `${prefix}-${year}-${String(n).padStart(4, "0")}`;
+  return `${prefix}-${kind}${String(n).padStart(4, "0")}`;
 }
 
 export function isTeamCode(value: string): boolean {
