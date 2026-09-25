@@ -1,4 +1,5 @@
 import "server-only";
+import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import type { AttendanceState } from "@/lib/domain/labels";
 import type { Announcement, ParticipantOverview, ScheduleItem, Team } from "@/lib/types";
@@ -26,9 +27,10 @@ export async function loadMyTeam(participantId: string) {
 
 export async function loadAnnouncementsAndSchedule(limit = 50) {
   const supabase = await createClient();
+  const hackathonId = (await getSession())?.hackathonId ?? "";
   const [{ data: announcements }, { data: schedule }] = await Promise.all([
     supabase.from("announcements").select("*").eq("status", "published").order("is_important", { ascending: false }).order("published_at", { ascending: false }).limit(limit).returns<Announcement[]>(),
-    supabase.from("event_schedule").select("*").order("starts_at").returns<ScheduleItem[]>(),
+    supabase.from("event_schedule").select("*").eq("hackathon_id", hackathonId).order("starts_at").returns<ScheduleItem[]>(),
   ]);
   return { announcements: announcements ?? [], schedule: schedule ?? [] };
 }

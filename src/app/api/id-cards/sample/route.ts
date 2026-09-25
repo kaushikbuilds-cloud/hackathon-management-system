@@ -17,7 +17,7 @@ export async function GET() {
   const supabase = createServiceClient();
   const [hackathon, { data: template }] = await Promise.all([
     getHackathon(),
-    supabase.from("id_card_templates").select("*").eq("is_active", true).maybeSingle<IdCardTemplate>(),
+    supabase.from("id_card_templates").select("*").eq("hackathon_id", guard.session.hackathonId).eq("is_active", true).maybeSingle<IdCardTemplate>(),
   ]);
   if (!hackathon) return NextResponse.json({ error: "Event not configured" }, { status: 400 });
   const token = (n: number) => `${"0".repeat(63)}${n}`;

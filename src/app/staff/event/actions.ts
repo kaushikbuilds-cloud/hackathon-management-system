@@ -33,7 +33,7 @@ const schema = z
   .refine((d) => d.max_team_size >= d.min_team_size, { path: ["max_team_size"], message: "Must be ≥ minimum size" });
 
 export async function saveEvent(_prev: EventFormState, formData: FormData): Promise<EventFormState> {
-  await requirePermission("manage_event");
+  const session = await requirePermission("manage_event");
   const raw = Object.fromEntries(
     ["name", "tagline", "description", "organizer_name", "venue", "timezone", "contact_email", "contact_phone", "support_instructions", "primary_color", "accent_color", "min_team_size", "max_team_size", "id_year"].map((k) => [k, str(formData, k, 5000)]),
   );
@@ -54,8 +54,8 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
   if (dates.starts_at && dates.ends_at && dates.ends_at < dates.starts_at) return { error: "The event must end after it starts.", fieldErrors: { ends_at: "End must be after start" } };
 
   const supabase = await createClient();
-  const { data: existing } = await supabase.from("hackathons").select("id, id_year").limit(1).maybeSingle<{ id: string; id_year: number }>();
-  if (!existing) return { error: "No hackathon row exists. Run the database seed or insert one (see README)." };
+  const { data: existing } = await supabase.from("hackathons").select("id, id_year").eq("id", session.hackathonId).maybeSingle<{ id: string; id_year: number }>();
+  if (!existing) return { error: "Hackathon not found." };
   const { count: teamCount } = await supabase.from("teams").select("id", { count: "exact", head: true });
   if ((teamCount ?? 0) > 0 && d.id_year !== existing.id_year) {
     return { error: "The ID year cannot change after teams have registered (IDs are immutable).", fieldErrors: { id_year: "Locked" } };
@@ -74,7 +74,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
     if (file instanceof File && file.size > 0) {
       const check = await validateUpload(file, ["image/png", "image/jpeg"], 2 * 1024 * 1024);
       if (!check.ok) return { error: check.error, fieldErrors: { [field]: check.error } };
-      const path = `${field}-${Date.now()}.${check.extension}`;
+      const path = `${existing.id}/${field}-${Date.now()}.${check.extension}`;
       await uploadObject(BUCKETS.branding, path, check.bytes, check.contentType);
       update[column] = path;
     }

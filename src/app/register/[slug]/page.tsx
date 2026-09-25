@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PublicShell } from "@/components/layout/public-shell";
 import { Alert, Card } from "@/components/ui";
-import { formAvailability, getHackathon } from "@/lib/data/event";
+import { formAvailability, getHackathonById } from "@/lib/data/event";
 import { resolveCustomQuestions, resolveFieldConfig } from "@/lib/domain/registration";
 import { formatDateTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -28,13 +28,13 @@ export default async function RegisterPage(props: PageProps<"/register/[slug]">)
   const { slug } = await props.params;
   const form = await loadForm(slug);
   if (!form) notFound();
-  const hackathon = await getHackathon();
+  const hackathon = await getHackathonById(form.hackathon_id);
   const availability = formAvailability(form);
   const isPreview = form.status !== "published";
   const tz = hackathon?.timezone ?? "UTC";
 
   return (
-    <PublicShell>
+    <PublicShell hackathon={hackathon}>
       <div className="mx-auto max-w-3xl px-4 py-10">
         {isPreview && (
           <div className="mb-6">

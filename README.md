@@ -103,10 +103,19 @@ How the pieces work together:
 
 ## Security model
 
+### Multiple hackathons
+
+One deployment hosts many hackathons. The **Super Admin is the platform owner**: organisers contact them (the home page's *Contact the admin* button), and the Super Admin creates the hackathon under **Hackathons** and invites its Admin. Admins, Officials and participants each belong to exactly one hackathon (`profiles.hackathon_id`).
+
+- `current_hackathon_id()` is the hackathon the signed-in user works in. For the Super Admin it is the hackathon they **opened** (sent as the `x-hackathon-id` header from the `hms_hackathon` cookie; the database ignores the header for everyone else). With none open they see the platform view only: the dashboard, the hackathons list and audit logs.
+- **Restrictive RLS policies** add "same hackathon" to every existing policy (teams, participants, attendance, support, ID cards, announcements, schedule, forms, profiles, invitations, audit…). Staff can never read or change another hackathon's rows, whatever permissions they hold. Privileged RPCs (`verify_qr`, `check_in`, `lookup_participants`, `dashboard_stats`…) check it too, so another event's QR card is simply *invalid*.
+- Server code that uses the secret key filters by the session's hackathon explicitly.
+- Only the Super Admin changes a hackathon's status (Setting up → Active → Completed → Archived). Only **Active** hackathons are listed on the public home page; each has a public page at `/h/<slug>`.
+
 | Role | Created by | Can |
 | --- | --- | --- |
-| **Super Admin** | One-time protected setup (`/setup` with `SETUP_TOKEN`, or SQL) | Everything: User Management (Admins, Officials), roles, all permissions, audit logs, system settings. |
-| **Admin** | Super Admin only, by invitation | Exactly the permissions granted (see below). Can invite Officials only with **Manage Officials**, and only grant permissions they hold. Cannot manage Admins or raise their own access. |
+| **Super Admin** | One-time protected setup (`/setup` with `SETUP_TOKEN`, or SQL) | The platform: create hackathons, invite each hackathon's Admin, usage dashboard, audit logs, system settings. Can open any hackathon to support it (full access while it is open). |
+| **Admin** | Super Admin only, by invitation into one hackathon | Exactly the permissions granted (see below). Can invite Officials only with **Manage Officials**, and only grant permissions they hold. Cannot manage Admins or raise their own access. |
 | **Official** | Super Admin or an Admin with **Manage Officials**, by invitation | QR check-in, own attendance history, assigned help-desk requests, duty/station. Manual check-in, corrections, ID cards etc. only if granted. Never sees participant contact details (uses a contact-free lookup). |
 | **Team Leader** | Registration (activation link shown after submitting) | Own team: members incl. contacts, registration status, team ID card PDF (if enabled), change requests via support. |
 | **Participant** | Registration, then an activation link from the organisers | Own profile/IDs, contact-free team roster, own ID card (if enabled), schedule, announcements, own support requests. |
@@ -174,6 +183,8 @@ npm run dev                          # http://localhost:3000
 | `STAFF_INVITE_TTL_HOURS` | – | Staff invitation / reset link lifetime (default 72) |
 | `PARTICIPANT_INVITE_TTL_HOURS` | – | Participant activation link lifetime (default 168) |
 | `SETUP_TOKEN` | – | Enables `/setup` to create the first Super Admin; remove after use |
+| `NEXT_PUBLIC_PLATFORM_CONTACT_EMAIL` | – | Where "Host your hackathon / Contact the admin" emails go (default kaushik.builds@gmail.com) |
+| `NEXT_PUBLIC_PLATFORM_NAME` | – | Platform name shown on public pages (default "Hackathon Portal") |
 | `SIGNED_URL_TTL_SECONDS` | – | Signed download URL lifetime (default 300) |
 | `SEED_SUPER_ADMIN_EMAIL` / `SEED_SUPER_ADMIN_PASSWORD` | – | Used only by `npm run seed:users` |
 | `TEST_DATABASE_URL` | – | Postgres URL for `npm run test:db` (a throwaway server; each run creates and drops its own database) |
@@ -193,6 +204,7 @@ No secrets are committed. `.env*` files are git-ignored, except `.env.example`.
 | `20260924000004_storage.sql` | Private buckets `id-cards`, `participant-photos`, `support-attachments`; public `branding` |
 | `20260925000005_roles_permissions.sql` | Granular permissions, invitations, account status, official duties, contact-free lookup RPCs, tightened RLS (safe on an existing database) |
 | `20260926000006_activation_codes.sql` | One-time account activation codes (shown at registration and printed on ID cards; service-role only table) and unique phone numbers across teams |
+| `20260927000007_multi_hackathon.sql` | Many hackathons per platform: `hackathon_id` everywhere, `current_hackathon_id()`, restrictive same-hackathon RLS, scoped RPCs, `platform_overview()` (safe on an existing database: current data joins the existing hackathon) |
 
 Data model: `hackathons` (single row) → `registration_forms` → `registration_submissions`; `teams` → `participants`. Around those sit `profiles`, `permissions`, `staff_permissions`, `invitations`, `official_assignments`, `credential_events`, `id_card_templates`, `id_card_jobs`, `attendance`, `support_requests`, `support_messages`, `support_status_history`, `notifications`, `announcements`, `event_schedule`, `audit_logs` and `rate_limits`.
 
@@ -291,6 +303,6 @@ Other handy commands:
 - **Google Sheets sync is not implemented** (the PRD lists it as optional). CSV exports are provided instead.
 - **Photos** are uploaded by staff on the team page. The public form doesn't collect them.
 - **PDFs are generated synchronously per team.** That's fine for the 20-member team cap. Bulk generation runs team by team from the browser; a queue or background worker would be the next step for very large events.
-- **Print-sheet layout** (several cards per A4 sheet) is left as the PRD's optional enhancement. Pages are one card each, either card-sized or on A4 with crop marks.
+- **One account per email across the platform.** Someone who is a participant in one hackathon can't register an account with the same email in another hackathon; they need a different email.
 - **Font coverage**: the embedded Inter font covers Latin, Greek and Cyrillic. Characters outside it are replaced with `?` on cards; the web UI is unaffected. Add a Noto font to `assets/fonts` if you need other scripts.
 - The rate limiter **fails open** if its database call errors, so a database hiccup doesn't lock everyone out. Supabase Auth's own limits still apply.

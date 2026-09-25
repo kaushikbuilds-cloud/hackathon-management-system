@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { creds, signIn } from "./helpers";
+import { creds, openHackathon, signIn } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
 test.skip(!creds.superAdmin.password || !creds.admin.password, "Set E2E_SUPER_ADMIN_PASSWORD and E2E_ADMIN_PASSWORD (see README).");
@@ -14,12 +14,17 @@ test("only the Super Admin can reach Admin management", async ({ page }) => {
   await expect(page.getByText("You don't have access to this page")).toBeVisible();
   await page.context().clearCookies();
   await signIn(page, creds.superAdmin.email, creds.superAdmin.password);
+  // Event pages need an opened hackathon; without one the Super Admin is sent to the list.
+  await page.goto("/staff/users/admins");
+  await expect(page).toHaveURL(/\/staff\/hackathons/);
+  await openHackathon(page, "BuildFest");
   await page.goto("/staff/users/admins");
   await expect(page.getByRole("heading", { name: "User Management · Admins" })).toBeVisible();
 });
 
 test("Super Admin invites an Official with limited permissions", async ({ page }) => {
   await signIn(page, creds.superAdmin.email, creds.superAdmin.password);
+  await openHackathon(page, "BuildFest");
   await page.goto("/staff/users/officials");
   const form = page.locator("section").filter({ has: page.getByRole("heading", { name: "Invite Official" }) });
   await form.getByLabel("Full name").fill(official.name);
@@ -55,6 +60,7 @@ test("the invitation cannot be reused and suspension blocks access", async ({ pa
   await expect(page.getByText("Link not usable")).toBeVisible();
 
   await signIn(page, creds.superAdmin.email, creds.superAdmin.password);
+  await openHackathon(page, "BuildFest");
   await page.goto("/staff/users/officials");
   const card = page.locator("section").filter({ hasText: official.email }).first();
   await card.locator("summary").click();

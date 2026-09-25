@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AutoSubmitSelect } from "@/components/client";
 import { SupportBadge } from "@/components/status";
 import { Card, EmptyState, LinkButton, PageHeader, Stat, Table, Td, Th, inputClass } from "@/components/ui";
-import { can, requireStaff } from "@/lib/auth";
+import { can, requireHackathon, requireStaff } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { param, type SearchParams } from "@/lib/data/query";
 import { pickEnum } from "@/lib/domain/search";
@@ -17,7 +17,7 @@ export const metadata: Metadata = { title: "Help & Support" };
 type Row = SupportRequest & { teams: { name: string; team_code: string } | null; assignee: { full_name: string | null } | null };
 
 export default async function StaffSupportPage(props: PageProps<"/staff/support">) {
-  const session = await requireStaff();
+  const session = requireHackathon(await requireStaff());
   const sp = (await props.searchParams) as SearchParams;
   const status = pickEnum(param(sp, "status"), SUPPORT_STATUSES);
   const mine = param(sp, "mine") === "1";

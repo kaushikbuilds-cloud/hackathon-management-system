@@ -5,6 +5,7 @@ import { Card, CardTitle, DescriptionList, LinkButton, PageHeader, Stat, buttonC
 import { can, isSuperAdmin, portalName, requireStaff, type Session } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { loadDashboardStats } from "@/lib/data/stats";
+import { HACKATHON_STATUS_LABEL, loadPlatformOverview } from "@/lib/data/platform";
 import { PDF_STATUS_LABEL, REGISTRATION_STATUS_LABEL, TEAM_ATTENDANCE_LABEL } from "@/lib/domain/labels";
 import { SUPPORT_STATUSES, supportStatusLabel } from "@/lib/domain/support";
 import { formatDateTime, requestTime } from "@/lib/format";
@@ -18,12 +19,51 @@ const SUPPORT_LABELS = Object.fromEntries(SUPPORT_STATUSES.map((s) => [s, suppor
 
 export default async function DashboardPage() {
   const session = await requireStaff();
+  if (isSuperAdmin(session) && !session.hackathonId) return <PlatformDashboard />;
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";
   return (
     <>
       <PageHeader title="Dashboard" description={`${portalName(session)} · ${hackathon?.name ?? "Hackathon"}`} />
       {can(session, "view_reports") ? <Overview tz={tz} superAdmin={isSuperAdmin(session)} /> : <WorkDashboard session={session} tz={tz} />}
+    </>
+  );
+}
+
+/** Platform owner's view: usage across all hackathons (no event data). */
+async function PlatformDashboard() {
+  const rows = await loadPlatformOverview(await createClient());
+  const sum = (k: "teams" | "participants" | "staff" | "present" | "open_support") => rows.reduce((n, r) => n + r[k], 0);
+  const byStatus = Object.keys(HACKATHON_STATUS_LABEL).map((k) => ({ label: k, value: rows.filter((r) => r.status === k).length }));
+  const count = (status: string) => byStatus.find((b) => b.label === status)?.value ?? 0;
+  const recent = [...rows].filter((r) => r.last_activity).sort((a, b) => (b.last_activity ?? "").localeCompare(a.last_activity ?? "")).slice(0, 8);
+  return (
+    <>
+      <PageHeader title="Platform Dashboard" description="Usage across every hackathon on the platform."
+        actions={<LinkButton href="/staff/hackathons">Manage hackathons</LinkButton>} />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat label="Hackathons" value={rows.length} hint={`${count("active")} active · ${count("setup")} setting up`} />
+        <Stat label="Teams" value={sum("teams")} tone="violet" />
+        <Stat label="Participants" value={sum("participants")} tone="green" hint={`${sum("present")} checked in`} />
+        <Stat label="Staff accounts" value={sum("staff")} tone="amber" hint={`${sum("open_support")} open support requests`} />
+      </div>
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        <Card><CardTitle>Hackathons by status</CardTitle><BarList items={byStatus} labels={HACKATHON_STATUS_LABEL} /></Card>
+        <Card><CardTitle>Teams per hackathon</CardTitle><BarList items={[...rows].sort((a, b) => b.teams - a.teams).map((r) => ({ label: r.name, value: r.teams }))} /></Card>
+      </div>
+      <Card className="mt-6">
+        <CardTitle>Recently active</CardTitle>
+        {recent.length === 0 ? <p className="text-sm text-slate-400">No activity yet.</p> : (
+          <ul className="divide-y divide-navy-800 text-sm">
+            {recent.map((r) => (
+              <li key={r.id} className="flex justify-between gap-3 py-2">
+                <Link href={`/staff/hackathons/${r.id}`} className="text-slate-100 hover:underline">{r.name}</Link>
+                <span className="text-xs text-slate-400">{formatDateTime(r.last_activity)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </>
   );
 }

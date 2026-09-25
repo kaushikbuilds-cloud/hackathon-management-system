@@ -39,7 +39,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
     supabase.from("participant_overview").select("*").eq("team_id", id).order("role").order("participant_code").returns<ParticipantOverview[]>(),
     supabase.from("id_card_jobs").select("*").eq("team_id", id).order("created_at", { ascending: false }).limit(10).returns<IdCardJob[]>(),
     canAccounts
-      ? createServiceClient().from("profiles").select("id, participant_id, status, last_sign_in_at").eq("role", "participant").returns<Pick<Profile, "id" | "participant_id" | "status" | "last_sign_in_at">[]>()
+      ? createServiceClient().from("profiles").select("id, participant_id, status, last_sign_in_at").eq("role", "participant").eq("hackathon_id", session.hackathonId ?? "").returns<Pick<Profile, "id" | "participant_id" | "status" | "last_sign_in_at">[]>()
       : Promise.resolve({ data: [] as Pick<Profile, "id" | "participant_id" | "status" | "last_sign_in_at">[] }),
   ]);
   const memberIds = (members ?? []).map((m) => m.id);

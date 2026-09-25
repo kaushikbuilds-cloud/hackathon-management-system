@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { publicEnv, serverEnv } from "@/lib/env";
+import { HACKATHON_COOKIE, parseHackathonId } from "@/lib/hackathon-context";
 
 /**
  * Supabase client bound to the signed-in user's session (cookies).
@@ -11,7 +12,10 @@ import { publicEnv, serverEnv } from "@/lib/env";
 export async function createClient(): Promise<SupabaseClient> {
   const cookieStore = await cookies();
   const { supabaseUrl, supabaseAnonKey } = publicEnv();
+  const hackathonId = parseHackathonId(cookieStore.get(HACKATHON_COOKIE)?.value);
   return createServerClient(supabaseUrl, supabaseAnonKey, {
+    // Only the Super Admin's opened hackathon is honoured by the database.
+    global: { headers: hackathonId ? { "x-hackathon-id": hackathonId } : {} },
     cookies: {
       getAll() {
         return cookieStore.getAll();

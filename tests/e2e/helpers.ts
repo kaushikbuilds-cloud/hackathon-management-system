@@ -19,3 +19,10 @@ export async function signIn(page: Page, email: string, password: string) {
 export async function signOut(page: Page) {
   await page.context().clearCookies();
 }
+
+/** Super Admin: open a hackathon (platform → event context). */
+export async function openHackathon(page: Page, name: string | RegExp) {
+  await page.goto("/staff/hackathons");
+  await page.getByRole("row").filter({ hasText: name }).getByRole("button", { name: "Open" }).click();
+  await expect(page.getByText("as the platform owner")).toBeVisible();
+}

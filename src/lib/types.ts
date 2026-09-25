@@ -1,8 +1,12 @@
 import type { AppRole, PdfStatus, RegistrationStatus, AttendanceState, TeamAttendanceState } from "@/lib/domain/labels";
 import type { SupportStatus } from "@/lib/domain/support";
 
+export type HackathonStatus = "setup" | "active" | "completed" | "archived";
+
 export type Hackathon = {
   id: string;
+  slug: string;
+  status: HackathonStatus;
   name: string;
   tagline: string | null;
   description: string | null;
@@ -32,6 +36,8 @@ export type Profile = {
   full_name: string | null;
   role: AppRole;
   participant_id: string | null;
+  /** The hackathon this person belongs to (null for the Super Admin). */
+  hackathon_id: string | null;
   is_active: boolean;
   status: "active" | "suspended" | "deactivated";
   phone: string | null;
@@ -46,6 +52,7 @@ export type { Permission } from "@/lib/permissions";
 
 export type Invitation = {
   id: string;
+  hackathon_id: string | null;
   purpose: "activate" | "reset";
   role: "admin" | "official" | "participant";
   email: string;

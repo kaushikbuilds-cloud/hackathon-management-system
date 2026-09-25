@@ -23,11 +23,13 @@ export async function StaffDirectory({ session, role, searchParams }: {
   session: Session; role: "admin" | "official"; searchParams: Record<string, string | string[] | undefined>;
 }) {
   const service = createServiceClient();
-  const roles = role === "admin" ? ["admin", "super_admin"] : ["official"];
+  // Staff of the hackathon being managed (the Super Admin is platform-level, not listed).
+  const h = session.hackathonId ?? "";
+  const roles = [role];
   const [{ data: people }, { data: grants }, { data: invitations }, { data: assignments }, hackathon] = await Promise.all([
-    service.from("profiles").select("*").in("role", roles).order("role").order("full_name").returns<Profile[]>(),
+    service.from("profiles").select("*").in("role", roles).eq("hackathon_id", h).order("full_name").returns<Profile[]>(),
     service.from("staff_permissions").select("profile_id, permission").returns<{ profile_id: string; permission: string }[]>(),
-    service.from("invitations").select("*").eq("role", role).eq("purpose", "activate").order("created_at", { ascending: false }).limit(50).returns<Invitation[]>(),
+    service.from("invitations").select("*").eq("role", role).eq("hackathon_id", h).eq("purpose", "activate").order("created_at", { ascending: false }).limit(50).returns<Invitation[]>(),
     role === "official" ? service.from("official_assignments").select("*").returns<OfficialAssignment[]>() : Promise.resolve({ data: [] as OfficialAssignment[] }),
     getHackathon(),
   ]);

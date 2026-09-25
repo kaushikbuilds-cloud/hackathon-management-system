@@ -17,12 +17,12 @@ export const metadata: Metadata = { title: "Edit form" };
 type Submission = { id: string; status: string; created_at: string; payload: { team_name?: string; member_count?: number }; errors: { code?: string; message?: string; fields?: string[] } | null; team_id: string | null };
 
 export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">) {
-  await requirePermission("manage_registrations");
+  const session = await requirePermission("manage_registrations");
   const { id } = await props.params;
   const sp = await props.searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const supabase = await createClient();
-  const { data: form } = await supabase.from("registration_forms").select("*").eq("id", id).maybeSingle<RegistrationForm>();
+  const { data: form } = await supabase.from("registration_forms").select("*").eq("id", id).eq("hackathon_id", session.hackathonId).maybeSingle<RegistrationForm>();
   if (!form) notFound();
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";

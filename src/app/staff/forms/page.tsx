@@ -10,11 +10,11 @@ import type { RegistrationForm } from "@/lib/types";
 export const metadata: Metadata = { title: "Form Builder" };
 
 export default async function FormsPage(props: PageProps<"/staff/forms">) {
-  await requirePermission("manage_registrations");
+  const session = await requirePermission("manage_registrations");
   const sp = await props.searchParams;
   const supabase = await createClient();
   const [{ data: forms }, { data: subs }] = await Promise.all([
-    supabase.from("registration_forms").select("*").order("created_at", { ascending: false }).returns<RegistrationForm[]>(),
+    supabase.from("registration_forms").select("*").eq("hackathon_id", session.hackathonId).order("created_at", { ascending: false }).returns<RegistrationForm[]>(),
     supabase.from("registration_submissions").select("form_id, status").returns<{ form_id: string; status: string }[]>(),
   ]);
   const counts = (id: string, status: string) => (subs ?? []).filter((s) => s.form_id === id && s.status === status).length;

@@ -14,11 +14,11 @@ import { GeneratePanel } from "./generate-panel";
 export const metadata: Metadata = { title: "ID card PDF" };
 
 export default async function TeamIdCardsPage(props: PageProps<"/staff/teams/[id]/id-cards">) {
-  await requirePermission("generate_pdf");
+  const session = await requirePermission("generate_pdf");
   const { id } = await props.params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const supabase = createServiceClient();
-  const ctx = await loadTeamCardContext(supabase, id);
+  const ctx = await loadTeamCardContext(supabase, id, session.hackathonId);
   if (!ctx) notFound();
   const { data: last } = await supabase
     .from("id_card_jobs").select("*, profiles:generated_by(full_name, email)").eq("team_id", id)

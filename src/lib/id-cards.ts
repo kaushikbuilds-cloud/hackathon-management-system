@@ -25,14 +25,17 @@ export type TeamCardContext = {
  * Loads everything needed to render a team's cards using the caller's
  * RLS-scoped client (so only users who can see the team can generate it).
  */
-export async function loadTeamCardContext(supabase: SupabaseClient, teamId: string): Promise<TeamCardContext | null> {
-  const [{ data: team }, { data: members }, { data: hackathon }, { data: template }] = await Promise.all([
-    supabase.from("teams").select("*").eq("id", teamId).maybeSingle<Team>(),
+export async function loadTeamCardContext(supabase: SupabaseClient, teamId: string, hackathonId: string | null): Promise<TeamCardContext | null> {
+  // Only teams of the caller's hackathon (the service client bypasses RLS).
+  if (!hackathonId) return null;
+  const { data: team } = await supabase.from("teams").select("*").eq("id", teamId).eq("hackathon_id", hackathonId).maybeSingle<Team>();
+  if (!team) return null;
+  const [{ data: members }, { data: hackathon }, { data: template }] = await Promise.all([
     supabase.from("participants").select("*").eq("team_id", teamId).order("role").order("participant_code").returns<Participant[]>(),
-    supabase.from("hackathons").select("*").limit(1).maybeSingle<Hackathon>(),
-    supabase.from("id_card_templates").select("*").eq("is_active", true).maybeSingle<IdCardTemplate>(),
+    supabase.from("hackathons").select("*").eq("id", hackathonId).maybeSingle<Hackathon>(),
+    supabase.from("id_card_templates").select("*").eq("hackathon_id", hackathonId).eq("is_active", true).maybeSingle<IdCardTemplate>(),
   ]);
-  if (!team || !hackathon) return null;
+  if (!hackathon) return null;
   const templateConfig = resolveTemplateConfig(template?.config);
   const memberList = members ?? [];
   const validation = validateCardInput({

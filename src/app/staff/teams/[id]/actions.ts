@@ -176,7 +176,7 @@ export async function uploadPhoto(teamId: string, participantId: string, formDat
   if (!check.ok) flash(teamPath(teamId), { error: check.error });
   const path = `${participantId}/${Date.now()}.${check.extension}`;
   await uploadObject(BUCKETS.photos, path, check.bytes, check.contentType);
-  const { error } = await createServiceClient(session.userId).from("participants").update({ photo_path: path }).eq("id", participantId).eq("team_id", teamId);
+  const { error } = await createServiceClient(session.userId).from("participants").update({ photo_path: path }).eq("id", participantId).eq("team_id", teamId).eq("hackathon_id", session.hackathonId);
   if (error) flash(teamPath(teamId), { error: dbErrorMessage(error) });
   flash(teamPath(teamId), { notice: "Photo uploaded." });
 }
@@ -192,7 +192,7 @@ export async function createParticipantLink(participantId: string, _prev: LinkSt
   assertId(participantId);
   const session = await requirePermission("manage_registrations");
   const service = createServiceClient(session.userId);
-  const { data: p } = await service.from("participants").select("id, email, full_name, user_id").eq("id", participantId).single<Pick<Participant, "id" | "email" | "full_name" | "user_id">>();
+  const { data: p } = await service.from("participants").select("id, email, full_name, user_id").eq("id", participantId).eq("hackathon_id", session.hackathonId).maybeSingle<Pick<Participant, "id" | "email" | "full_name" | "user_id">>();
   if (!p) return { error: "Participant not found." };
   const invitation = await createInvitation(session, p.user_id
     ? { role: "participant", purpose: "reset", email: p.email, profileId: p.user_id, participantId: p.id, fullName: p.full_name }
@@ -205,7 +205,7 @@ export async function setParticipantAccountStatus(teamId: string, userId: string
   assertId(teamId);
   assertId(userId);
   const session = await requirePermission("manage_registrations");
-  const { data: target } = await createServiceClient().from("profiles").select("role").eq("id", userId).maybeSingle<{ role: string }>();
+  const { data: target } = await createServiceClient().from("profiles").select("role").eq("id", userId).eq("hackathon_id", session.hackathonId).maybeSingle<{ role: string }>();
   if (target?.role !== "participant") flash(teamPath(teamId), { error: "Account not found." });
   const res = await setAccountStatus(session, userId, status);
   flash(teamPath(teamId), res.ok ? { notice: res.message } : { error: res.error });

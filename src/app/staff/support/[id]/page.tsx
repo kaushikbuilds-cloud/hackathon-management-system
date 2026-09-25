@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SubmitButton } from "@/components/client";
 import { SupportThread } from "@/components/support-thread";
 import { Card, CardTitle, Flash, PageHeader, SelectField } from "@/components/ui";
-import { can, requireStaff } from "@/lib/auth";
+import { can, requireHackathon, requireStaff } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { nextStatuses, supportStatusLabel } from "@/lib/domain/support";
 import { assignRequest, updateRequestStatus } from "@/lib/support/actions";
@@ -14,7 +14,7 @@ import type { Profile } from "@/lib/types";
 export const metadata: Metadata = { title: "Support request" };
 
 export default async function StaffSupportDetail(props: PageProps<"/staff/support/[id]">) {
-  const session = await requireStaff();
+  const session = requireHackathon(await requireStaff());
   const { id } = await props.params;
   const sp = await props.searchParams;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();

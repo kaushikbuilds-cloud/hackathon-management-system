@@ -69,13 +69,19 @@ export async function createUser(pool: pg.Pool, role: Role, extra: Record<string
  * Runs `fn` inside a transaction as an authenticated user (like PostgREST
  * does with a JWT), or as anon when userId is null. RLS applies.
  */
-export async function as<T>(pool: pg.Pool, userId: string | null, fn: (c: pg.PoolClient) => Promise<T>, opts: { rollback?: boolean } = {}): Promise<T> {
+export async function as<T>(
+  pool: pg.Pool, userId: string | null, fn: (c: pg.PoolClient) => Promise<T>, opts: { rollback?: boolean; hackathon?: string } = {},
+): Promise<T> {
   const client = await pool.connect();
   try {
     await client.query("begin");
     await client.query("select set_config('request.jwt.claims', $1, true)", [
       JSON.stringify(userId ? { sub: userId, role: "authenticated" } : { role: "anon" }),
     ]);
+    if (opts.hackathon) {
+      // What the app sends when the Super Admin opens a hackathon.
+      await client.query("select set_config('request.headers', $1, true)", [JSON.stringify({ "x-hackathon-id": opts.hackathon })]);
+    }
     await client.query(userId ? "set local role authenticated" : "set local role anon");
     const result = await fn(client);
     await client.query(opts.rollback ? "rollback" : "commit");

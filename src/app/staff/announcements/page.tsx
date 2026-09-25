@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AnnouncementFeed, ScheduleList } from "@/components/announcements";
 import { ConfirmSubmit, SubmitButton } from "@/components/client";
 import { Badge, Card, CardTitle, Checkbox, EmptyState, Flash, PageHeader, SelectField, TextArea, TextField } from "@/components/ui";
-import { can, requireStaff } from "@/lib/auth";
+import { can, requireHackathon, requireStaff } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { formatDateTime, requestTime, toLocalInput } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -16,14 +16,14 @@ const STATUS = [{ value: "draft", label: "Draft" }, { value: "published", label:
 const VISIBILITY = [{ value: "public", label: "Public" }, { value: "participants", label: "Participants & staff" }, { value: "staff", label: "Staff only" }];
 
 export default async function AnnouncementsPage(props: PageProps<"/staff/announcements">) {
-  const session = await requireStaff();
+  const session = requireHackathon(await requireStaff());
   const sp = await props.searchParams;
   const supabase = await createClient();
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";
   const [{ data: announcements }, { data: schedule }] = await Promise.all([
     supabase.from("announcements").select("*").order("created_at", { ascending: false }).returns<Announcement[]>(),
-    supabase.from("event_schedule").select("*").order("starts_at").returns<ScheduleItem[]>(),
+    supabase.from("event_schedule").select("*").eq("hackathon_id", session.hackathonId).order("starts_at").returns<ScheduleItem[]>(),
   ]);
 
   if (!can(session, "publish_announcements")) {

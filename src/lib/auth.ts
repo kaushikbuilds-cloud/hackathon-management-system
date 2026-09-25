@@ -1,6 +1,8 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { HACKATHON_COOKIE, parseHackathonId } from "@/lib/hackathon-context";
 import { createClient } from "@/lib/supabase/server";
 import { isPermission, type Permission } from "@/lib/permissions";
 import type { Profile } from "@/lib/types";
@@ -11,6 +13,11 @@ export type Session = {
   profile: Profile;
   /** Explicit grants (empty for participants). The Super Admin implicitly holds all. */
   permissions: ReadonlySet<Permission>;
+  /**
+   * The hackathon this session works in: the person's own hackathon, or for
+   * the Super Admin the one they opened (null = platform view).
+   */
+  hackathonId: string | null;
 };
 
 /** Current user + profile + grants, memoised per request. Null when signed out or not active. */
@@ -27,7 +34,14 @@ export const getSession = cache(async (): Promise<Session | null> => {
     const { data } = await supabase.from("staff_permissions").select("permission").eq("profile_id", user.id).returns<{ permission: string }[]>();
     permissions = new Set((data ?? []).map((r) => r.permission).filter(isPermission));
   }
-  return { userId: user.id, email: user.email ?? null, profile, permissions };
+  let hackathonId = profile.hackathon_id;
+  if (profile.role === "super_admin") {
+    const requested = parseHackathonId((await cookies()).get(HACKATHON_COOKIE)?.value);
+    hackathonId = requested
+      ? ((await supabase.from("hackathons").select("id").eq("id", requested).maybeSingle<{ id: string }>()).data?.id ?? null)
+      : null;
+  }
+  return { userId: user.id, email: user.email ?? null, profile, permissions, hackathonId };
 });
 
 export function isSuperAdmin(session: Session | null): boolean {
@@ -83,11 +97,20 @@ export async function requireSuperAdmin(): Promise<Session> {
   return session;
 }
 
-/** Requires at least one of the given permissions. */
-export async function requirePermission(...permissions: Permission[]): Promise<Session> {
+/**
+ * Requires at least one of the given permissions inside a hackathon. The
+ * Super Admin must open a hackathon first (event pages have no meaning at
+ * platform level).
+ */
+export async function requirePermission(...permissions: Permission[]): Promise<Session & { hackathonId: string }> {
   const session = await requireStaff();
   if (!canAny(session, permissions)) redirect("/staff/forbidden");
-  return session;
+  return requireHackathon(session);
+}
+
+export function requireHackathon<S extends Session>(session: S): S & { hackathonId: string } {
+  if (!session.hackathonId) redirect(isSuperAdmin(session) ? "/staff/hackathons?notice=Open+a+hackathon+first." : "/staff/forbidden");
+  return session as S & { hackathonId: string };
 }
 
 export async function requireParticipant(): Promise<Session & { participantId: string }> {

@@ -21,6 +21,8 @@ export function invitationState(inv: Pick<Invitation, "accepted_at" | "revoked_a
 }
 
 export type NewInvitation = {
+  /** Hackathon the new account joins (participants: taken from the participant). */
+  hackathonId?: string | null;
   role: "admin" | "official" | "participant";
   purpose?: "activate" | "reset";
   email: string;
@@ -63,6 +65,7 @@ export async function createInvitation(actor: Session | null, input: NewInvitati
     .from("invitations")
     .insert({
       purpose,
+      hackathon_id: input.hackathonId ?? null,
       role: input.role,
       email,
       full_name: input.fullName?.trim() || null,
@@ -156,7 +159,11 @@ export async function acceptInvitation(token: string, input: { fullName: string;
       userId = data.user.id;
       await service
         .from("profiles")
-        .update({ full_name: input.fullName, phone: claimed.phone, job_title: claimed.job_title, status: "active", must_change_password: false })
+        .update({
+          full_name: input.fullName, phone: claimed.phone, job_title: claimed.job_title, status: "active", must_change_password: false,
+          // Staff join the hackathon they were invited to (participants follow their participant row).
+          ...(claimed.role !== "participant" && claimed.hackathon_id ? { hackathon_id: claimed.hackathon_id } : {}),
+        })
         .eq("id", userId);
       if (claimed.role === "admin" || claimed.role === "official") {
         if (claimed.permissions.length) {
@@ -170,6 +177,10 @@ export async function acceptInvitation(token: string, input: { fullName: string;
       }
     }
     await service.from("invitations").update({ accepted_by: userId }).eq("id", claimed.id);
+    if (claimed.participant_id && claimed.purpose === "activate") {
+      // The account exists now: any code printed on the ID card is spent.
+      await service.from("participant_activation_codes").update({ used_at: nowIso }).eq("participant_id", claimed.participant_id).is("used_at", null);
+    }
     await service.from("credential_events").insert({
       profile_id: userId,
       participant_id: claimed.participant_id,

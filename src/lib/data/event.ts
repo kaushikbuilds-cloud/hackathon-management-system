@@ -1,13 +1,26 @@
 import "server-only";
 import { cache } from "react";
+import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { publicUrl, BUCKETS } from "@/lib/storage";
 import type { Hackathon, RegistrationForm } from "@/lib/types";
 
-/** The single hackathon row (readable by everyone). */
+/** The hackathon the signed-in user works in (see Session.hackathonId). */
 export const getHackathon = cache(async (): Promise<Hackathon | null> => {
+  const session = await getSession();
+  return session?.hackathonId ? getHackathonById(session.hackathonId) : null;
+});
+
+/** Hackathon rows are public (event page, registration page). */
+export const getHackathonById = cache(async (id: string): Promise<Hackathon | null> => {
   const supabase = await createClient();
-  const { data } = await supabase.from("hackathons").select("*").limit(1).maybeSingle<Hackathon>();
+  const { data } = await supabase.from("hackathons").select("*").eq("id", id).maybeSingle<Hackathon>();
+  return data ?? null;
+});
+
+export const getHackathonBySlug = cache(async (slug: string): Promise<Hackathon | null> => {
+  const supabase = await createClient();
+  const { data } = await supabase.from("hackathons").select("*").eq("slug", slug).maybeSingle<Hackathon>();
   return data ?? null;
 });
 

@@ -18,9 +18,9 @@ const annSchema = z.object({
 });
 
 /** In-app notification to every team for important published announcements. */
-async function notifyTeams(actorId: string, title: string) {
+async function notifyTeams(actorId: string, hackathonId: string, title: string) {
   const service = createServiceClient(actorId);
-  const { data: teams } = await service.from("teams").select("id").neq("status", "rejected");
+  const { data: teams } = await service.from("teams").select("id").eq("hackathon_id", hackathonId).neq("status", "rejected");
   if (teams?.length) {
     await service.from("notifications").insert(teams.map((t) => ({ team_id: t.id, title: "Important announcement", body: title, link: "/portal/schedule" })));
   }
@@ -40,7 +40,7 @@ export async function saveAnnouncement(formData: FormData) {
   const { error } = id ? await supabase.from("announcements").update(row).eq("id", id) : await supabase.from("announcements").insert(row);
   if (error) flash(PATH, { error: dbErrorMessage(error) });
   if (important && parsed.data.status === "published" && before?.status !== "published" && parsed.data.audience !== "staff") {
-    await notifyTeams(session.userId, parsed.data.title);
+    await notifyTeams(session.userId, session.hackathonId, parsed.data.title);
   }
   revalidatePath(PATH);
   revalidatePath("/portal", "layout");

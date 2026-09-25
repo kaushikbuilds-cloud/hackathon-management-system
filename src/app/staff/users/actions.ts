@@ -5,7 +5,7 @@ import { z } from "zod";
 import { setAccountStatus } from "@/lib/accounts";
 import { UUID, flash, str } from "@/lib/actions";
 import { audit } from "@/lib/audit";
-import { can, isSuperAdmin, requireStaff, type Session } from "@/lib/auth";
+import { can, isSuperAdmin, requireHackathon, requireStaff, type Session } from "@/lib/auth";
 import { createInvitation, revokeInvitation } from "@/lib/invitations";
 import { sanitizeGrants } from "@/lib/permissions";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -23,7 +23,8 @@ function mayManage(session: Session, role: StaffRole): boolean {
 async function requireManager(role: StaffRole) {
   const session = await requireStaff();
   if (!mayManage(session, role)) flash("/staff/forbidden", { error: "You cannot manage these accounts." });
-  return session;
+  // New staff always join the hackathon being managed.
+  return requireHackathon(session);
 }
 
 /** Loads a staff account the actor may manage (never the actor themself, never a Super Admin). */
@@ -32,6 +33,8 @@ async function loadManagedProfile(session: Session, profileId: string): Promise<
   if (profileId === session.userId) return "Use Profile & Security to manage your own account.";
   const { data } = await createServiceClient().from("profiles").select("*").eq("id", profileId).maybeSingle<Profile>();
   if (!data || (data.role !== "admin" && data.role !== "official")) return "Account not found.";
+  // Only the platform owner manages staff across hackathons.
+  if (!isSuperAdmin(session) && data.hackathon_id !== session.hackathonId) return "Account not found.";
   if (!mayManage(session, data.role)) return "You cannot manage this account.";
   return data;
 }
@@ -64,6 +67,7 @@ export async function inviteStaff(role: StaffRole, _prev: InviteState, formData:
     permissions: session.permissions,
   });
   const invitation = await createInvitation(session, {
+    hackathonId: session.hackathonId,
     role, email: d.email, fullName: d.full_name, phone: d.phone, jobTitle: d.job_title, permissions,
     duty: role === "official" ? d.duty : null, station: role === "official" ? d.station : null,
   });
@@ -148,7 +152,8 @@ export async function revokeStaffInvitation(invitationId: string) {
   const session = await requireStaff();
   if (!UUID.test(invitationId)) flash("/staff/users/officials", { error: "Invalid invitation." });
   const { data: inv } = await createServiceClient().from("invitations").select("*").eq("id", invitationId).maybeSingle<Invitation>();
-  if (!inv || (inv.role !== "admin" && inv.role !== "official") || !mayManage(session, inv.role)) flash("/staff/users/officials", { error: "Invitation not found." });
+  const sameHackathon = isSuperAdmin(session) || inv?.hackathon_id === session.hackathonId;
+  if (!inv || (inv.role !== "admin" && inv.role !== "official") || !mayManage(session, inv.role) || !sameHackathon) flash("/staff/users/officials", { error: "Invitation not found." });
   await revokeInvitation(session, invitationId);
   revalidatePath(pathFor(inv.role as StaffRole));
   flash(pathFor(inv.role as StaffRole), { notice: `Invitation for ${inv.email} revoked.` });

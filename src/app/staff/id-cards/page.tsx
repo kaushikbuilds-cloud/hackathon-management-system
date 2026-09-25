@@ -20,8 +20,8 @@ export default async function IdCardsPage(props: PageProps<"/staff/id-cards">) {
   // generate_pdf may not read participant rows directly.
   const supabase = createServiceClient();
   const [{ data: templates }, { data: teams }] = await Promise.all([
-    supabase.from("id_card_templates").select("*").order("version", { ascending: false }).returns<IdCardTemplate[]>(),
-    supabase.from("team_overview").select("id, name, team_code, pdf_status, member_count, status").order("team_code").returns<Pick<TeamOverview, "id" | "name" | "team_code" | "pdf_status" | "member_count" | "status">[]>(),
+    supabase.from("id_card_templates").select("*").eq("hackathon_id", session.hackathonId).order("version", { ascending: false }).returns<IdCardTemplate[]>(),
+    supabase.from("team_overview").select("id, name, team_code, pdf_status, member_count, status").eq("hackathon_id", session.hackathonId).order("team_code").returns<Pick<TeamOverview, "id" | "name" | "team_code" | "pdf_status" | "member_count" | "status">[]>(),
   ]);
   const active = templates?.find((t) => t.is_active);
   const config = resolveTemplateConfig(active?.config);

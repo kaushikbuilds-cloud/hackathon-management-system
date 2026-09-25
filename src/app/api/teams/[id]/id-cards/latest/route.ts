@@ -12,7 +12,7 @@ export async function GET(_request: Request, ctx: RouteContext<"/api/teams/[id]/
   if (!UUID_RE.test(id)) return NextResponse.json({ error: "Invalid team id" }, { status: 400 });
   const supabase = createServiceClient();
   const { data: job } = await supabase
-    .from("id_card_jobs").select("*").eq("team_id", id).eq("status", "completed")
+    .from("id_card_jobs").select("*").eq("team_id", id).eq("hackathon_id", guard.session.hackathonId).eq("status", "completed")
     .order("created_at", { ascending: false }).limit(1).maybeSingle<IdCardJob>();
   if (!job?.file_path) return NextResponse.json({ error: "No generated PDF for this team" }, { status: 404 });
   const url = await signedUrl(BUCKETS.idCards, job.file_path, job.file_name ?? undefined);

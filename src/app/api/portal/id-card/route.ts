@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const scope = request.nextUrl.searchParams.get("scope") === "team" ? "team" : "me";
   const supabase = await createClient();
   const [{ data: hackathon }, { data: teamId }, { data: leader }] = await Promise.all([
-    supabase.from("hackathons").select("portal_id_cards").limit(1).maybeSingle<{ portal_id_cards: boolean }>(),
+    supabase.from("hackathons").select("portal_id_cards").eq("id", session.hackathonId ?? "").maybeSingle<{ portal_id_cards: boolean }>(),
     supabase.rpc("my_team_id"),
     supabase.rpc("is_team_leader"),
   ]);
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   if (scope === "team" && !leader) return NextResponse.json({ error: "Only the Team Leader can download the team PDF." }, { status: 403 });
 
   // Ownership is established above; read card data with the service client.
-  const ctx = await loadTeamCardContext(createServiceClient(), teamId as string);
+  const ctx = await loadTeamCardContext(createServiceClient(), teamId as string, session.hackathonId);
   if (!ctx) return NextResponse.json({ error: "Team not found" }, { status: 404 });
   if (scope === "me") {
     ctx.members = ctx.members.filter((m) => m.id === session.profile.participant_id);

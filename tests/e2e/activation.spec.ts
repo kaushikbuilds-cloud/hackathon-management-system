@@ -26,12 +26,13 @@ test("printing a team's cards issues a one-time activation code per member witho
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toContain("application/pdf");
     const codes = await pool.query(
-      `select p.participant_code, c.code from participants p left join participant_activation_codes c on c.participant_id = p.id
+      `select p.participant_code, case when c.used_at is null then c.code end as code
+         from participants p left join participant_activation_codes c on c.participant_id = p.id
         where p.team_id = $1 order by 1`, [rows[0].team_id]);
     const byCode = Object.fromEntries(codes.rows.map((r) => [r.participant_code, r.code]));
     const withAccount = await pool.query(
       "select p.participant_code from participants p join profiles pr on pr.participant_id = p.id where p.team_id = $1 limit 1", [rows[0].team_id]);
-    expect(byCode[withAccount.rows[0].participant_code]).toBeNull(); // members with an account get no code
+    expect(byCode[withAccount.rows[0].participant_code]).toBeNull(); // members with an account have no usable code
     expect(byCode[PARTICIPANT]).toMatch(/^[A-HJ-KM-NP-Z2-9]{8}$/);
     code = byCode[PARTICIPANT];
     // Reprinting keeps the same code.
