@@ -58,7 +58,7 @@ export default async function MonthlyReportsPage(props: PageProps<"/staff/monthl
               <tbody className="divide-y divide-line-soft">
                 {detail.map((r) => (
                   <tr key={r.hackathon_id}>
-                    <Td className="font-bold"><Link href={`/staff/hackathons/${r.hackathon_id}`} className="text-brand hover:underline">{r.hackathon_name}</Link></Td>
+                    <Td className="font-bold"><Link href={`/staff/hackathons/${r.hackathon_id}`} className="text-grass hover:underline">{r.hackathon_name}</Link></Td>
                     <Td>{r.teams}</Td><Td>{r.participants}</Td><Td>{r.checked_in}</Td>
                     <Td>{formatRupees(r.fees_verified)}</Td><Td>{r.food_orders}</Td><Td>{r.support_opened}</Td>
                   </tr>
@@ -80,7 +80,7 @@ export default async function MonthlyReportsPage(props: PageProps<"/staff/monthl
           <tbody className="divide-y divide-line-soft">
             {totals.map((t) => (
               <tr key={t.month} className={t.month === month ? "bg-pop/40" : undefined}>
-                <Td className="font-bold"><Link href={`/staff/monthly-reports?month=${t.month}`} className="text-brand hover:underline">{monthLabel(t.month)}</Link></Td>
+                <Td className="font-bold"><Link href={`/staff/monthly-reports?month=${t.month}`} className="text-grass hover:underline">{monthLabel(t.month)}</Link></Td>
                 <Td>{t.hackathons}</Td><Td>{t.teams}</Td><Td>{t.participants}</Td><Td>{t.checked_in}</Td>
                 <Td>{formatRupees(t.fees_verified)}</Td><Td>{t.food_orders}</Td><Td>{formatRupees(t.food_revenue)}</Td><Td>{t.support_opened}</Td>
               </tr>

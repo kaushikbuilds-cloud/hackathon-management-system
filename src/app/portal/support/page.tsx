@@ -38,7 +38,7 @@ export default async function PortalSupportPage() {
           <tbody className="divide-y divide-line-soft">
             {data.map((r) => (
               <tr key={r.id}>
-                <Td><Link href={`/portal/support/${r.id}`} className="font-medium text-brand hover:underline">{r.subject}</Link></Td>
+                <Td><Link href={`/portal/support/${r.id}`} className="font-medium text-grass hover:underline">{r.subject}</Link></Td>
                 <Td>{supportCategoryLabel(r.category)}</Td>
                 <Td><SupportBadge status={r.status} /></Td>
                 <Td>{formatDateTime(r.updated_at, hackathon?.timezone)}</Td>

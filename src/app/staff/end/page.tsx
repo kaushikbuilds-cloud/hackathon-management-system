@@ -59,7 +59,7 @@ export default async function EndHackathonPage(props: PageProps<"/staff/end">) {
               <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-ink">
                 <li>Registration forms and food shops are closed.</li>
                 <li>Team IDs, passwords, activation codes, ID card QR codes and shop logins no longer work.</li>
-                <li>Certificates: download them on the <a href="/staff/certificates" className="font-bold text-brand underline">Certificates</a> page and send them to the teams.</li>
+                <li>Certificates: download them on the <a href="/staff/certificates" className="font-bold text-grass underline">Certificates</a> page and send them to the teams.</li>
               </ul>
               {isSuperAdmin(session) && (
                 <form action={reopenHackathon.bind(null, id)}>
@@ -73,7 +73,7 @@ export default async function EndHackathonPage(props: PageProps<"/staff/end">) {
               <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-ink">
                 <li>Closes every registration form and food shop.</li>
                 <li>Stops every Team ID and password, activation code, ID card QR code and shop login. Teams are signed out straight away.</li>
-                <li>Staff keep access to download the data and certificates (set awards and signatures on the <a href="/staff/certificates" className="font-bold text-brand underline">Certificates</a> page). Only the platform owner can reopen it.</li>
+                <li>Staff keep access to download the data and certificates (set awards and signatures on the <a href="/staff/certificates" className="font-bold text-grass underline">Certificates</a> page). Only the platform owner can reopen it.</li>
               </ul>
               {pendingPayments + openOrders + openSupport > 0 && (
                 <div className="mb-4"><Alert tone="amber" title="Some things are still open">{pendingPayments} payments to check, {openOrders} food orders, {openSupport} support requests. You can still end the hackathon.</Alert></div>
@@ -100,7 +100,7 @@ export default async function EndHackathonPage(props: PageProps<"/staff/end">) {
               <p className="text-sm font-bold text-ink">Latest export · {stampLabel}</p>
               <ul className="mt-2 space-y-1 text-sm">
                 {links.map((l) => (
-                  <li key={l.path}>{l.url ? <a href={l.url} className="font-bold text-brand underline-offset-4 hover:underline">{l.name}</a> : l.name} <span className="text-muted">({(l.size / 1024 / 1024).toFixed(1)} MB)</span></li>
+                  <li key={l.path}>{l.url ? <a href={l.url} className="font-bold text-grass underline-offset-4 hover:underline">{l.name}</a> : l.name} <span className="text-muted">({(l.size / 1024 / 1024).toFixed(1)} MB)</span></li>
                 ))}
               </ul>
               <p className="mt-2 text-xs text-muted">Links work for an hour; reload this page for fresh links. Big events come in parts (spreadsheets and certificates are in part 1).</p>

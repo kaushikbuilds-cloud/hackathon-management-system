@@ -152,7 +152,7 @@ function TeamRows({ team: t, open, members, canPdf, toggleHref }: { team: TeamOv
           </Link>
         </Td>
         <Td className="min-w-40 font-semibold">
-          <Link href={`/staff/teams/${t.id}`} className="text-brand hover:text-brand hover:underline">{t.name}</Link>
+          <Link href={`/staff/teams/${t.id}`} className="text-grass hover:text-grass hover:underline">{t.name}</Link>
         </Td>
         <Td className="font-mono text-xs whitespace-nowrap">{t.team_code}</Td>
         <Td className="min-w-32">{t.leader_name ?? "—"}</Td>

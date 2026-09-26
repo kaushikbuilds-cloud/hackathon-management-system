@@ -62,7 +62,7 @@ export function Icon({ name, title, className, ...props }: { name: IconName; tit
 /** The HackathonBase mark: a code-bracket block with a lime notch. */
 export function LogoMark({ className = "size-9" }: { className?: string }) {
   return (
-    <span className={`${className} grid shrink-0 place-items-center rounded-md border-2 border-line bg-brand text-white shadow-brutal-sm`} aria-hidden="true">
+    <span className={`${className} bevel grid shrink-0 place-items-center rounded-md border-2 border-line bg-cobalt text-white`} aria-hidden="true">
       <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
         <path d="M8 7l-5 5 5 5M16 7l5 5-5 5" />
         <path d="M13.5 5l-3 14" stroke="var(--color-pop)" />

@@ -124,7 +124,7 @@ function FormBody({
             <Card key={row.key} aria-labelledby={`${baseId}-m${i}`}>
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h3 id={`${baseId}-m${i}`} className="font-semibold text-ink">
-                  Member {i + 1} {i === leaderIndex && <span className="ml-2 rounded-full bg-brand-tint px-2 py-0.5 text-xs text-brand">Team leader</span>}
+                  Member {i + 1} {i === leaderIndex && <span className="ml-2 rounded-full bg-brand-tint px-2 py-0.5 text-xs text-grass">Team leader</span>}
                 </h3>
                 <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 text-sm text-ink-soft">

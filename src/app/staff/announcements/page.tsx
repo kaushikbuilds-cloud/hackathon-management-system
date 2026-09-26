@@ -58,7 +58,7 @@ export default async function AnnouncementsPage(props: PageProps<"/staff/announc
                 {a.title}
               </CardTitle>
               <details>
-                <summary className="cursor-pointer text-sm text-brand">Edit</summary>
+                <summary className="cursor-pointer text-sm text-grass">Edit</summary>
                 <div className="mt-3"><AnnouncementForm item={a} /></div>
                 <form action={deleteAnnouncement.bind(null, a.id)} className="mt-3">
                   <ConfirmSubmit variant="danger" size="sm" message="Delete this announcement?">Delete</ConfirmSubmit>
@@ -77,7 +77,7 @@ export default async function AnnouncementsPage(props: PageProps<"/staff/announc
             <Card key={s.id}>
               <CardTitle description={`${formatDateTime(s.starts_at, tz)}${s.venue ? ` · ${s.venue}` : ""}`} actions={<Badge>{s.visibility}</Badge>}>{s.title}</CardTitle>
               <details>
-                <summary className="cursor-pointer text-sm text-brand">Edit</summary>
+                <summary className="cursor-pointer text-sm text-grass">Edit</summary>
                 <div className="mt-3"><ScheduleForm item={s} tz={tz} /></div>
                 <form action={deleteScheduleItem.bind(null, s.id)} className="mt-3">
                   <ConfirmSubmit variant="danger" size="sm" message="Delete this schedule item?">Delete</ConfirmSubmit>

@@ -52,7 +52,7 @@ export default async function FaqPage(props: PageProps<"/staff/faq">) {
                 {f.question}
               </CardTitle>
               <details>
-                <summary className="cursor-pointer text-sm font-bold text-brand">Edit</summary>
+                <summary className="cursor-pointer text-sm font-bold text-grass">Edit</summary>
                 <div className="mt-3"><FaqForm item={f} /></div>
                 <form action={deleteFaq.bind(null, f.id)} className="mt-3">
                   <ConfirmSubmit variant="danger" size="sm" message="Delete this question?">Delete</ConfirmSubmit>

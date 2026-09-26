@@ -30,7 +30,7 @@ export default async function FormsPage(props: PageProps<"/staff/forms">) {
           <tbody className="divide-y divide-line-soft">
             {forms.map((f) => (
               <tr key={f.id}>
-                <Td><Link href={`/staff/forms/${f.id}`} className="font-medium text-brand hover:underline">{f.title}</Link></Td>
+                <Td><Link href={`/staff/forms/${f.id}`} className="font-medium text-grass hover:underline">{f.title}</Link></Td>
                 <Td><Badge tone={f.status === "published" ? "green" : f.status === "closed" ? "red" : "neutral"}>{f.status}</Badge></Td>
                 <Td className="font-mono text-xs break-all">{appUrl()}/register/{f.slug}</Td>
                 <Td>{f.min_team_size}–{f.max_team_size}</Td>

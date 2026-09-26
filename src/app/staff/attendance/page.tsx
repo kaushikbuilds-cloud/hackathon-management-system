@@ -33,7 +33,7 @@ export default async function AttendancePage(props: PageProps<"/staff/attendance
           {can(session, "manual_checkin") && <LinkButton href="/staff/attendance/manual" variant="secondary">Manual check-in</LinkButton>}
           <LinkButton href="/staff/attendance/history" variant="secondary">Attendance history</LinkButton>
           {seeAll && <LinkButton href="/api/reports/attendance" variant="secondary" prefetch={false}>Export CSV</LinkButton>}
-          {!inApp && <a href={APP_DOWNLOAD_URL} className="self-center text-sm font-bold text-brand underline">Faster on phones: Android app</a>}
+          {!inApp && <a href={APP_DOWNLOAD_URL} className="self-center text-sm font-bold text-grass underline">Faster on phones: Android app</a>}
         </>}
       />
       <div className="mb-6 grid gap-4 sm:grid-cols-3">

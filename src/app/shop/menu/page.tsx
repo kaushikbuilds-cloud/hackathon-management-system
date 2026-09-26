@@ -43,7 +43,7 @@ export default async function ShopMenuPage(props: PageProps<"/shop/menu">) {
                 </form>
               </div>
               <details className="mt-2">
-                <summary className="cursor-pointer text-sm font-bold text-brand">Edit item or price</summary>
+                <summary className="cursor-pointer text-sm font-bold text-grass">Edit item or price</summary>
                 <div className="mt-3"><ItemForm free={free} item={item} /></div>
                 <form action={deleteMyItem.bind(null, item.id)} className="mt-3">
                   <ConfirmSubmit size="sm" variant="danger" message={`Remove ${item.name} from your menu?`}>Remove item</ConfirmSubmit>

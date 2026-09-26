@@ -56,7 +56,7 @@ export default async function StaffSupportPage(props: PageProps<"/staff/support"
             <input type="checkbox" name="mine" value="1" defaultChecked={mine} className="accent-brand" />
             Assigned to me
           </label>
-          <button type="submit" className="text-sm text-brand underline">Apply</button>
+          <button type="submit" className="text-sm text-grass underline">Apply</button>
         </form>
       </Card>
       {!data?.length ? (
@@ -67,7 +67,7 @@ export default async function StaffSupportPage(props: PageProps<"/staff/support"
           <tbody className="divide-y divide-line-soft">
             {data.map((r) => (
               <tr key={r.id} className="hover:bg-paper">
-                <Td><Link className="font-medium text-brand hover:underline" href={`/staff/support/${r.id}`}>{r.subject}</Link></Td>
+                <Td><Link className="font-medium text-grass hover:underline" href={`/staff/support/${r.id}`}>{r.subject}</Link></Td>
                 <Td>{r.teams?.name} <span className="font-mono text-xs text-muted">{r.teams?.team_code}</span></Td>
                 <Td>{supportCategoryLabel(r.category)}</Td>
                 <Td><SupportBadge status={r.status} /></Td>

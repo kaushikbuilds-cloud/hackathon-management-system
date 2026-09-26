@@ -304,7 +304,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                   </span>
                   <span className="flex items-center gap-2">
                     <Badge tone={j.status === "completed" ? "green" : j.status === "failed" ? "red" : "amber"}>{j.status}</Badge>
-                    {j.status === "completed" && canPdf && <a className="text-brand hover:underline" href={`/api/id-cards/jobs/${j.id}/download`}>Download</a>}
+                    {j.status === "completed" && canPdf && <a className="text-grass hover:underline" href={`/api/id-cards/jobs/${j.id}/download`}>Download</a>}
                   </span>
                 </li>
               ))}

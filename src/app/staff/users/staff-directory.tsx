@@ -80,7 +80,7 @@ export async function StaffDirectory({ session, role, searchParams }: {
                     <p className="text-sm text-muted">Permissions: {[...held].map(permissionLabel).join(", ") || "none"}</p>
                   ) : (
                     <details>
-                      <summary className="cursor-pointer text-sm text-brand">
+                      <summary className="cursor-pointer text-sm text-grass">
                         Manage · {held.size} permission{held.size === 1 ? "" : "s"}{assignment?.station ? ` · ${assignment.station}` : ""}
                       </summary>
                       <div className="mt-4 grid gap-6 lg:grid-cols-2">

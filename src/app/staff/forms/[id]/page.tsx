@@ -144,7 +144,7 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
               {submissions.map((s) => (
                 <tr key={s.id}>
                   <Td className="whitespace-nowrap">{formatDateTime(s.created_at, tz)}</Td>
-                  <Td>{s.team_id ? <Link className="text-brand hover:underline" href={`/staff/teams/${s.team_id}`}>{s.payload?.team_name ?? "—"}</Link> : s.payload?.team_name ?? "—"}</Td>
+                  <Td>{s.team_id ? <Link className="text-grass hover:underline" href={`/staff/teams/${s.team_id}`}>{s.payload?.team_name ?? "—"}</Link> : s.payload?.team_name ?? "—"}</Td>
                   <Td className="tabular-nums">{s.payload?.member_count ?? "—"}</Td>
                   <Td><Badge tone={s.status === "accepted" ? "green" : "red"}>{s.status}</Badge></Td>
                   <Td className="text-xs text-ink-soft">{s.errors ? s.errors.message ?? `${s.errors.code}${s.errors.fields ? `: ${s.errors.fields.join(", ")}` : ""}` : "—"}</Td>

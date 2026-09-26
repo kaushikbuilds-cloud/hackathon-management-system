@@ -216,9 +216,9 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
           {native ? (
             <Button className="w-full py-6 text-lg" onClick={() => void scanNative()} disabled={busy}>Scan ID card</Button>
           ) : (<>
-          <div className="relative aspect-square overflow-hidden rounded-md border-2 border-line bg-ink shadow-brutal">
+          <div className="relative aspect-square overflow-hidden rounded-md border-2 border-line bg-paper shadow-brutal">
             <video ref={videoRef} className={`size-full object-cover ${scanning ? "" : "hidden"}`} muted playsInline aria-label="Camera preview" />
-            {!scanning && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm font-bold text-paper">Camera is off</div>}
+            {!scanning && <div className="font-pixel absolute inset-0 grid place-items-center p-6 text-center text-sm text-ink-soft">Camera is off</div>}
             {scanning && <div className="pointer-events-none absolute inset-[18%] rounded-lg border-2 border-line" aria-hidden="true" />}
           </div>
           <canvas ref={canvasRef} className="hidden" />

@@ -45,7 +45,7 @@ export default async function CertificatesPage(props: PageProps<"/staff/certific
                     <div className="min-w-0">
                       <p className="font-bold text-ink">{t.name} <span className="font-mono text-xs text-muted">{t.code}</span> {t.award && <Badge tone="violet">{t.award}</Badge>}</p>
                       <p className="text-sm text-ink-soft">{t.members.map((m) => m.fullName).join(", ")}</p>
-                      <a href={`/api/certificates/team/${t.id}`} className="text-sm font-bold text-brand hover:underline">Download team certificates</a>
+                      <a href={`/api/certificates/team/${t.id}`} className="text-sm font-bold text-grass hover:underline">Download team certificates</a>
                     </div>
                     <form action={setTeamAward.bind(null, t.id)} className="flex items-end gap-2">
                       <TextField label="Award (optional)" name="award" id={`award-${t.id}`} maxLength={60} defaultValue={t.award ?? ""} placeholder="e.g. Winner" className="w-44" />

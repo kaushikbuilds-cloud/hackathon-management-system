@@ -61,11 +61,11 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
                   Shop login: <span className="font-mono">{shop.code ?? "—"}</span>{" "}
                   <Badge tone={loginFor.get(shop.id) ? "green" : "neutral"}>{loginFor.get(shop.id) ? "Created" : "Not created yet"}</Badge>
                 </p>
-                <p className="mb-2 text-xs text-ink-soft">The shop signs in with this Shop ID and the password you set to accept or reject its orders and edit its own menu and prices. {loginEnds ? `The login works until ${formatDateTime(loginEnds.toISOString(), tz)} (a day after the hackathon ends).` : "The login works until a day after the hackathon ends (set the end date in Event Setup)."} Shops can use the website or the <a href={APP_DOWNLOAD_URL} className="font-bold text-brand underline">Android app</a>.</p>
+                <p className="mb-2 text-xs text-ink-soft">The shop signs in with this Shop ID and the password you set to accept or reject its orders and edit its own menu and prices. {loginEnds ? `The login works until ${formatDateTime(loginEnds.toISOString(), tz)} (a day after the hackathon ends).` : "The login works until a day after the hackathon ends (set the end date in Event Setup)."} Shops can use the website or the <a href={APP_DOWNLOAD_URL} className="font-bold text-grass underline">Android app</a>.</p>
                 <ShopLoginForm shopId={shop.id} hasLogin={Boolean(loginFor.get(shop.id))} suggestion={suggestShopPassword(shop.name)} />
               </div>
               <details className="mb-4">
-                <summary className="cursor-pointer text-sm font-bold text-brand">Edit shop</summary>
+                <summary className="cursor-pointer text-sm font-bold text-grass">Edit shop</summary>
                 <div className="mt-3"><ShopForm shop={shop} /></div>
                 <form action={deleteShop.bind(null, shop.id)} className="mt-3">
                   <ConfirmSubmit variant="danger" size="sm" message={`Delete ${shop.name} and its menu?`}>Delete shop</ConfirmSubmit>
@@ -93,7 +93,7 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
                         </form>
                       </div>
                       <details className="mt-2">
-                        <summary className="cursor-pointer text-sm text-brand">Edit item</summary>
+                        <summary className="cursor-pointer text-sm text-grass">Edit item</summary>
                         <div className="mt-3"><ItemForm shop={shop} item={item} /></div>
                         <form action={deleteItem.bind(null, item.id)} className="mt-3">
                           <ConfirmSubmit variant="danger" size="sm" message={`Remove ${item.name} from the menu?`}>Remove item</ConfirmSubmit>
@@ -104,7 +104,7 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
                 </ul>
               )}
               <details open={menu.length === 0}>
-                <summary className="cursor-pointer text-sm font-bold text-brand">Add menu item</summary>
+                <summary className="cursor-pointer text-sm font-bold text-grass">Add menu item</summary>
                 <div className="mt-3"><ItemForm shop={shop} /></div>
               </details>
             </Card>

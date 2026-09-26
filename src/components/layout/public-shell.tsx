@@ -11,9 +11,9 @@ export function PublicShell({ children, hackathon = null }: { children: ReactNod
   const logo = hackathon ? brandingUrls(hackathon).logo : null;
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b-2 border-line bg-surface">
+      <header className="panel border-b-4 border-line">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-          <Link href={hackathon ? `/h/${hackathon.slug}` : "/"} className="flex min-w-0 items-center gap-3 font-heading text-lg font-bold text-ink">
+          <Link href={hackathon ? `/h/${hackathon.slug}` : "/"} className="flex min-w-0 items-center gap-3 font-heading text-xl font-bold text-ink [text-shadow:2px_2px_0_var(--color-line)]">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logo} alt="" className="size-10 shrink-0 rounded-md border-2 border-line bg-surface object-contain p-0.5" />
@@ -23,7 +23,7 @@ export function PublicShell({ children, hackathon = null }: { children: ReactNod
             <span className="truncate">{hackathon?.name ?? PLATFORM.name}</span>
           </Link>
           <nav className="flex items-center gap-2 text-sm" aria-label="Site">
-            <Link href="/login" className={buttonClass("secondary", "sm")}>Sign in</Link>
+            <Link href="/login" className={buttonClass("primary", "sm")}>Sign in</Link>
           </nav>
         </div>
       </header>
@@ -35,13 +35,13 @@ export function PublicShell({ children, hackathon = null }: { children: ReactNod
         </div>
       )}
       <main id="main" className="flex-1">{children}</main>
-      <footer className="border-t-2 border-line bg-surface py-6 text-center text-sm text-ink-soft">
+      <footer className="panel border-t-4 border-line py-6 text-center text-sm text-ink-soft">
         <span className="font-bold text-ink">{hackathon?.organizer_name ? `Organised by ${hackathon.organizer_name}` : PLATFORM.name}</span>
         {" · "}
         {hackathon?.contact_email ? (
-          <a className="font-bold text-brand underline-offset-4 hover:underline" href={`mailto:${hackathon.contact_email}`}>{hackathon.contact_email}</a>
+          <a className="font-bold text-pop underline-offset-4 hover:underline" href={`mailto:${hackathon.contact_email}`}>{hackathon.contact_email}</a>
         ) : (
-          <a className="font-bold text-brand underline-offset-4 hover:underline" href={`mailto:${PLATFORM.contactEmail}`}>Host your hackathon with us</a>
+          <a className="font-bold text-pop underline-offset-4 hover:underline" href={`mailto:${PLATFORM.contactEmail}`}>Host your hackathon with us</a>
         )}
       </footer>
     </div>

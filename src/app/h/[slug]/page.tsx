@@ -74,7 +74,7 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
           <ol className="grid gap-3 sm:grid-cols-2">
             {schedule.map((item) => (
               <li key={item.id} className="rounded-md border-2 border-line bg-paper p-4">
-                <p className="text-xs font-semibold text-brand">
+                <p className="text-xs font-semibold text-grass">
                   {formatDateTime(item.starts_at, tz)}
                   {item.ends_at && ` – ${formatTime(item.ends_at, tz)}`}
                 </p>
@@ -90,7 +90,7 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
         <section className="mx-auto max-w-3xl px-4 pb-20" aria-labelledby="faq-heading">
           <h2 id="faq-heading" className="mb-4 text-2xl font-bold text-ink">Frequently asked questions</h2>
           <FaqList items={faqs} footer={hackathon.contact_email ? (
-            <p className="text-sm text-ink-soft">Still have a question? Email <a className="font-bold text-brand underline-offset-4 hover:underline" href={`mailto:${hackathon.contact_email}`}>{hackathon.contact_email}</a>.</p>
+            <p className="text-sm text-ink-soft">Still have a question? Email <a className="font-bold text-grass underline-offset-4 hover:underline" href={`mailto:${hackathon.contact_email}`}>{hackathon.contact_email}</a>.</p>
           ) : undefined} />
         </section>
       )}

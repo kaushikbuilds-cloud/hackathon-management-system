@@ -25,7 +25,7 @@ export function EventForm({ initial: h }: { initial: Initial }) {
           <TextArea label="Description" name="description" defaultValue={h.description ?? ""} maxLength={5000} className="md:col-span-2" />
           <TextField label="Organiser / institution" name="organizer_name" defaultValue={h.organizer_name ?? ""} maxLength={150} />
           <p className="self-end text-sm text-muted md:col-span-2">
-            Logos and colours are in the <a href="/staff/brand" className="font-bold text-brand underline-offset-4 hover:underline">Brand Kit</a>; ID cards and your public pages use them.
+            Logos and colours are in the <a href="/staff/brand" className="font-bold text-grass underline-offset-4 hover:underline">Brand Kit</a>; ID cards and your public pages use them.
           </p>
         </div>
       </Card>

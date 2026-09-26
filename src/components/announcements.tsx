@@ -40,7 +40,7 @@ export function ScheduleList({ items, timeZone, now }: { items: ScheduleItem[]; 
             return (
               <li key={s.id} className="relative">
                 <span className={`absolute -left-[1.6rem] top-1.5 size-2.5 rounded-full ${live ? "bg-ok" : "bg-brand"}`} aria-hidden="true" />
-                <p className="text-xs font-semibold text-brand">
+                <p className="text-xs font-semibold text-grass">
                   {formatDateTime(s.starts_at, timeZone)}{s.ends_at && ` – ${formatTime(s.ends_at, timeZone)}`}
                   {live && <span className="ml-2 text-ok">Now</span>}
                 </p>

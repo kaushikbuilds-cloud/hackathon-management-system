@@ -68,7 +68,7 @@ export default async function ParticipantsPage(props: PageProps<"/staff/particip
                 <tr key={p.id} className="hover:bg-paper">
                   <Td className="font-mono text-xs whitespace-nowrap">{p.participant_code}</Td>
                   <Td className="font-medium">{p.full_name}</Td>
-                  <Td><Link className="text-brand hover:underline" href={`/staff/teams/${p.team_id}`}>{p.team_name}</Link><div className="font-mono text-xs text-muted">{p.team_code}</div></Td>
+                  <Td><Link className="text-grass hover:underline" href={`/staff/teams/${p.team_id}`}>{p.team_name}</Link><div className="font-mono text-xs text-muted">{p.team_code}</div></Td>
                   <Td>{p.role === "leader" ? <Badge tone="violet">Leader</Badge> : "Member"}</Td>
                   <Td className="break-all">{p.email}</Td>
                   <Td className="whitespace-nowrap">{p.phone ?? "—"}</Td>

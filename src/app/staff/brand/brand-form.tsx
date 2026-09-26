@@ -94,7 +94,7 @@ export function BrandForm(p: Props) {
           </div>
         </Card>
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <a href={p.sampleHref} target="_blank" rel="noopener" className="text-sm font-bold text-brand underline-offset-4 hover:underline">Open a sample card PDF (saved brand kit)</a>
+          <a href={p.sampleHref} target="_blank" rel="noopener" className="text-sm font-bold text-grass underline-offset-4 hover:underline">Open a sample card PDF (saved brand kit)</a>
           <SubmitButton pendingText="Saving…">Save brand kit</SubmitButton>
         </div>
       </div>

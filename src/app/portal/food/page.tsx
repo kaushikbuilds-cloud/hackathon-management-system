@@ -68,7 +68,7 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
                   {shop.description && <span className="mt-1 text-sm text-muted">{shop.description}</span>}
                   <span className="mt-auto flex items-center justify-between gap-2 pt-4 text-sm">
                     <Badge tone={shop.is_free ? "violet" : "amber"}>{shop.is_free ? "Free" : "Pay at counter"}</Badge>
-                    <span className="font-bold text-brand">{available.get(shop.id) ?? 0} {available.get(shop.id) === 1 ? "item" : "items"} · See menu →</span>
+                    <span className="font-bold text-grass">{available.get(shop.id) ?? 0} {available.get(shop.id) === 1 ? "item" : "items"} · See menu →</span>
                   </span>
                 </Link>
               </li>

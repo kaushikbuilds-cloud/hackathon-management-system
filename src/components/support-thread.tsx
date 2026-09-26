@@ -29,7 +29,7 @@ export function SupportThread({
           ]} />
           <p className="mt-4 whitespace-pre-wrap rounded-md bg-paper p-4 text-sm text-ink">{request.description}</p>
           {request.attachment_path && (
-            <p className="mt-3 text-sm"><a className="text-brand underline" href={`/api/support/${request.id}/attachment`}>Download attachment</a></p>
+            <p className="mt-3 text-sm"><a className="text-grass underline" href={`/api/support/${request.id}/attachment`}>Download attachment</a></p>
           )}
         </Card>
 

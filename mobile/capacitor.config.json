@@ -13,7 +13,7 @@
     "captureInput": true
   },
   "plugins": {
-    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#F4F1E8", "showSpinner": false },
-    "StatusBar": { "overlaysWebView": false, "style": "LIGHT", "backgroundColor": "#F4F1E8" }
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#17121F", "showSpinner": false },
+    "StatusBar": { "overlaysWebView": false, "style": "DARK", "backgroundColor": "#17121F" }
   }
 }

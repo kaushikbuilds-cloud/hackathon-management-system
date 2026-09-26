@@ -124,7 +124,7 @@ export default async function HomePage() {
         <ol className="grid gap-6 md:grid-cols-3">
           {STEPS.map((s) => (
             <li key={s.n} className="rounded-lg border-2 border-line bg-paper-2 p-5">
-              <span className="font-heading text-4xl font-bold text-brand">{s.n}</span>
+              <span className="font-heading text-4xl font-bold text-grass">{s.n}</span>
               <p className="mt-2 font-heading text-lg font-bold text-ink">{s.title}</p>
               <p className="mt-1 text-sm text-ink-soft">{s.body}</p>
             </li>
@@ -135,7 +135,7 @@ export default async function HomePage() {
       <section className="mx-auto max-w-6xl px-4 pb-24" aria-labelledby="host-heading">
         <div className="rounded-lg border-2 border-line bg-brand p-6 text-white shadow-brutal-lg sm:p-10">
           <h2 id="host-heading" className="text-3xl font-bold sm:text-4xl">Want to conduct a hackathon?</h2>
-          <p className="mt-3 max-w-2xl text-white/90">
+          <p className="mt-3 max-w-2xl text-white">
             Contact the platform admin to register and manage your hackathon. We set up your event and send your organiser an Admin
             invitation. From there you build your form, invite your officials and run the event.
           </p>
