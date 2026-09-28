@@ -13,6 +13,9 @@ export type Hackathon = {
   tracks: string[];
   /** Judges can submit scores only while this is on. */
   judging_open?: boolean;
+  /** Teams can submit their project while this is on (and before the deadline). */
+  projects_open?: boolean;
+  projects_deadline?: string | null;
   description: string | null;
   logo_path: string | null;
   organizer_name: string | null;
@@ -365,4 +368,18 @@ export type LeaderboardRow = {
   judges: number;
   avg_total: number | null;
   criteria: Record<string, number>;
+};
+
+export type ProjectSubmission = {
+  team_id: string;
+  hackathon_id: string;
+  title: string;
+  description: string;
+  repo_url: string;
+  demo_url: string | null;
+  video_url: string | null;
+  slides_path: string | null;
+  submitted_by: string | null;
+  created_at: string;
+  updated_at: string;
 };

@@ -9,6 +9,7 @@ export const BUCKETS = {
   attachments: "support-attachments",
   paymentProofs: "payment-proofs",
   exports: "exports",
+  projectFiles: "project-files",
 } as const;
 
 type AllowedType = "image/png" | "image/jpeg" | "application/pdf" | "text/plain";

@@ -8,7 +8,8 @@ import { UUID } from "@/lib/actions";
 import { resolveCustomQuestions } from "@/lib/domain/registration";
 import { judgingTeams, loadCriteria, maxTotal } from "@/lib/judging";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import type { JudgeScore, RegistrationForm } from "@/lib/types";
+import { ProjectCard } from "@/components/project-card";
+import type { JudgeScore, ProjectSubmission, RegistrationForm } from "@/lib/types";
 import { submitScore } from "../actions";
 
 export const metadata: Metadata = { title: "Score team" };
@@ -28,6 +29,7 @@ export default async function ScoreTeamPage(props: PageProps<"/staff/judging/[te
   const { data: form } = team.form_id
     ? await createServiceClient().from("registration_forms").select("custom_questions").eq("id", team.form_id).maybeSingle<Pick<RegistrationForm, "custom_questions">>()
     : { data: null };
+  const { data: project } = await createServiceClient().from("project_submissions").select("*").eq("team_id", team.id).eq("hackathon_id", session.hackathonId).maybeSingle<ProjectSubmission>();
   const answers = resolveCustomQuestions(form?.custom_questions ?? []).map((q) => ({ label: q.label, value: team.custom_answers?.[q.id] || "—" }));
   const open = Boolean(hackathon?.judging_open);
 
@@ -35,7 +37,7 @@ export default async function ScoreTeamPage(props: PageProps<"/staff/judging/[te
     <>
       <PageHeader title={team.name} description={<span className="font-mono">{team.team_code}</span>} back={{ href: "/staff/judging", label: "All teams" }} />
       <Flash notice={sp.notice} error={sp.error} />
-      <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_24rem]">
         <Card>
           <CardTitle description={`Out of ${maxTotal(criteria)} points. ${mine ? "You have scored this team; saving again replaces your scores." : ""}`}>Your scores</CardTitle>
           {!open && <div className="mb-4"><Alert tone="amber" title="Judging is closed">Scores can&apos;t be saved until the organisers open judging.</Alert></div>}
@@ -67,6 +69,8 @@ export default async function ScoreTeamPage(props: PageProps<"/staff/judging/[te
             </form>
           )}
         </Card>
+        <div className="order-first space-y-6 lg:order-none lg:col-start-2 lg:row-start-1">
+        <ProjectCard project={project} tz={hackathon?.timezone} />
         <Card>
           <CardTitle>About the team</CardTitle>
           <DescriptionList items={[
@@ -75,6 +79,7 @@ export default async function ScoreTeamPage(props: PageProps<"/staff/judging/[te
             ...answers,
           ]} />
         </Card>
+        </div>
       </div>
     </>
   );

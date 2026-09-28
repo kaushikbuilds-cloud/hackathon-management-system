@@ -11,7 +11,8 @@ import { getHackathon } from "@/lib/data/event";
 import { resolveCustomQuestions } from "@/lib/domain/registration";
 import { formatDateTime } from "@/lib/format";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import type { AuditLog, IdCardJob, ParticipantOverview, Profile, Team } from "@/lib/types";
+import { ProjectCard } from "@/components/project-card";
+import type { AuditLog, IdCardJob, ParticipantOverview, Profile, ProjectSubmission, Team } from "@/lib/types";
 import {
   addParticipant, issueNewTeamCode, makeLeader, removeParticipant, reviewPayment, rotateQr, setParticipantAccountStatus, setQrRevoked, setTeamStatus, updateParticipant, updateTeam, uploadPhoto,
 } from "./actions";
@@ -35,6 +36,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";
 
+  const { data: project } = await supabase.from("project_submissions").select("*").eq("team_id", id).maybeSingle<ProjectSubmission>();
   const [{ data: members }, { data: jobs }, { data: accounts }] = await Promise.all([
     supabase.from("participant_overview").select("*").eq("team_id", id).order("role").order("participant_code").returns<ParticipantOverview[]>(),
     supabase.from("id_card_jobs").select("*").eq("team_id", id).order("created_at", { ascending: false }).limit(10).returns<IdCardJob[]>(),
@@ -164,6 +166,8 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
           </Card>
         )}
       </div>
+
+      {(project || team.status === "approved") && <div className="mt-6"><ProjectCard project={project} tz={tz} /></div>}
 
       <Card className="mt-6">
         <CardTitle description={`${list.length} of max ${maxMembers} members`}>Members</CardTitle>

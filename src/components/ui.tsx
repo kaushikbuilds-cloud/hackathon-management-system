@@ -231,7 +231,8 @@ export function DescriptionList({ items }: { items: { label: string; value: Reac
 // ---------------------------------------------------------------------------
 export function Table({ children, caption }: { children: ReactNode; caption?: string }) {
   return (
-    <div className="relative overflow-x-auto rounded-lg border border-line bg-surface shadow-brutal">
+    // Focusable and labelled, so keyboard users can scroll a wide table sideways.
+    <div className="relative overflow-x-auto rounded-lg border border-line bg-surface shadow-brutal" tabIndex={0} role="region" aria-label={caption ?? "Table"}>
       <table className="min-w-full divide-y divide-line text-sm [&_tbody>tr]:border-b [&_tbody>tr]:border-line-soft [&_tbody>tr:hover]:bg-paper">
         {caption && <caption className="sr-only">{caption}</caption>}
         {children}

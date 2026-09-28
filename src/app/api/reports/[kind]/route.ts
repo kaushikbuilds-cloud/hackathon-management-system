@@ -3,7 +3,7 @@ import { contentDisposition, guardApi } from "@/lib/api";
 import { audit } from "@/lib/audit";
 import { toCsv } from "@/lib/domain/csv";
 import { createClient } from "@/lib/supabase/server";
-import type { LeaderboardRow, Permission } from "@/lib/types";
+import type { LeaderboardRow, Permission, ProjectSubmission } from "@/lib/types";
 
 type Report = { requirement: "super_admin" | Permission; build: (sb: Awaited<ReturnType<typeof createClient>>) => Promise<{ headers: string[]; rows: unknown[][] }> };
 
@@ -67,6 +67,23 @@ const REPORTS: Record<string, Report> = {
       return {
         headers: ["Time", "Status", "Team name", "Members", "Error"],
         rows: (data ?? []).map((s) => [s.created_at, s.status, s.payload?.team_name, s.payload?.member_count, s.errors?.message ?? s.errors?.code ?? ""]),
+      };
+    },
+  },
+  projects: {
+    requirement: "view_reports",
+    async build(sb) {
+      const [{ data: teams }, { data: projects }] = await Promise.all([
+        sb.from("teams").select("id, team_code, name, track, college").eq("status", "approved").order("team_code"),
+        sb.from("project_submissions").select("*"),
+      ]) as [{ data: { id: string; team_code: string; name: string; track: string | null; college: string | null }[] | null }, { data: ProjectSubmission[] | null }];
+      const byTeam = new Map((projects ?? []).map((p) => [p.team_id, p]));
+      return {
+        headers: ["Team ID", "Team name", "Track", "College", "Submitted", "Project name", "Description", "Repository", "Live demo", "Video", "Slides uploaded", "Last updated"],
+        rows: (teams ?? []).map((t) => {
+          const p = byTeam.get(t.id);
+          return [t.team_code, t.name, t.track ?? "", t.college ?? "", p ? "Yes" : "No", p?.title ?? "", p?.description ?? "", p?.repo_url ?? "", p?.demo_url ?? "", p?.video_url ?? "", p?.slides_path ? "Yes" : "No", p?.updated_at ?? ""];
+        }),
       };
     },
   },

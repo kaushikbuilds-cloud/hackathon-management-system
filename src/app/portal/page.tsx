@@ -3,10 +3,12 @@ import { SubmitButton } from "@/components/client";
 import { AttendanceBadge, PaymentBadge, RegistrationBadge } from "@/components/status";
 import { Badge, Card, CardTitle, DescriptionList, EmptyState, Flash, LinkButton, PageHeader, Table, Td, TextField, Th, buttonClass } from "@/components/ui";
 import { requireParticipant } from "@/lib/auth";
+import { projectsOpen } from "@/lib/projects";
 import { getHackathon } from "@/lib/data/event";
 import { loadAnnouncementsAndSchedule, loadMyTeam } from "@/lib/data/portal";
 import { formatRupees } from "@/lib/domain/fees";
 import { formatDateTime } from "@/lib/format";
+import { createClient } from "@/lib/supabase/server";
 import { resubmitPayment } from "./payment-actions";
 
 export default async function PortalHome(props: PageProps<"/portal">) {
@@ -17,6 +19,8 @@ export default async function PortalHome(props: PageProps<"/portal">) {
   const { team, roster, me, isLeader, members } = data;
   const tz = hackathon?.timezone ?? "UTC";
   const cards = Boolean(hackathon?.portal_id_cards);
+  const projectDue = team.status === "approved" && projectsOpen(hackathon)
+    && !(await (await createClient()).from("project_submissions").select("team_id", { count: "exact", head: true }).eq("team_id", team.id)).count;
 
   return (
     <>
@@ -30,6 +34,15 @@ export default async function PortalHome(props: PageProps<"/portal">) {
         </>}
       />
       <Flash notice={sp.notice} error={sp.error} />
+      {projectDue && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/20 bg-brand-tint p-4">
+          <div>
+            <p className="font-semibold text-ink">Submit your project</p>
+            <p className="text-sm text-ink-soft">Share your GitHub repository, demo and slides{hackathon?.projects_deadline ? ` before ${formatDateTime(hackathon.projects_deadline, tz)}` : ""}.</p>
+          </div>
+          <LinkButton href="/portal/project">Submit project</LinkButton>
+        </div>
+      )}
       {hackathon?.status === "completed" && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-pop p-5 shadow-brutal">
           <div>

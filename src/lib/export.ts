@@ -50,6 +50,9 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
     all("profiles", hackathonId, "id, full_name, email, role, status, team_id, shop_id, participant_id, last_sign_in_at, created_at"),
     all("id_card_jobs", hackathonId),
   ]);
+  const [projects, criteria, scores] = await Promise.all([
+    all("project_submissions", hackathonId), all("judging_criteria", hackathonId), all("judge_scores", hackathonId),
+  ]);
   const teamCode = new Map(teams.map((t) => [t.id as string, t.team_code as string]));
   const partCode = new Map(participants.map((p) => [p.id as string, p.participant_code as string]));
 
@@ -81,6 +84,13 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
   files["data/registration_submissions.csv"] = csv(submissions);
   files["data/staff_and_logins.csv"] = csv(staff);
   files["data/audit_log.csv"] = csv(audit);
+  files["data/projects.csv"] = csv(projects.map((p) => ({ team_code: teamCode.get(p.team_id as string), ...p })));
+  files["data/judging_criteria.csv"] = csv(criteria);
+  files["data/judge_scores.csv"] = csv(scores.map((sc) => ({
+    team_code: teamCode.get(sc.team_id as string), judge: staff.find((st) => st.id === sc.judge_id)?.full_name ?? sc.judge_id,
+    ...Object.fromEntries(criteria.map((c) => [String(c.name), (sc.scores as Record<string, number>)?.[String(c.id)] ?? ""])),
+    comment: sc.comment, updated_at: sc.updated_at,
+  })));
 
   // Stored files, named so they can be matched to the CSV rows.
   const fetches: Promise<void>[] = [];
@@ -92,6 +102,7 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
   const latestJob = new Map<string, Row>();
   for (const j of jobs) if (j.status === "completed" && j.file_path && (!latestJob.has(j.team_id as string) || String(j.created_at) > String(latestJob.get(j.team_id as string)!.created_at))) latestJob.set(j.team_id as string, j);
   for (const j of latestJob.values()) grab(BUCKETS.idCards, j.file_path, `files/id-cards/${teamCode.get(j.team_id as string) ?? j.team_id}_ID_Cards.pdf`);
+  for (const p of projects) grab(BUCKETS.projectFiles, p.slides_path, `files/project-slides/${teamCode.get(p.team_id as string) ?? p.team_id}_slides.pdf`);
   for (const p of participants) grab(BUCKETS.photos, p.photo_path, `files/photos/${p.participant_code}${extOf(String(p.photo_path ?? ""))}`);
   for (const r of support) grab(BUCKETS.attachments, r.attachment_path, `files/support-attachments/${String(r.id).slice(0, 8)}_${safeName(String(r.subject ?? ""))}${extOf(String(r.attachment_path ?? ""))}`);
   grab(BUCKETS.branding, h.logo_path, `files/branding/hackathon-logo${extOf(h.logo_path ?? "")}`);
@@ -113,9 +124,10 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
     "",
     `Teams: ${teams.length}   Participants: ${participants.length}   Check-ins: ${attendance.filter((a) => a.status === "present").length}`,
     `Food orders: ${orders.length}   Support requests: ${support.length}   Certificates: ${people.length}`,
+    `Projects submitted: ${projects.length}   Judge scores: ${scores.length}`,
     "",
     "data/          spreadsheets (CSV, open in Excel or Google Sheets)",
-    `files/         payment proofs (${count("files/payment-proofs/")}), ID card PDFs (${count("files/id-cards/")}), photos (${count("files/photos/")}), support attachments (${count("files/support-attachments/")}), branding`,
+    `files/         payment proofs (${count("files/payment-proofs/")}), ID card PDFs (${count("files/id-cards/")}), photos (${count("files/photos/")}), support attachments (${count("files/support-attachments/")}), project slides (${count("files/project-slides/")}), branding`,
     `certificates/  one PDF per person, a folder per team (${count("certificates/")})`,
     "",
     "Files are named by Team ID / Participant ID so they match the spreadsheets.",
