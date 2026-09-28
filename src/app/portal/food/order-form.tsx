@@ -22,7 +22,7 @@ export function OrderForm({ action, items, free, shopName, members, closed = fal
         <SelectField label="Who is this order for?" name="member" id={`member-${shopName}`} required defaultValue=""
           options={[{ value: "", label: "Choose a team member" }, ...members.map((m) => ({ value: m.id, label: m.name }))]} />
       )}
-      <ul className="divide-y-2 divide-line-soft rounded-md border-2 border-line">
+      <ul className="divide-y divide-line-soft rounded-md border border-line">
         {items.map((i) => {
           const max = Math.min(i.limit ?? 20, 20);
           const n = qty[i.id] ?? 0;
@@ -41,14 +41,14 @@ export function OrderForm({ action, items, free, shopName, members, closed = fal
               </div>
               {i.available ? (
                 <div className="flex items-center gap-2">
-                  <button type="button" className="press grid size-11 place-items-center rounded-md border-2 border-line bg-surface text-lg font-bold shadow-brutal-sm disabled:opacity-40"
+                  <button type="button" className="press grid size-11 place-items-center rounded-md border border-line bg-surface text-lg font-bold shadow-brutal-sm disabled:opacity-40"
                     onClick={() => set(i.id, n - 1, max)} disabled={n === 0} aria-label={`One less ${i.name}`}>−</button>
                   <output className="w-8 text-center font-mono text-lg font-bold" aria-live="polite" aria-label={`${i.name} quantity`}>{n}</output>
-                  <button type="button" className="press grid size-11 place-items-center rounded-md border-2 border-line bg-pop text-lg font-bold shadow-brutal-sm disabled:opacity-40"
+                  <button type="button" className="press grid size-11 place-items-center rounded-md border border-line bg-pop text-lg font-bold shadow-brutal-sm disabled:opacity-40"
                     onClick={() => set(i.id, n + 1, max)} disabled={n >= max} aria-label={`One more ${i.name}`}>+</button>
                   {n > 0 && <input type="hidden" name={`qty_${i.id}`} value={n} />}
                 </div>
-              ) : <span className="rounded-sm border-2 border-line bg-danger-tint px-2 py-0.5 text-xs font-bold">Sold out</span>}
+              ) : <span className="rounded-sm border border-line bg-danger-tint px-2 py-0.5 text-xs font-bold">Sold out</span>}
             </li>
           );
         })}

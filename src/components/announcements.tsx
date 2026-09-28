@@ -11,7 +11,7 @@ export function AnnouncementFeed({ items, timeZone, title = "Announcements" }: {
       ) : (
         <ul className="space-y-3">
           {items.map((a) => (
-            <li key={a.id} className={`rounded-md p-4 ${a.is_important ? "border-2 border-line bg-brand-tint" : "bg-paper"}`}>
+            <li key={a.id} className={`rounded-md p-4 ${a.is_important ? "border border-line bg-brand-tint" : "bg-paper"}`}>
               <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
                 {a.title}
                 {a.is_important && <Badge tone="violet">Important</Badge>}

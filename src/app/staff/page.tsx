@@ -3,9 +3,9 @@ import Link from "next/link";
 import { BarList } from "@/components/bar-list";
 import { ColumnChart, RingChart, STATUS_COLORS, ShareBars } from "@/components/charts";
 import { Countdown } from "@/components/countdown";
-import { PixelIcon, type PixelIconName } from "@/components/pixel-icons";
+import { Icon, type IconName } from "@/components/icons";
 import { RegistrationBadge } from "@/components/status";
-import { Card, CardTitle, DescriptionList, LinkButton, PageHeader, Stat, Table, Td, Th, buttonClass, cx } from "@/components/ui";
+import { Badge, Card, CardTitle, DescriptionList, LinkButton, PageHeader, Stat, Table, Td, Th, buttonClass, cx } from "@/components/ui";
 import { can, isSuperAdmin, portalName, requireStaff, type Session } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { loadDashboardStats } from "@/lib/data/stats";
@@ -41,18 +41,17 @@ function greeting(tz: string) {
   return hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 }
 
-/** Greeting banner over the pixel landscape, with the event countdown beside it. */
+/** Greeting banner with the event countdown beside it. */
 function Hero({ session, hackathon, tz }: { session: Session; hackathon: Hackathon | null; tz: string }) {
   const first = (session.profile.full_name ?? "").trim().split(/\s+/)[0] || "there";
   return (
     <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_auto]">
-      <div className="panel rounded-lg border-2 border-line p-5">
-        <p className="font-pixel text-lg text-ink-soft">{greeting(tz)},</p>
-        <p className="font-heading text-4xl font-bold text-pop [text-shadow:3px_3px_0_var(--color-line)] sm:text-5xl">{first}!</p>
-        <p className="mt-3 max-w-xl text-ink-soft">
+      <div className="panel rounded-lg border border-line p-5">
+        <p className="text-2xl font-bold tracking-tight text-ink sm:text-3xl">{greeting(tz)}, {first}</p>
+        <p className="mt-2 max-w-xl text-sm text-muted sm:text-base">
           {hackathon ? <>Everything for <strong className="text-ink">{hackathon.name}</strong> in one place. {hackathon.tagline ?? "Let's build something amazing!"}</> : "Open a hackathon to see its dashboard."}
         </p>
-        <p className="font-pixel mt-3 inline-block rounded-sm border-2 border-line bg-brand-tint px-2 py-0.5 text-sm text-ink">{portalName(session)}</p>
+        <p className="mt-4"><Badge tone="violet">{portalName(session)}</Badge></p>
       </div>
       {hackathon && <div className="lg:w-96"><Countdown startsAt={hackathon.starts_at} endsAt={hackathon.ends_at} now={requestTime()} /></div>}
     </div>
@@ -114,13 +113,13 @@ async function registrationsByDay(supabase: Awaited<ReturnType<typeof createClie
   });
 }
 
-const QUICK_ACTIONS: { href: string; label: string; icon: PixelIconName; tone: string; show: (s: Session) => boolean }[] = [
-  { href: "/staff/teams", label: "Review teams", icon: "team", tone: "bg-brand", show: (s) => can(s, "view_participants") || can(s, "manage_registrations") },
-  { href: "/staff/attendance", label: "Scan ID cards", icon: "check", tone: "bg-cobalt", show: (s) => can(s, "record_attendance") },
-  { href: "/staff/id-cards", label: "Generate ID cards", icon: "card", tone: "bg-violet", show: (s) => can(s, "generate_pdf") || can(s, "manage_event") },
-  { href: "/staff/announcements", label: "Post announcement", icon: "megaphone", tone: "bg-danger-strong", show: (s) => can(s, "publish_announcements") },
-  { href: "/staff/reports", label: "View reports", icon: "chart", tone: "bg-cobalt", show: (s) => can(s, "view_reports") },
-  { href: "/staff/event", label: "Event settings", icon: "shield", tone: "bg-paper-2", show: (s) => can(s, "manage_event") },
+const QUICK_ACTIONS: { href: string; label: string; icon: IconName; tone: string; show: (s: Session) => boolean }[] = [
+  { href: "/staff/teams", label: "Review teams", icon: "users", tone: "bg-brand-tint text-brand", show: (s) => can(s, "view_participants") || can(s, "manage_registrations") },
+  { href: "/staff/attendance", label: "Scan ID cards", icon: "qr", tone: "bg-sky-tint text-sky-ink", show: (s) => can(s, "record_attendance") },
+  { href: "/staff/id-cards", label: "Generate ID cards", icon: "idcard", tone: "bg-brand-tint text-brand", show: (s) => can(s, "generate_pdf") || can(s, "manage_event") },
+  { href: "/staff/announcements", label: "Post announcement", icon: "megaphone", tone: "bg-warn-tint text-warn", show: (s) => can(s, "publish_announcements") },
+  { href: "/staff/reports", label: "View reports", icon: "chart", tone: "bg-ok-tint text-ok", show: (s) => can(s, "view_reports") },
+  { href: "/staff/event", label: "Event settings", icon: "settings", tone: "bg-paper-2 text-ink-soft", show: (s) => can(s, "manage_event") },
 ];
 
 async function Overview({ session, tz, superAdmin, tracks }: { session: Session; tz: string; superAdmin: boolean; tracks: string[] }) {
@@ -144,22 +143,22 @@ async function Overview({ session, tz, superAdmin, tracks }: { session: Session;
     { label: "Approved", value: byStatus.approved ?? 0, color: STATUS_COLORS.approved },
     { label: "Pending", value: byStatus.pending ?? 0, color: STATUS_COLORS.pending },
     { label: "Rejected", value: byStatus.rejected ?? 0, color: STATUS_COLORS.rejected },
-    ...(byStatus.flagged ? [{ label: "Flagged", value: byStatus.flagged, color: "#7a5cf0" }] : []),
+    ...(byStatus.flagged ? [{ label: "Flagged", value: byStatus.flagged, color: "#6366f1" }] : []),
   ];
   const last30 = daily.reduce((n, d) => n + d.value, 0);
   const actions = QUICK_ACTIONS.filter((a) => a.show(session));
   return (
     <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat icon={<PixelIcon name="team" className="size-10" />} tone="green" label="Registered teams" value={stats.teams} hint={stats.pendingApprovals ? <Link href="/staff/teams?status=pending" className="underline">{stats.pendingApprovals} pending approval</Link> : "No pending approvals"} />
-        <Stat icon={<PixelIcon name="person" className="size-10" />} tone="blue" label="Participants" value={stats.participants} hint={`${last30} teams in the last 30 days`} />
-        <Stat icon={<PixelIcon name="check" className="size-10" />} tone="violet" label="Checked in" value={`${stats.present}/${stats.participants}`} hint={stats.participants ? `${Math.round((stats.present / stats.participants) * 100)}% attendance` : undefined} />
-        <Stat icon={<PixelIcon name="help" className="size-10" />} tone="amber" label="Open support requests" value={stats.openSupport} hint={<Link href="/staff/support" className="underline">View queue</Link>} />
+        <Stat icon={<Icon name="users" className="size-5" />} tone="green" label="Registered teams" value={stats.teams} hint={stats.pendingApprovals ? <Link href="/staff/teams?status=pending" className="underline">{stats.pendingApprovals} pending approval</Link> : "No pending approvals"} />
+        <Stat icon={<Icon name="user" className="size-5" />} tone="blue" label="Participants" value={stats.participants} hint={`${last30} teams in the last 30 days`} />
+        <Stat icon={<Icon name="check" className="size-5" />} tone="violet" label="Checked in" value={`${stats.present}/${stats.participants}`} hint={stats.participants ? `${Math.round((stats.present / stats.participants) * 100)}% attendance` : undefined} />
+        <Stat icon={<Icon name="help" className="size-5" />} tone="amber" label="Open support requests" value={stats.openSupport} hint={<Link href="/staff/support" className="underline">View queue</Link>} />
       </div>
       {superAdmin && (
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <Stat icon={<PixelIcon name="crown" className="size-10" />} tone="amber" label="Active staff" value={stats.staff} hint={<Link href="/staff/users/admins" className="underline">User Management</Link>} />
-          <Stat icon={<PixelIcon name="megaphone" className="size-10" />} tone="violet" label="Pending invitations" value={stats.pendingInvitations} />
+          <Stat icon={<Icon name="shield" className="size-5" />} tone="amber" label="Active staff" value={stats.staff} hint={<Link href="/staff/users/admins" className="underline">User Management</Link>} />
+          <Stat icon={<Icon name="mail" className="size-5" />} tone="violet" label="Pending invitations" value={stats.pendingInvitations} />
         </div>
       )}
 
@@ -203,11 +202,13 @@ async function Overview({ session, tz, superAdmin, tracks }: { session: Session;
         </Card>
         <Card>
           <CardTitle>Quick actions</CardTitle>
-          <ul className="space-y-2.5">
+          <ul className="space-y-2">
             {actions.map((a) => (
               <li key={a.href}>
-                <Link href={a.href} className={cx("press bevel font-pixel flex min-h-12 items-center gap-3 rounded-md border-2 border-line px-3 text-base text-white", a.tone)}>
-                  <PixelIcon name={a.icon} className="size-7" />{a.label}
+                <Link href={a.href} className="group flex min-h-12 items-center gap-3 rounded-md border border-line px-3 text-sm font-medium text-ink transition-colors hover:border-line-strong hover:bg-paper">
+                  <span className={cx("grid size-8 place-items-center rounded-md", a.tone)} aria-hidden="true"><Icon name={a.icon} className="size-4" /></span>
+                  <span className="flex-1">{a.label}</span>
+                  <Icon name="arrowRight" className="size-4 text-muted transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </li>
             ))}

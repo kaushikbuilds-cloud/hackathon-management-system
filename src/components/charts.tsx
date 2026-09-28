@@ -4,11 +4,11 @@ import type { CSSProperties } from "react";
  * Dashboard charts (server-rendered, no chart library). Each chart has a
  * hover/focus tooltip on every mark and a screen-reader table of its data.
  * Colours: one sequential hue for magnitude, the status palette for states
- * (validated against the panel surface #2a1e14).
+ * (validated against the white card surface).
  */
 
-export const STATUS_COLORS = { approved: "#1f9e89", pending: "#c2830c", rejected: "#e0476a" } as const;
-const BAR = "#7a5cf0";
+export const STATUS_COLORS = { approved: "#0d9488", pending: "#d97706", rejected: "#e11d48" } as const;
+const BAR = "#6366f1";
 
 /** Rounds a max value up to a tidy axis top (1, 2, 5 × 10^n). */
 function niceMax(v: number) {
@@ -33,8 +33,8 @@ export function ColumnChart({ data, label, unit }: { data: { label: string; valu
           <ul className="absolute inset-0 flex items-end gap-[2px]" aria-hidden="true">
             {data.map((d) => (
               <li key={d.label} className="group relative flex h-full flex-1 items-end">
-                <span className="block w-full rounded-t-[4px]" style={{ height: `${(d.value / top) * 100}%`, minHeight: d.value ? 3 : 0, background: BAR, boxShadow: "inset 2px 0 0 rgb(255 255 255 / 0.25)" }} />
-                <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-sm border-2 border-line bg-paper px-2 py-1 text-xs whitespace-nowrap text-ink shadow-brutal-sm group-hover:block">
+                <span className="block w-full rounded-t-[4px]" style={{ height: `${(d.value / top) * 100}%`, minHeight: d.value ? 3 : 0, background: BAR, boxShadow: "none" }} />
+                <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 rounded-md bg-ink px-2 py-1 text-xs whitespace-nowrap text-white shadow-brutal-lg group-hover:block">
                   {d.label}: <strong>{d.value}</strong> {unit}
                 </span>
               </li>
@@ -79,15 +79,15 @@ export function RingChart({ segments, total, totalLabel }: { segments: { label: 
           })}
         </svg>
         <div className="absolute inset-0 grid place-content-center text-center">
-          <span className="font-heading text-3xl font-bold text-ink tabular-nums">{total}</span>
-          <span className="font-pixel text-xs text-ink-soft">{totalLabel}</span>
+          <span className="text-3xl font-semibold tracking-tight text-ink tabular-nums">{total}</span>
+          <span className="text-xs text-ink-soft">{totalLabel}</span>
         </div>
       </div>
       <ul className="min-w-40 flex-1 space-y-2.5">
         {segments.map((s) => (
           <li key={s.label} className="flex items-center justify-between gap-3 text-sm">
             <span className="flex items-center gap-2 text-ink">
-              <span className="size-4 rounded-sm border-2 border-line" style={{ background: s.color } as CSSProperties} aria-hidden="true" />
+              <span className="size-3 rounded-full" style={{ background: s.color } as CSSProperties} aria-hidden="true" />
               {s.label}
             </span>
             <span className="font-bold text-ink tabular-nums">{s.value}</span>
@@ -116,8 +116,8 @@ export function ShareBars({ items }: { items: { label: string; value: number }[]
               <span className="min-w-0 break-words text-ink">{i.label}</span>
               <span className="shrink-0 font-bold text-ink tabular-nums">{pct}% <span className="font-normal text-muted">({i.value})</span></span>
             </div>
-            <div className="h-4 rounded-sm border-2 border-line bg-paper" aria-hidden="true">
-              <div className="h-full rounded-r-[3px]" style={{ width: `${(i.value / top) * 100}%`, background: BAR, boxShadow: "inset 0 2px 0 rgb(255 255 255 / 0.25)" }} />
+            <div className="h-2 rounded-full bg-paper-2" aria-hidden="true">
+              <div className="h-full rounded-full" style={{ width: `${(i.value / top) * 100}%`, background: BAR, boxShadow: "none" }} />
             </div>
           </li>
         );

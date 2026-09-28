@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 
 const UNITS = [
-  { label: "Days", ms: 86_400_000, tone: "text-sky" },
-  { label: "Hours", ms: 3_600_000, tone: "text-grass" },
-  { label: "Minutes", ms: 60_000, tone: "text-pink" },
-  { label: "Seconds", ms: 1000, tone: "text-pop" },
+  { label: "Days", ms: 86_400_000, tone: "text-ink" },
+  { label: "Hours", ms: 3_600_000, tone: "text-ink" },
+  { label: "Minutes", ms: 60_000, tone: "text-ink" },
+  { label: "Seconds", ms: 1000, tone: "text-ink" },
 ] as const;
 
 /**
@@ -29,16 +29,16 @@ export function Countdown({ startsAt, endsAt, now }: { startsAt: string | null; 
   const parts = UNITS.map((u, i) => ({ ...u, v: Math.floor((i === 0 ? left : left % UNITS[i - 1].ms) / u.ms) }));
 
   return (
-    <div className="panel rounded-lg border-2 border-line p-4">
-      <p className="font-pixel mb-3 text-lg text-ink">{title}</p>
+    <div className="panel rounded-lg border border-line p-4">
+      <p className="mb-3 text-sm font-semibold text-ink">{title}</p>
       {Number.isNaN(target) ? (
         <p className="text-sm text-ink-soft">{Number.isNaN(start) ? "Set the start and end dates in Event Setup." : "The event has finished."}</p>
       ) : (
         <div className="grid grid-cols-4 gap-2" role="timer" aria-live="off" aria-label={`${title} ${parts.map((p) => `${p.v} ${p.label}`).join(", ")}`}>
           {parts.map((p) => (
             <div key={p.label} className="text-center">
-              <div className={`rounded-md border-2 border-line bg-paper py-2 font-heading text-3xl font-bold tabular-nums shadow-[inset_2px_2px_0_0_rgb(0_0_0/0.5)] ${p.tone}`}>{String(p.v).padStart(2, "0")}</div>
-              <p className="font-pixel mt-1 text-xs text-ink-soft">{p.label}</p>
+              <div className={`rounded-md bg-paper-2 py-2.5 text-2xl font-semibold tracking-tight tabular-nums ${p.tone}`}>{String(p.v).padStart(2, "0")}</div>
+              <p className="mt-1 text-xs text-muted">{p.label}</p>
             </div>
           ))}
         </div>

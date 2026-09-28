@@ -84,7 +84,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
             ]}
           />
           {canEdit && (
-            <details className="mt-6 rounded-md border-2 border-line p-4">
+            <details className="mt-6 rounded-md border border-line p-4">
               <summary className="cursor-pointer text-sm font-semibold text-ink">Correct team details</summary>
               <form action={updateTeam.bind(null, id)} className="mt-4 grid gap-4 sm:grid-cols-2">
                 <TextField label="Team name" name="name" defaultValue={team.name} required maxLength={80} hint="Must stay unique (case and spacing are ignored)." />
@@ -114,7 +114,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
               <a href={`/api/teams/${id}/payment-proof`} target="_blank" rel="noopener" className={buttonClass("secondary", "sm", "mt-4")}>View payment screenshot</a>
             )}
             {canAccounts && (
-              <form action={reviewPayment.bind(null, id)} className="mt-4 space-y-3 border-t-2 border-line-soft pt-4">
+              <form action={reviewPayment.bind(null, id)} className="mt-4 space-y-3 border-t border-line-soft pt-4">
                 <TextField label="Note to the team" name="note" maxLength={500} hint="Required when rejecting, e.g. 'Amount received was ₹200, expected ₹400'." />
                 <div className="flex flex-wrap gap-2">
                   <SubmitButton size="sm" variant="success" name="decision" value="verified">Mark as paid</SubmitButton>
@@ -207,7 +207,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
             {list.map((m) => {
               const acct = accountByParticipant.get(m.id);
               return (
-                <details key={m.id} className="rounded-md border-2 border-line p-4">
+                <details key={m.id} className="rounded-md border border-line p-4">
                   <summary className="cursor-pointer text-sm font-semibold text-ink">
                     {m.full_name} <span className="font-mono text-xs text-muted">({m.participant_code})</span>
                   </summary>
@@ -279,7 +279,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
         )}
 
         {canEdit && list.length < maxMembers && (
-          <details className="mt-4 rounded-md border-2 border-dashed border-line p-4">
+          <details className="mt-4 rounded-md border border-dashed border-line p-4">
             <summary className="cursor-pointer text-sm font-semibold text-ink">+ Add a member</summary>
             <form action={addParticipant.bind(null, id)} className="mt-4 grid gap-3 sm:grid-cols-3">
               <TextField label="Full name" name="full_name" required maxLength={100} />

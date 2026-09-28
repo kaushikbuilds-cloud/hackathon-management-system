@@ -49,7 +49,7 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
                 {form && availability.open ? (
                   <LinkButton href={`/register/${form.slug}`}>Register your team</LinkButton>
                 ) : (
-                  <span className="rounded-lg border-2 border-line px-4 py-2 text-sm text-ink-soft">{"reason" in availability && availability.reason ? availability.reason : "Registration is not open."}</span>
+                  <span className="rounded-lg border border-line px-4 py-2 text-sm text-ink-soft">{"reason" in availability && availability.reason ? availability.reason : "Registration is not open."}</span>
                 )}
                 <LinkButton href="/login" variant="secondary">Team &amp; staff sign in</LinkButton>
               </div>
@@ -73,7 +73,7 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
           <h2 id="schedule-heading" className="mb-4 text-xl font-semibold text-ink">Schedule</h2>
           <ol className="grid gap-3 sm:grid-cols-2">
             {schedule.map((item) => (
-              <li key={item.id} className="rounded-md border-2 border-line bg-paper p-4">
+              <li key={item.id} className="rounded-md border border-line bg-paper p-4">
                 <p className="text-xs font-semibold text-grass">
                   {formatDateTime(item.starts_at, tz)}
                   {item.ends_at && ` – ${formatTime(item.ends_at, tz)}`}

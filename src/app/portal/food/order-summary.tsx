@@ -54,7 +54,7 @@ export function OrderSummary({ order: o, tz, forName }: { order: MyOrder; tz?: s
   const steps = trackSteps(o);
   const msg = message(o);
   return (
-    <article className="rounded-lg border-2 border-line bg-surface p-5 shadow-brutal" aria-label={`Order ${orderLabel(o.order_no)} tracking`}>
+    <article className="rounded-lg border border-line bg-surface p-5 shadow-brutal" aria-label={`Order ${orderLabel(o.order_no)} tracking`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-xs font-bold tracking-wide text-ink-soft uppercase">Track your order</p>
@@ -72,11 +72,11 @@ export function OrderSummary({ order: o, tz, forName }: { order: MyOrder; tz?: s
             {i > 0 && (
               <span aria-hidden="true" className={cx(
                 "absolute top-5 right-1/2 h-1 w-full -translate-y-1/2",
-                s.state === "todo" ? "border-t-2 border-dashed border-line-soft" : s.state === "failed" ? "bg-danger" : "bg-ink",
+                s.state === "todo" ? "border-t border-dashed border-line-soft" : s.state === "failed" ? "bg-danger" : "bg-ink",
               )} />
             )}
             <span className={cx(
-              "relative z-10 grid size-10 place-items-center rounded-full border-2 border-line",
+              "relative z-10 grid size-10 place-items-center rounded-full border border-line",
               s.state === "done" && "bg-pop text-ink",
               s.state === "current" && "bg-brand text-white shadow-brutal-sm",
               s.state === "todo" && "border-line-soft bg-surface text-muted",
@@ -94,9 +94,9 @@ export function OrderSummary({ order: o, tz, forName }: { order: MyOrder; tz?: s
         ))}
       </ol>
 
-      <p className={cx("mt-5 rounded-md border-2 border-line px-3 py-2 text-sm font-bold text-ink", msg.tone)} role="status">{msg.text}</p>
+      <p className={cx("mt-5 rounded-md border border-line px-3 py-2 text-sm font-bold text-ink", msg.tone)} role="status">{msg.text}</p>
 
-      <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t-2 border-line-soft pt-3 text-sm text-ink">
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-3 border-t border-line-soft pt-3 text-sm text-ink">
         <ul>
           {o.food_order_items.map((l, i) => <li key={i}><span className="font-bold">{l.qty} ×</span> {l.name}</li>)}
           {o.note && <li className="text-ink-soft">Note: {o.note}</li>}

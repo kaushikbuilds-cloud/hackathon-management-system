@@ -30,7 +30,7 @@ export default async function StaffLayout({ children }: LayoutProps<"/staff">) {
       notificationsHref="/staff/notifications"
     >
       {isSuperAdmin(session) && hackathon && (
-        <form action={closeHackathon} className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border-2 border-line bg-brand-tint px-4 py-3 text-sm">
+        <form action={closeHackathon} className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-brand-tint px-4 py-3 text-sm">
           <p className="text-ink">
             You are viewing <strong className="text-ink">{hackathon.name}</strong> as the platform owner. Changes you make apply to this hackathon.
           </p>

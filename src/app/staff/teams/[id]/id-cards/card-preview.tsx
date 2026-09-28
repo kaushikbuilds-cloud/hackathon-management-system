@@ -33,7 +33,7 @@ export function CardPreview({ eventName, organizer, member, teamName, teamCode, 
             <p className="line-clamp-2 text-[8px] font-bold leading-tight">{teamName}</p>
             <p className="text-[7px] font-semibold" style={{ color: config.accentColor }}>{teamCode}</p>
           </div>
-          <div className="grid size-12 shrink-0 place-items-center border-2 border-line bg-[repeating-linear-gradient(45deg,#111_0_2px,#fff_2px_4px)] text-[6px]" aria-label="QR code placeholder" />
+          <div className="grid size-12 shrink-0 place-items-center border border-line bg-[repeating-linear-gradient(45deg,#111_0_2px,#fff_2px_4px)] text-[6px]" aria-label="QR code placeholder" />
         </div>
       </div>
       <div className="py-1 text-center text-[7px] font-semibold text-ink" style={{ background: config.headerColor }}>

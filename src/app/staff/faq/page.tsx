@@ -63,7 +63,7 @@ export default async function FaqPage(props: PageProps<"/staff/faq">) {
         </section>
         <section className="space-y-4" aria-labelledby="faq-preview">
           <h2 id="faq-preview" className="text-lg font-bold text-ink">What teams see</h2>
-          {published.length ? <FaqList items={published} /> : <p className="rounded-md border-2 border-dashed border-line p-4 text-sm text-muted">Published answers appear here.</p>}
+          {published.length ? <FaqList items={published} /> : <p className="rounded-md border border-dashed border-line p-4 text-sm text-muted">Published answers appear here.</p>}
         </section>
       </div>
     </>

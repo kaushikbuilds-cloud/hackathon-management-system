@@ -31,7 +31,7 @@ export default async function PortalHome(props: PageProps<"/portal">) {
       />
       <Flash notice={sp.notice} error={sp.error} />
       {hackathon?.status === "completed" && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border-2 border-line bg-pop p-5 shadow-brutal">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-pop p-5 shadow-brutal">
           <div>
             <p className="font-heading text-xl font-bold text-ink">{hackathon.name} has ended. Thank you for taking part!</p>
             <p className="text-sm text-ink">Certificates are ready for every team member who checked in.</p>
@@ -61,7 +61,7 @@ export default async function PortalHome(props: PageProps<"/portal">) {
             ]} />
             {team.status_reason && team.status !== "approved" && <p className="mt-4 text-sm text-warn">Note from organisers: {team.status_reason}</p>}
             {team.payment_status === "rejected" && (
-              <div className="mt-4 rounded-md border-2 border-line bg-danger-tint p-4">
+              <div className="mt-4 rounded-md border border-line bg-danger-tint p-4">
                 <p className="font-bold text-ink">Your payment was not accepted</p>
                 {team.payment_note && <p className="mt-1 text-sm text-ink-soft">{team.payment_note}</p>}
                 {isLeader ? (
@@ -70,7 +70,7 @@ export default async function PortalHome(props: PageProps<"/portal">) {
                     <div className="space-y-1.5">
                       <label htmlFor="payment_proof" className="block text-sm font-bold text-ink">Payment screenshot</label>
                       <input id="payment_proof" name="payment_proof" type="file" required accept="image/png,image/jpeg,application/pdf"
-                        className="block w-full cursor-pointer text-sm text-ink-soft file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-md file:border-2 file:border-line file:bg-surface file:px-3 file:font-bold file:text-ink" />
+                        className="block w-full cursor-pointer text-sm text-ink-soft file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:font-bold file:text-ink" />
                     </div>
                     <SubmitButton pendingText="Submitting…">Resubmit</SubmitButton>
                   </form>

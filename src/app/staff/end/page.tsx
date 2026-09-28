@@ -95,7 +95,7 @@ export default async function EndHackathonPage(props: PageProps<"/staff/end">) {
             <SubmitButton variant={ended ? "primary" : "secondary"} pendingText="Preparing… (this can take a minute)">{ended ? "Prepare full data download" : "Prepare a backup now"}</SubmitButton>
           </form>
           {links.length > 0 && (
-            <div className="mt-4 rounded-md border-2 border-line bg-paper-2 p-3">
+            <div className="mt-4 rounded-md border border-line bg-paper-2 p-3">
               <p className="text-sm font-bold text-ink">Latest export · {stampLabel}</p>
               <ul className="mt-2 space-y-1 text-sm">
                 {links.map((l) => (

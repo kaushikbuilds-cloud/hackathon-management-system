@@ -83,10 +83,10 @@ export function BrandForm(p: Props) {
           <div className="mt-2 flex flex-wrap gap-2">
             {PRESETS.map((s) => (
               <button key={s.name} type="button" onClick={() => { setPrimary(s.primary); setAccent(s.accent); }}
-                className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md border-2 border-line bg-surface px-3 text-sm font-bold text-ink shadow-brutal-sm hover:bg-paper">
+                className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-line bg-surface px-3 text-sm font-bold text-ink shadow-brutal-sm hover:bg-paper">
                 <span className="flex" aria-hidden="true">
-                  <span className="size-4 rounded-l-sm border-2 border-line" style={{ background: s.primary }} />
-                  <span className="size-4 rounded-r-sm border-2 border-l-0 border-line" style={{ background: s.accent }} />
+                  <span className="size-4 rounded-l-sm border border-line" style={{ background: s.primary }} />
+                  <span className="size-4 rounded-r-sm border border-l-0 border-line" style={{ background: s.accent }} />
                 </span>
                 {s.name}
               </button>
@@ -101,14 +101,14 @@ export function BrandForm(p: Props) {
 
       <aside className="xl:sticky xl:top-24 xl:self-start" aria-label="Live ID card preview">
         <p className="mb-2 text-sm font-bold text-ink">Live preview</p>
-        <div className="mx-auto w-full max-w-[18rem] overflow-hidden rounded-xl border-2 border-line p-4 shadow-brutal-lg" style={{ background: primary, color: text }}>
+        <div className="mx-auto w-full max-w-[18rem] overflow-hidden rounded-xl border border-line p-4 shadow-brutal-lg" style={{ background: primary, color: text }}>
           <div className="mx-auto mb-3 h-2.5 w-16 rounded-full border opacity-70" style={{ borderColor: text }} />
           <div className="flex items-center gap-3">
             {logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logo} alt="" className="size-11 rounded object-contain" />
             ) : (
-              <span className="grid size-11 place-items-center rounded border-2" style={{ borderColor: accent, color: accent }}><Icon name="trophy" className="size-6" /></span>
+              <span className="grid size-11 place-items-center rounded border" style={{ borderColor: accent, color: accent }}><Icon name="trophy" className="size-6" /></span>
             )}
             <div className="min-w-0">
               <p className="truncate font-heading text-sm font-bold uppercase">{p.eventName}</p>
@@ -148,9 +148,9 @@ function ColourInput({ name, label, value, onChange, error }: { name: string; la
       <label htmlFor={name} className="block text-sm font-bold text-ink">{label}</label>
       <div className="flex items-center gap-3">
         <input id={name} name={name} type="color" value={value} onChange={(ev) => onChange(ev.target.value)}
-          className="h-11 w-16 cursor-pointer rounded-md border-2 border-line bg-surface p-1" />
+          className="h-11 w-16 cursor-pointer rounded-md border border-line bg-surface p-1" />
         <input aria-label={`${label} hex code`} value={value} onChange={(ev) => /^#[0-9a-fA-F]{0,6}$/.test(ev.target.value) && onChange(ev.target.value)}
-          className="min-h-11 w-28 rounded-md border-2 border-line bg-surface px-3 font-mono text-sm text-ink" maxLength={7} />
+          className="min-h-11 w-28 rounded-md border border-line bg-surface px-3 font-mono text-sm text-ink" maxLength={7} />
       </div>
       {error && <p className="text-xs font-bold text-danger" role="alert">{error}</p>}
     </div>
@@ -163,7 +163,7 @@ function LogoInput({ name, label, url, error, onChange, hasSaved }: {
   return (
     <div className="space-y-2">
       <label htmlFor={name} className="block text-sm font-bold text-ink">{label}</label>
-      <div className="grid h-24 place-items-center rounded-md border-2 border-dashed border-line bg-paper p-2">
+      <div className="grid h-24 place-items-center rounded-md border border-dashed border-line bg-paper p-2">
         {url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={url} alt={`${label} preview`} className="max-h-20 w-auto object-contain" />
@@ -172,7 +172,7 @@ function LogoInput({ name, label, url, error, onChange, hasSaved }: {
         )}
       </div>
       <input id={name} name={name} type="file" accept="image/png,image/jpeg" onChange={onChange}
-        className="block w-full cursor-pointer text-sm text-ink-soft file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-md file:border-2 file:border-line file:bg-surface file:px-3 file:font-bold file:text-ink" />
+        className="block w-full cursor-pointer text-sm text-ink-soft file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-md file:border file:border-line file:bg-surface file:px-3 file:font-bold file:text-ink" />
       {hasSaved && <Checkbox name={`remove_${name}`} label="Remove the saved logo" />}
       {error && <p className="text-xs font-bold text-danger" role="alert">{error}</p>}
     </div>

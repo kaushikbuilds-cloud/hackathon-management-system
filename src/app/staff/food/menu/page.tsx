@@ -56,7 +56,7 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
               >
                 {shop.name}
               </CardTitle>
-              <div className="mb-4 rounded-md border-2 border-line bg-paper-2 p-3">
+              <div className="mb-4 rounded-md border border-line bg-paper-2 p-3">
                 <p className="text-sm font-bold text-ink">
                   Shop login: <span className="font-mono">{shop.code ?? "—"}</span>{" "}
                   <Badge tone={loginFor.get(shop.id) ? "green" : "neutral"}>{loginFor.get(shop.id) ? "Created" : "Not created yet"}</Badge>
@@ -73,7 +73,7 @@ export default async function FoodMenuPage(props: PageProps<"/staff/food/menu">)
               </details>
 
               {menu.length > 0 && (
-                <ul className="mb-4 divide-y-2 divide-line-soft rounded-md border-2 border-line">
+                <ul className="mb-4 divide-y divide-line-soft rounded-md border border-line">
                   {menu.map((item) => (
                     <li key={item.id} className="p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">

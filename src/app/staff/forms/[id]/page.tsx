@@ -92,7 +92,7 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
           <CardTitle description="Team name, college, and each member's full name and email are always collected and required.">Member fields</CardTitle>
           <div className="grid gap-3 sm:grid-cols-2">
             {OPTIONAL_MEMBER_FIELDS.map((f) => (
-              <fieldset key={f} className="rounded-md border-2 border-line p-3">
+              <fieldset key={f} className="rounded-md border border-line p-3">
                 <legend className="px-1 text-sm font-semibold text-ink">{OPTIONAL_FIELD_LABEL[f]}</legend>
                 <div className="flex flex-wrap gap-4">
                   <Checkbox name={`field.${f}.enabled`} label="Collect" defaultChecked={fields[f].enabled} />
@@ -107,7 +107,7 @@ export default async function EditFormPage(props: PageProps<"/staff/forms/[id]">
           <CardTitle description="Leave a label empty to remove a question. Select options are comma-separated.">Custom questions</CardTitle>
           <div className="space-y-3">
             {rows.map((q, i) => (
-              <div key={q?.id ?? `new-${i}`} className="grid gap-3 rounded-md border-2 border-line p-3 md:grid-cols-[2fr_1fr_2fr_auto]">
+              <div key={q?.id ?? `new-${i}`} className="grid gap-3 rounded-md border border-line p-3 md:grid-cols-[2fr_1fr_2fr_auto]">
                 <input type="hidden" name={`q.${i}.id`} value={q?.id ?? ""} />
                 <div>
                   <label htmlFor={`q-${i}-label`} className="text-xs text-muted">Question {q ? "" : "(new)"}</label>

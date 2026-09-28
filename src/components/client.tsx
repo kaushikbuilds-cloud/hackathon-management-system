@@ -12,7 +12,7 @@ export function SubmitButton({
   const { pending } = useFormStatus();
   return (
     <button type="submit" disabled={pending || props.disabled} aria-busy={pending} className={buttonClass(variant, size, className)} {...props}>
-      {pending && <span className="size-3.5 animate-spin rounded-full border-2 border-current/30 border-t-current" aria-hidden="true" />}
+      {pending && <span className="size-3.5 animate-spin rounded-full border border-current/30 border-t-current" aria-hidden="true" />}
       {pending ? pendingText ?? "Working…" : children}
     </button>
   );
@@ -72,7 +72,7 @@ export function AutoRefresh({ seconds = 15 }: { seconds?: number }) {
     return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", tick); };
   }, [router, seconds]);
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-sm border-2 border-line bg-pop px-2 py-0.5 text-xs font-bold text-ink" title={`Updates automatically every ${seconds} seconds`}>
+    <span className="inline-flex items-center gap-1.5 rounded-sm border border-line bg-pop px-2 py-0.5 text-xs font-bold text-ink" title={`Updates automatically every ${seconds} seconds`}>
       <span className="size-2 animate-pulse rounded-full bg-ok" aria-hidden="true" />Live
     </span>
   );

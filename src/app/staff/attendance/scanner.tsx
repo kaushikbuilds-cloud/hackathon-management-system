@@ -215,10 +215,10 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
           {native ? (
             <Button className="w-full py-6 text-lg" onClick={() => void scanNative()} disabled={busy}>Scan ID card</Button>
           ) : (<>
-          <div className="relative aspect-square overflow-hidden rounded-md border-2 border-line bg-paper shadow-brutal">
+          <div className="relative aspect-square overflow-hidden rounded-md border border-line bg-paper shadow-brutal">
             <video ref={videoRef} className={`size-full object-cover ${scanning ? "" : "hidden"}`} muted playsInline aria-label="Camera preview" />
-            {!scanning && <div className="font-pixel absolute inset-0 grid place-items-center p-6 text-center text-sm text-ink-soft">Camera is off</div>}
-            {scanning && <div className="pointer-events-none absolute inset-[18%] rounded-lg border-2 border-line" aria-hidden="true" />}
+            {!scanning && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-ink-soft">Camera is off</div>}
+            {scanning && <div className="pointer-events-none absolute inset-[18%] rounded-lg border border-line" aria-hidden="true" />}
           </div>
           <canvas ref={canvasRef} className="hidden" />
           </>)}
@@ -252,7 +252,7 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
                   "Do not check this person in. Send them to the help desk with a photo ID so the organisers can verify their registration."}
               </Alert>
               {result.participant && result.team && (
-                <div className="rounded-md border-2 border-line bg-paper p-4">
+                <div className="rounded-md border border-line bg-paper p-4">
                   <p className="text-lg font-bold text-ink">{result.participant.full_name}</p>
                   <p className="font-mono text-sm text-ink-soft">{result.participant.participant_code}</p>
                   <p className="mt-2 text-sm text-ink-soft">

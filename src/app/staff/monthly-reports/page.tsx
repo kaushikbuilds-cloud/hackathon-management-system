@@ -33,7 +33,7 @@ export default async function MonthlyReportsPage(props: PageProps<"/staff/monthl
         <Link href={`/staff/monthly-reports?month=${shiftMonth(month, -1)}`} className={buttonClass("secondary", "sm")}>← {monthLabel(shiftMonth(month, -1))}</Link>
         <form method="get" className="flex items-center gap-2">
           <label htmlFor="month" className="sr-only">Month</label>
-          <input id="month" name="month" type="month" defaultValue={month} max={latest} className="min-h-9 rounded-md border-2 border-line bg-surface px-2 text-sm" />
+          <input id="month" name="month" type="month" defaultValue={month} max={latest} className="min-h-9 rounded-md border border-line bg-surface px-2 text-sm" />
           <button type="submit" className={buttonClass("primary", "sm")}>Show</button>
         </form>
         {month < latest && <Link href={`/staff/monthly-reports?month=${shiftMonth(month, 1)}`} className={buttonClass("secondary", "sm")}>{monthLabel(shiftMonth(month, 1))} →</Link>}

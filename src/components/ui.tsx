@@ -12,18 +12,18 @@ type Variant = "primary" | "secondary" | "danger" | "ghost" | "success";
 type Size = "sm" | "md";
 
 const VARIANTS: Record<Variant, string> = {
-  primary: "press bevel border-2 border-line bg-brand text-white hover:bg-brand-hover",
-  secondary: "press bevel border-2 border-line bg-paper-2 text-ink hover:bg-line-soft",
-  danger: "press bevel border-2 border-line bg-danger-strong text-white",
-  success: "press bevel border-2 border-line bg-pop hover:bg-pop-hover",
-  ghost: "border-2 border-transparent text-ink-soft hover:border-line hover:bg-paper-2 hover:text-ink",
+  primary: "press bevel border border-transparent bg-brand text-white hover:bg-brand-hover",
+  secondary: "press bevel border border-line-strong bg-surface text-ink hover:bg-paper-2",
+  danger: "press bevel border border-transparent bg-danger-strong text-white hover:bg-danger",
+  success: "press bevel border border-transparent bg-ok text-white hover:brightness-110",
+  ghost: "border border-transparent text-ink-soft hover:bg-paper-2 hover:text-ink",
 };
 // md meets the 44px touch-target minimum; sm is for dense tables/toolbars.
 const SIZES: Record<Size, string> = { sm: "min-h-9 px-3 text-xs", md: "min-h-11 px-4 text-sm" };
 
 export function buttonClass(variant: Variant = "primary", size: Size = "md", extra?: string) {
   return cx(
-    "font-pixel inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed",
+    "inline-flex cursor-pointer items-center justify-center gap-2 rounded-md font-semibold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed",
     VARIANTS[variant],
     SIZES[size],
     extra,
@@ -42,7 +42,7 @@ export function LinkButton({ variant = "primary", size = "md", className, ...pro
 // Form fields
 // ---------------------------------------------------------------------------
 export const inputClass =
-  "block min-h-11 w-full rounded-md border-2 border-line bg-paper px-3 py-2 text-base text-ink shadow-[inset_2px_2px_0_0_rgb(0_0_0/0.45)] placeholder:text-muted focus:border-pop aria-[invalid=true]:border-danger aria-[invalid=true]:bg-danger-tint disabled:opacity-60 sm:text-sm";
+  "block min-h-11 w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-base text-ink shadow-brutal-sm placeholder:text-muted focus:border-brand focus:ring-2 focus:ring-brand/20 focus:outline-none aria-[invalid=true]:border-danger aria-[invalid=true]:bg-danger-tint disabled:bg-paper-2 disabled:opacity-70 sm:text-sm";
 
 type FieldProps = { label: string; name: string; id?: string; error?: string; hint?: ReactNode; required?: boolean; className?: string };
 
@@ -50,7 +50,7 @@ type FieldProps = { label: string; name: string; id?: string; error?: string; hi
 function FieldShell({ label, name, error, hint, required, className, children }: Omit<FieldProps, "id"> & { children: ReactNode }) {
   return (
     <div className={cx("space-y-1.5", className)}>
-      <label htmlFor={name} className="block text-sm font-bold text-ink">
+      <label htmlFor={name} className="block text-sm font-medium text-ink-soft">
         {label}
         {required && <span className="ml-0.5 text-danger" aria-hidden="true">*</span>}
       </label>
@@ -122,7 +122,7 @@ export function Checkbox({ label, name, hint, ...props }: { label: string; name:
 // ---------------------------------------------------------------------------
 export function Card({ className, children, ...props }: ComponentProps<"section">) {
   return (
-    <section className={cx("panel min-w-0 rounded-lg border-2 border-line p-5", className)} {...props}>
+    <section className={cx("panel min-w-0 rounded-lg border border-line p-5", className)} {...props}>
       {children}
     </section>
   );
@@ -132,7 +132,7 @@ export function CardTitle({ children, actions, description }: { children: ReactN
   return (
     <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
       <div>
-        <h2 className="text-xl font-semibold text-ink">{children}</h2>
+        <h2 className="text-base font-semibold text-ink">{children}</h2>
         {description && <p className="mt-1 text-sm text-muted">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -145,12 +145,12 @@ export function PageHeader({ title, description, actions, back }: { title: React
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
         {back && (
-          <Link href={back.href} className="font-pixel mb-2 inline-flex min-h-8 items-center gap-1 text-sm font-semibold text-ink-soft underline-offset-4 [text-shadow:1px_1px_0_var(--color-line)] hover:text-pop hover:underline">
+          <Link href={back.href} className="mb-2 inline-flex min-h-8 items-center gap-1 text-sm font-semibold text-ink-soft underline-offset-4 hover:text-ink hover:underline">
             <span aria-hidden="true">←</span> {back.label}
           </Link>
         )}
-        <h1 className="text-3xl font-bold text-balance text-ink [text-shadow:3px_3px_0_var(--color-line)] sm:text-4xl">{title}</h1>
-        {description && <p className="mt-2 max-w-3xl text-sm text-ink-soft [text-shadow:1px_1px_0_var(--color-line)] sm:text-base">{description}</p>}
+        <h1 className="text-2xl font-bold text-balance text-ink sm:text-3xl">{title}</h1>
+        {description && <p className="mt-1.5 max-w-3xl text-sm text-muted sm:text-base">{description}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
@@ -159,29 +159,29 @@ export function PageHeader({ title, description, actions, back }: { title: React
 
 type Tone = "neutral" | "blue" | "violet" | "green" | "amber" | "red";
 const TONES: Record<Tone, string> = {
-  neutral: "bg-paper-2",
-  blue: "bg-sky-tint",
-  violet: "bg-brand-tint",
-  green: "bg-ok-tint",
-  amber: "bg-warn-tint",
-  red: "bg-danger-tint",
+  neutral: "bg-paper-2 text-ink-soft ring-line-strong",
+  blue: "bg-sky-tint text-sky-ink ring-sky/60",
+  violet: "bg-brand-tint text-brand-hover ring-brand/25",
+  green: "bg-ok-tint text-ok ring-ok/25",
+  amber: "bg-warn-tint text-warn ring-warn/25",
+  red: "bg-danger-tint text-danger ring-danger/25",
 };
 
-/** Status chip: ink text on a tinted block (the label, not the colour, carries the meaning). */
+/** Status pill: tinted background with matching text (the label, not the colour, carries the meaning). */
 export function Badge({ tone = "neutral", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
-  return <span className={cx("font-pixel inline-flex items-center rounded-sm border-2 border-line px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-ink shadow-[inset_1px_1px_0_0_rgb(255_255_255/0.15)]", TONES[tone], className)}>{children}</span>;
+  return <span className={cx("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ring-1 ring-inset", TONES[tone], className)}>{children}</span>;
 }
 
 export function Alert({ tone = "blue", title, children }: { tone?: "blue" | "green" | "amber" | "red"; title?: ReactNode; children?: ReactNode }) {
   const styles = {
-    blue: "bg-sky-tint",
-    green: "bg-ok-tint",
-    amber: "bg-warn-tint",
-    red: "bg-danger-tint",
+    blue: "border-sky/60 bg-sky-tint",
+    green: "border-ok/25 bg-ok-tint",
+    amber: "border-warn/25 bg-warn-tint",
+    red: "border-danger/25 bg-danger-tint",
   }[tone];
   return (
-    <div className={cx("rounded-md border-2 border-line px-4 py-3 text-sm text-ink shadow-brutal-sm", styles)} role={tone === "red" ? "alert" : "status"}>
-      {title && <p className="font-bold">{title}</p>}
+    <div className={cx("rounded-md border px-4 py-3 text-sm text-ink", styles)} role={tone === "red" ? "alert" : "status"}>
+      {title && <p className="font-semibold">{title}</p>}
       {children && <div className={cx(title ? "mt-1" : "", "text-ink-soft")}>{children}</div>}
     </div>
   );
@@ -189,25 +189,25 @@ export function Alert({ tone = "blue", title, children }: { tone?: "blue" | "gre
 
 export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="rounded-lg border-2 border-dashed border-wood-light bg-surface/85 px-6 py-12 text-center">
-      <p className="font-heading text-lg font-bold text-ink">{title}</p>
+    <div className="rounded-lg border border-dashed border-line-strong bg-surface px-6 py-12 text-center">
+      <p className="text-base font-semibold text-ink">{title}</p>
       {children && <p className="mx-auto mt-1 max-w-md text-sm text-muted">{children}</p>}
       {action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
 }
 
-const STAT_ICON_BG = { blue: "bg-cobalt", violet: "bg-violet", green: "bg-brand", amber: "bg-warn-tint" } as const;
+const STAT_ICON = { blue: "bg-sky-tint text-sky-ink", violet: "bg-brand-tint text-brand", green: "bg-ok-tint text-ok", amber: "bg-warn-tint text-warn" } as const;
 
-/** Stat tile: a wooden panel with an optional pixel icon block, like a game HUD counter. */
+/** Stat tile: a card with a label, a big number and an optional icon. */
 export function Stat({ label, value, hint, tone = "blue", icon }: { label: string; value: ReactNode; hint?: ReactNode; tone?: "blue" | "violet" | "green" | "amber"; icon?: ReactNode }) {
   return (
-    <div className="panel flex items-center gap-3 rounded-lg border-2 border-line p-4">
-      {icon && <div className={cx("grid size-14 shrink-0 place-items-center rounded-md border-2 border-line bevel", STAT_ICON_BG[tone])} aria-hidden="true">{icon}</div>}
+    <div className="panel flex items-start gap-4 rounded-lg border border-line p-5">
+      {icon && <div className={cx("grid size-11 shrink-0 place-items-center rounded-md", STAT_ICON[tone])} aria-hidden="true">{icon}</div>}
       <div className="min-w-0">
-        <p className="font-pixel text-sm text-ink-soft">{label}</p>
-        <p className="font-heading text-3xl font-bold text-ink tabular-nums [text-shadow:2px_2px_0_var(--color-line)]">{value}</p>
-        {hint && <p className="mt-0.5 text-xs font-medium text-grass [&_a]:font-bold [&_a]:text-grass">{hint}</p>}
+        <p className="text-sm font-medium text-muted">{label}</p>
+        <p className="mt-1 text-3xl font-semibold tracking-tight text-ink tabular-nums">{value}</p>
+        {hint && <p className="mt-1 text-xs text-muted [&_a]:font-medium [&_a]:text-grass">{hint}</p>}
       </div>
     </div>
   );
@@ -218,7 +218,7 @@ export function DescriptionList({ items }: { items: { label: string; value: Reac
     <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
       {items.map((item) => (
         <div key={item.label} className="min-w-0">
-          <dt className="text-xs font-bold tracking-wide text-muted uppercase">{item.label}</dt>
+          <dt className="text-xs font-medium text-muted">{item.label}</dt>
           <dd className="mt-0.5 break-words text-sm text-ink">{item.value ?? "—"}</dd>
         </div>
       ))}
@@ -231,8 +231,8 @@ export function DescriptionList({ items }: { items: { label: string; value: Reac
 // ---------------------------------------------------------------------------
 export function Table({ children, caption }: { children: ReactNode; caption?: string }) {
   return (
-    <div className="relative overflow-x-auto rounded-md border-2 border-line bg-surface shadow-brutal">
-      <table className="min-w-full divide-y-2 divide-line text-sm [&_tbody>tr]:border-b [&_tbody>tr]:border-line-soft [&_tbody>tr:nth-child(even)]:bg-paper-2/40 [&_tbody>tr:hover]:bg-paper-2">
+    <div className="relative overflow-x-auto rounded-lg border border-line bg-surface shadow-brutal">
+      <table className="min-w-full divide-y divide-line text-sm [&_tbody>tr]:border-b [&_tbody>tr]:border-line-soft [&_tbody>tr:hover]:bg-paper">
         {caption && <caption className="sr-only">{caption}</caption>}
         {children}
       </table>
@@ -242,7 +242,7 @@ export function Table({ children, caption }: { children: ReactNode; caption?: st
 
 export function Th({ children, className, ...props }: ComponentProps<"th">) {
   return (
-    <th scope="col" className={cx("font-pixel bg-paper-2 px-3 py-3 text-left text-sm font-semibold whitespace-nowrap text-ink", className)} {...props}>
+    <th scope="col" className={cx("bg-paper px-3 py-3 text-left text-xs font-semibold tracking-wide whitespace-nowrap text-muted uppercase", className)} {...props}>
       {children}
     </th>
   );
@@ -261,7 +261,7 @@ export function Pagination({ page, pageSize, total, hrefFor }: { page: number; p
   const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const to = Math.min(total, page * pageSize);
   return (
-    <nav className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft [text-shadow:1px_1px_0_var(--color-line)]" aria-label="Pagination">
+    <nav className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink-soft" aria-label="Pagination">
       <p>
         Showing <span className="font-bold text-ink">{from}</span>–<span className="font-bold text-ink">{to}</span> of <span className="font-bold text-ink">{total}</span>
       </p>

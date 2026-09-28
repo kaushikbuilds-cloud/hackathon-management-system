@@ -35,7 +35,7 @@ export function CreateHackathonForm() {
           <TextField label="Time zone" name="timezone" defaultValue="Asia/Kolkata" maxLength={60} />
           <TextField label="Public contact email" name="contact_email" type="email" maxLength={254} />
         </div>
-        <fieldset className="space-y-3 rounded-md border-2 border-line p-4">
+        <fieldset className="space-y-3 rounded-md border border-line p-4">
           <legend className="px-1 text-sm font-medium text-ink">Hackathon Admin (organiser)</legend>
           <p className="text-xs text-muted">They get a single-use link to set their password, with full Admin access to this hackathon only.</p>
           <div className="grid gap-4 sm:grid-cols-2">

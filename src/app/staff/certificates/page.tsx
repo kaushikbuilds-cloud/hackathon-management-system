@@ -41,7 +41,7 @@ export default async function CertificatesPage(props: PageProps<"/staff/certific
             {!teams.length ? (
               <EmptyState title="Nobody has checked in yet">Certificates are for participants whose ID card was scanned at attendance.</EmptyState>
             ) : (
-              <ul className="divide-y-2 divide-line-soft">
+              <ul className="divide-y divide-line-soft">
                 {teams.map((t) => (
                   <li key={t.id} className="flex flex-wrap items-end justify-between gap-3 py-3">
                     <div className="min-w-0">
@@ -63,7 +63,7 @@ export default async function CertificatesPage(props: PageProps<"/staff/certific
           <CardTitle description="Printed at the bottom of every certificate.">Signatures</CardTitle>
           <form action={saveCertificateSettings} className="space-y-4" encType="multipart/form-data">
             {([1, 2] as const).map((n) => (
-              <fieldset key={n} className="space-y-2 rounded-md border-2 border-line p-3">
+              <fieldset key={n} className="space-y-2 rounded-md border border-line p-3">
                 <legend className="px-1 text-sm font-bold">Signatory {n}</legend>
                 <TextField label="Name" name={`sig${n}_name`} id={`sig${n}-name`} maxLength={80} defaultValue={(n === 1 ? h?.cert_signatory1_name : h?.cert_signatory2_name) ?? ""} placeholder={n === 1 ? "e.g. Dr. Anita Rao" : "e.g. Karthik S"} />
                 <TextField label="Title" name={`sig${n}_title`} id={`sig${n}-title`} maxLength={80} defaultValue={(n === 1 ? h?.cert_signatory1_title : h?.cert_signatory2_title) ?? ""} placeholder={n === 1 ? "e.g. Principal" : "e.g. Event Convenor"} />

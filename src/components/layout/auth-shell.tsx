@@ -8,16 +8,16 @@ export function AuthShell({ title, description, children, footer }: { title: str
   return (
     <main id="main" className="flex min-h-screen items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <Link href="/" className="mb-8 flex items-center justify-center gap-3 font-heading text-3xl font-bold text-ink [text-shadow:3px_3px_0_var(--color-line)]">
-          <LogoMark className="size-11" />
+        <Link href="/" className="mb-8 flex items-center justify-center gap-3 text-2xl font-bold tracking-tight text-ink">
+          <LogoMark className="size-10" />
           {PLATFORM.name}
         </Link>
         <Card className="p-6 sm:p-8">
-          <h1 className="text-3xl font-bold text-pop [text-shadow:2px_2px_0_var(--color-line)]">{title}</h1>
-          {description && <p className="mt-1 text-sm text-ink-soft">{description}</p>}
+          <h1 className="text-2xl font-bold tracking-tight text-ink">{title}</h1>
+          {description && <p className="mt-1 text-sm text-muted">{description}</p>}
           <div className="mt-6">{children}</div>
         </Card>
-        {footer && <div className="panel mt-6 rounded-lg border-2 border-line p-4 text-center text-sm text-ink-soft [&_a]:font-bold [&_a]:text-pop [&_a]:underline-offset-4 [&_a:hover]:underline">{footer}</div>}
+        {footer && <div className="mt-6 text-center text-sm text-muted [&_a]:font-semibold [&_a]:text-grass [&_a]:underline-offset-4 [&_a:hover]:underline">{footer}</div>}
       </div>
     </main>
   );

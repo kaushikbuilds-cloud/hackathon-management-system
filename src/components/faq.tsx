@@ -20,12 +20,12 @@ export function FaqList({ items, footer }: { items: Faq[]; footer?: ReactNode })
       {groupFaqs(items).map((g) => (
         <div key={g.category ?? "general"}>
           {g.category && <h3 className="mb-2 text-sm font-bold uppercase tracking-wide text-ink-soft">{g.category}</h3>}
-          <div className="divide-y-2 divide-line-soft rounded-md border-2 border-line bg-surface">
+          <div className="divide-y divide-line-soft rounded-md border border-line bg-surface">
             {g.items.map((f) => (
               <details key={f.id} className="group p-4">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 font-bold text-ink [&::-webkit-details-marker]:hidden">
                   <span>{f.question}</span>
-                  <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-sm border-2 border-line bg-pop text-sm transition-transform group-open:rotate-45">+</span>
+                  <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-sm border border-line bg-pop text-sm transition-transform group-open:rotate-45">+</span>
                 </summary>
                 <p className="mt-2 whitespace-pre-line text-sm text-ink-soft">{f.answer}</p>
               </details>

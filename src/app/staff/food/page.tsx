@@ -46,7 +46,7 @@ export default async function FoodOrdersPage(props: PageProps<"/staff/food">) {
           </nav>
           <div className="mb-6 flex flex-wrap gap-3">
             {(shop ? [shop] : shops).map((s) => (
-              <form key={s.id} action={setShopOpen.bind(null, s.id, !s.is_open)} className="flex max-w-full flex-wrap items-center gap-2 rounded-md border-2 border-line bg-surface px-3 py-2 shadow-brutal-sm">
+              <form key={s.id} action={setShopOpen.bind(null, s.id, !s.is_open)} className="flex max-w-full flex-wrap items-center gap-2 rounded-md border border-line bg-surface px-3 py-2 shadow-brutal-sm">
                 <span className="font-bold text-ink">{s.name}</span>
                 <Badge tone={s.is_open ? "green" : "neutral"}>{s.is_open ? "Taking orders" : "Closed"}</Badge>
                 <Badge tone={s.is_free ? "violet" : "amber"}>{s.is_free ? "Free" : "Paid at counter"}</Badge>
@@ -65,7 +65,7 @@ export default async function FoodOrdersPage(props: PageProps<"/staff/food">) {
 function FilterChip({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
   return (
     <Link href={href} aria-current={active ? "page" : undefined}
-      className={cx("inline-flex min-h-9 items-center rounded-md border-2 border-line px-3 text-sm font-bold", active ? "bg-ink text-paper" : "bg-surface text-ink hover:bg-paper-2")}>
+      className={cx("inline-flex min-h-9 items-center rounded-md border border-line px-3 text-sm font-bold", active ? "bg-ink text-paper" : "bg-surface text-ink hover:bg-paper-2")}>
       {children}
     </Link>
   );

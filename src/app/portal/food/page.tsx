@@ -59,7 +59,7 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
             {shops.map((shop) => (
               <li key={shop.id}>
                 <Link href={`/portal/food/${shop.id}`}
-                  className={`press flex h-full flex-col rounded-lg border-2 border-line p-5 shadow-brutal ${shop.is_open ? "bg-surface hover:bg-paper-2" : "bg-paper-2 opacity-80"}`}>
+                  className={`press flex h-full flex-col rounded-lg border border-line p-5 shadow-brutal ${shop.is_open ? "bg-surface hover:bg-paper-2" : "bg-paper"}`}>
                   <span className="flex items-start justify-between gap-2">
                     <span className="font-heading text-xl font-bold text-ink">{shop.name}</span>
                     <Badge tone={shop.is_open ? "green" : "neutral"}>{shop.is_open ? "Open" : "Closed"}</Badge>
@@ -80,7 +80,7 @@ export default async function PortalFoodPage(props: PageProps<"/portal/food">) {
       {past.length > 0 && (
         <section aria-labelledby="past-orders" className="mt-8">
           <h2 id="past-orders" className="mb-3 text-lg font-bold text-ink">Earlier orders</h2>
-          <ul className="divide-y-2 divide-line-soft rounded-md border-2 border-line bg-surface text-sm">
+          <ul className="divide-y divide-line-soft rounded-md border border-line bg-surface text-sm">
             {past.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
                 <span>

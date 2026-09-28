@@ -30,7 +30,7 @@ export function OrderBoard({ orders, tz, shopNames, back }: { orders: BoardOrder
               <h2 id={`col-${col.status}`} className="flex items-center gap-2 text-lg font-bold text-ink">
                 {col.title} <Badge tone={FOOD_STATUS_TONE[col.status]}>{list.length}</Badge>
               </h2>
-              {!list.length ? <p className="rounded-md border-2 border-dashed border-line p-4 text-sm text-muted">Nothing here.</p> : list.map((o) => (
+              {!list.length ? <p className="rounded-md border border-dashed border-line p-4 text-sm text-muted">Nothing here.</p> : list.map((o) => (
                 <OrderCard key={o.id} order={o} tz={tz} shopName={shopNames?.get(o.shop_id) ?? null} back={back} />
               ))}
             </section>
@@ -40,7 +40,7 @@ export function OrderBoard({ orders, tz, shopNames, back }: { orders: BoardOrder
       {done.length > 0 && (
         <Card className="mt-8">
           <h2 className="mb-3 text-lg font-bold text-ink">Recently finished</h2>
-          <ul className="divide-y-2 divide-line-soft text-sm">
+          <ul className="divide-y divide-line-soft text-sm">
             {done.map((o) => (
               <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <span>
@@ -61,7 +61,7 @@ export function OrderBoard({ orders, tz, shopNames, back }: { orders: BoardOrder
 function OrderCard({ order: o, tz, shopName, back }: { order: BoardOrder; tz: string; shopName: string | null; back: string }) {
   const next = FOOD_NEXT[o.status];
   return (
-    <article className="rounded-md border-2 border-line bg-surface p-4 shadow-brutal-sm" aria-label={`Order ${orderLabel(o.order_no)}`}>
+    <article className="rounded-md border border-line bg-surface p-4 shadow-brutal-sm" aria-label={`Order ${orderLabel(o.order_no)}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="font-mono text-2xl font-bold text-ink">{orderLabel(o.order_no)}</p>
@@ -86,7 +86,7 @@ function OrderCard({ order: o, tz, shopName, back }: { order: BoardOrder; tz: st
         )}
         {o.status === "placed" ? (
           <details className="w-full">
-            <summary className="inline-flex min-h-9 cursor-pointer items-center rounded-md border-2 border-line px-3 text-xs font-bold text-ink">Reject</summary>
+            <summary className="inline-flex min-h-9 cursor-pointer items-center rounded-md border border-line px-3 text-xs font-bold text-ink">Reject</summary>
             <form action={updateFoodOrder.bind(null, o.id, "rejected", back)} className="mt-2 space-y-2">
               <TextField label="Reason for the team" name="reason" id={`reason-${o.id}`} required minLength={3} maxLength={200} placeholder="e.g. Sold out, kitchen closed" />
               <SubmitButton size="sm" variant="danger">Reject order</SubmitButton>

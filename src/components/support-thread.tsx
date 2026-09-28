@@ -43,7 +43,7 @@ export function SupportThread({
                 const author = m.author_id ? byId.get(m.author_id) : undefined;
                 const fromStaff = author && author.role !== "participant";
                 return (
-                  <li key={m.id} className={`rounded-md p-4 text-sm ${m.is_internal ? "border-2 border-line bg-warn-tint" : fromStaff ? "bg-brand-tint" : "bg-paper"}`}>
+                  <li key={m.id} className={`rounded-md p-4 text-sm ${m.is_internal ? "border border-line bg-warn-tint" : fromStaff ? "bg-brand-tint" : "bg-paper"}`}>
                     <p className="mb-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                       <span className="font-semibold text-ink">{author?.full_name ?? (fromStaff ? "Organiser" : "Team member")}</span>
                       {fromStaff && <Badge tone="violet">Staff</Badge>}

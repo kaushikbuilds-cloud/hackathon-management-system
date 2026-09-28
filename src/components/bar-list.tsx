@@ -11,10 +11,10 @@ export function BarList({ items, labels, max = 8 }: { items: Counted[]; labels?:
         <li key={i.label}>
           <div className="mb-1 flex justify-between gap-3 text-sm">
             <span className="truncate text-ink">{labels?.[i.label] ?? i.label}</span>
-            <span className="font-bold text-ink tabular-nums">{i.value}</span>
+            <span className="font-semibold text-ink tabular-nums">{i.value}</span>
           </div>
-          <div className="h-3 rounded-sm border-2 border-line bg-paper" aria-hidden="true">
-            <div className="h-full bg-brand" style={{ width: `${(i.value / top) * 100}%` }} />
+          <div className="h-2 rounded-full bg-paper-2" aria-hidden="true">
+            <div className="h-full rounded-full bg-brand" style={{ width: `${(i.value / top) * 100}%` }} />
           </div>
         </li>
       ))}
