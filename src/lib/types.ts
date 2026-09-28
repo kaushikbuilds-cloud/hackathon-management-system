@@ -9,6 +9,8 @@ export type Hackathon = {
   status: HackathonStatus;
   name: string;
   tagline: string | null;
+  /** Tracks teams choose from when registering (empty = no tracks). */
+  tracks: string[];
   description: string | null;
   logo_path: string | null;
   organizer_name: string | null;
@@ -113,6 +115,7 @@ export type Team = {
   team_code: string;
   name: string;
   college: string | null;
+  track: string | null;
   status: RegistrationStatus;
   status_reason: string | null;
   pdf_status: PdfStatus;
@@ -136,6 +139,7 @@ export type TeamOverview = {
   team_code: string;
   name: string;
   college: string | null;
+  track?: string | null;
   status: RegistrationStatus;
   pdf_status: PdfStatus;
   created_at: string;

@@ -76,6 +76,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
               { label: "Team ID", value: <span className="font-mono">{team.team_code}</span> },
               { label: "Registration status", value: <span className="inline-flex items-center gap-2"><RegistrationBadge status={team.status} />{team.status_reason && <span className="text-muted">— {team.status_reason}</span>}</span> },
               { label: "College", value: team.college },
+              ...((hackathon?.tracks ?? []).length || team.track ? [{ label: "Track", value: team.track ?? "Not chosen" }] : []),
               { label: "ID card PDF", value: <PdfBadge status={team.pdf_status} /> },
               { label: "Registered", value: formatDateTime(team.created_at, tz) },
               { label: "Last updated", value: formatDateTime(team.updated_at, tz) },
@@ -88,6 +89,10 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
               <form action={updateTeam.bind(null, id)} className="mt-4 grid gap-4 sm:grid-cols-2">
                 <TextField label="Team name" name="name" defaultValue={team.name} required maxLength={80} hint="Must stay unique (case and spacing are ignored)." />
                 <TextField label="College" name="college" defaultValue={team.college ?? ""} maxLength={150} />
+                {(hackathon?.tracks ?? []).length > 0 && (
+                  <SelectField label="Track" name="track" defaultValue={team.track ?? ""}
+                    options={[{ value: "", label: "Not chosen" }, ...(hackathon?.tracks ?? []).map((t) => ({ value: t, label: t }))]} />
+                )}
                 <div className="sm:col-span-2"><SubmitButton size="sm">Save changes</SubmitButton></div>
               </form>
             </details>

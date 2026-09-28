@@ -45,6 +45,7 @@ export default async function PortalHome(props: PageProps<"/portal">) {
             <CardTitle>{isLeader ? "Team & registration" : "My registration"}</CardTitle>
             <DescriptionList items={[
               { label: "Team ID", value: <span className="font-mono">{team.team_code}</span> },
+              ...(team.track ? [{ label: "Track", value: team.track }] : []),
               { label: "Registration status", value: <RegistrationBadge status={team.status} /> },
               ...((team.payment_status ?? "not_required") !== "not_required" ? [{
                 label: "Registration fee",

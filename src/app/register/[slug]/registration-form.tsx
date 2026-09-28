@@ -14,6 +14,8 @@ type Props = {
   maxMembers: number;
   fieldConfig: FieldConfig;
   questions: CustomQuestion[];
+  /** The hackathon's tracks; when present, each team must pick one. */
+  tracks?: string[];
   fee?: FeeSettings | null;
   disabled?: boolean;
 };
@@ -24,7 +26,7 @@ function newKey() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConfig, questions, fee, disabled }: Props) {
+export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConfig, questions, tracks = [], fee, disabled }: Props) {
   const [state, formAction] = useActionState<RegisterState, FormData>(registerTeam.bind(null, slug), { status: "idle" });
   const [idempotencyKey] = useState(newKey);
 
@@ -65,6 +67,7 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
       maxMembers={maxMembers}
       fieldConfig={fieldConfig}
       questions={questions}
+      tracks={tracks}
       fee={fee}
       disabled={disabled}
     />
@@ -72,7 +75,7 @@ export function RegistrationFormClient({ slug, minMembers, maxMembers, fieldConf
 }
 
 function FormBody({
-  state, formAction, idempotencyKey, minMembers, maxMembers, fieldConfig, questions, fee, disabled,
+  state, formAction, idempotencyKey, minMembers, maxMembers, fieldConfig, questions, tracks = [], fee, disabled,
 }: Omit<Props, "slug"> & { state: RegisterState; formAction: (fd: FormData) => void; idempotencyKey: string }) {
   const values: RegistrationDraft | undefined = state.values;
   const initialMembers = values?.members.length
@@ -101,6 +104,11 @@ function FormBody({
           <TextField label="Team name" name="team_name" required maxLength={80} defaultValue={values?.team_name} error={errors.team_name}
             hint="Must be unique. Letters, numbers, spaces and & ' . _ ! -" autoComplete="off" />
           <TextField label="College / institution" name="college" required maxLength={150} defaultValue={values?.college} error={errors.college} autoComplete="organization" />
+          {tracks.length > 0 && (
+            <SelectField label="Track" name="track" required defaultValue={state.track ?? ""} error={errors.track} className="sm:col-span-2"
+              hint="The theme your team will build for."
+              options={[{ value: "", label: "Choose a track" }, ...tracks.map((t) => ({ value: t, label: t }))]} />
+          )}
         </div>
       </Card>
 

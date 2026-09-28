@@ -97,3 +97,31 @@ export function RingChart({ segments, total, totalLabel }: { segments: { label: 
     </figure>
   );
 }
+
+/**
+ * Share of a whole per category (e.g. teams per track): one bar per row with
+ * the count and percentage in text. One hue, since the label names each row.
+ */
+export function ShareBars({ items }: { items: { label: string; value: number }[] }) {
+  const total = items.reduce((n, i) => n + i.value, 0);
+  const top = Math.max(1, ...items.map((i) => i.value));
+  if (items.length === 0) return <p className="text-sm text-muted">No tracks yet.</p>;
+  return (
+    <ul className="space-y-3">
+      {items.map((i) => {
+        const pct = total ? Math.round((i.value / total) * 100) : 0;
+        return (
+          <li key={i.label} title={`${i.label}: ${i.value} teams (${pct}%)`}>
+            <div className="mb-1 flex justify-between gap-3 text-sm">
+              <span className="min-w-0 break-words text-ink">{i.label}</span>
+              <span className="shrink-0 font-bold text-ink tabular-nums">{pct}% <span className="font-normal text-muted">({i.value})</span></span>
+            </div>
+            <div className="h-4 rounded-sm border-2 border-line bg-paper" aria-hidden="true">
+              <div className="h-full rounded-r-[3px]" style={{ width: `${(i.value / top) * 100}%`, background: BAR, boxShadow: "inset 0 2px 0 rgb(255 255 255 / 0.25)" }} />
+            </div>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}

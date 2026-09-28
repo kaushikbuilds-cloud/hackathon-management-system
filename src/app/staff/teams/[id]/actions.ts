@@ -24,11 +24,19 @@ const teamSchema = z.object({
 
 export async function updateTeam(teamId: string, formData: FormData) {
   assertId(teamId);
-  await requirePermission("edit_registrations");
+  const session = await requirePermission("edit_registrations");
   const parsed = teamSchema.safeParse({ name: str(formData, "name"), college: str(formData, "college") });
   if (!parsed.success) flash(teamPath(teamId), { error: parsed.error.issues[0].message });
   const supabase = await createClient();
-  const { error } = await supabase.from("teams").update({ name: parsed.data.name, college: parsed.data.college || null }).eq("id", teamId);
+  const update: { name: string; college: string | null; track?: string | null } = { name: parsed.data.name, college: parsed.data.college || null };
+  if (formData.has("track")) {
+    // Only one of the hackathon's tracks (or none).
+    const { data: h } = await supabase.from("hackathons").select("tracks").eq("id", session.hackathonId).maybeSingle<{ tracks: string[] }>();
+    const track = str(formData, "track", 60);
+    if (track && !(h?.tracks ?? []).includes(track)) flash(teamPath(teamId), { error: "Choose one of the hackathon's tracks." });
+    update.track = track || null;
+  }
+  const { error } = await supabase.from("teams").update(update).eq("id", teamId);
   if (error) flash(teamPath(teamId), { error: dbErrorMessage(error) });
   revalidatePath("/staff/teams");
   flash(teamPath(teamId), { notice: "Team details updated." });

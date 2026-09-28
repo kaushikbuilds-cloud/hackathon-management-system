@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BarList } from "@/components/bar-list";
-import { ColumnChart, RingChart, STATUS_COLORS } from "@/components/charts";
+import { ColumnChart, RingChart, STATUS_COLORS, ShareBars } from "@/components/charts";
 import { Countdown } from "@/components/countdown";
 import { PixelIcon, type PixelIconName } from "@/components/pixel-icons";
 import { RegistrationBadge } from "@/components/status";
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     <>
       <h1 className="sr-only">Dashboard</h1>
       <Hero session={session} hackathon={hackathon} tz={tz} />
-      {can(session, "view_reports") ? <Overview session={session} tz={tz} superAdmin={isSuperAdmin(session)} /> : <WorkDashboard session={session} tz={tz} />}
+      {can(session, "view_reports") ? <Overview session={session} tz={tz} superAdmin={isSuperAdmin(session)} tracks={hackathon?.tracks ?? []} /> : <WorkDashboard session={session} tz={tz} />}
     </>
   );
 }
@@ -97,7 +97,7 @@ async function PlatformDashboard() {
   );
 }
 
-type RecentTeam = { id: string; name: string; team_code: string; status: RegistrationStatus; college: string | null; created_at: string; participants: { full_name: string; role: string }[] };
+type RecentTeam = { id: string; name: string; team_code: string; status: RegistrationStatus; college: string | null; track: string | null; created_at: string; participants: { full_name: string; role: string }[] };
 
 /** Registrations per day for the last 30 days, in the event's time zone. */
 async function registrationsByDay(supabase: Awaited<ReturnType<typeof createClient>>, tz: string) {
@@ -123,14 +123,22 @@ const QUICK_ACTIONS: { href: string; label: string; icon: PixelIconName; tone: s
   { href: "/staff/event", label: "Event settings", icon: "shield", tone: "bg-paper-2", show: (s) => can(s, "manage_event") },
 ];
 
-async function Overview({ session, tz, superAdmin }: { session: Session; tz: string; superAdmin: boolean }) {
+async function Overview({ session, tz, superAdmin, tracks }: { session: Session; tz: string; superAdmin: boolean; tracks: string[] }) {
   const supabase = await createClient();
-  const [stats, daily, { data: recent }] = await Promise.all([
+  const [stats, daily, { data: recent }, { data: trackRows }] = await Promise.all([
     loadDashboardStats(supabase),
     registrationsByDay(supabase, tz),
-    supabase.from("teams").select("id, name, team_code, status, college, created_at, participants(full_name, role)")
+    supabase.from("teams").select("id, name, team_code, status, college, track, created_at, participants(full_name, role)")
       .order("created_at", { ascending: false }).limit(5).returns<RecentTeam[]>(),
+    tracks.length ? supabase.from("teams").select("track").neq("status", "rejected").limit(10000).returns<{ track: string | null }[]>() : Promise.resolve({ data: [] as { track: string | null }[] }),
   ]);
+  const trackCounts = new Map<string, number>();
+  for (const r of trackRows ?? []) { const k = r.track ?? ""; trackCounts.set(k, (trackCounts.get(k) ?? 0) + 1); }
+  const distribution = [
+    ...tracks.map((t) => ({ label: t, value: trackCounts.get(t) ?? 0 })),
+    ...[...trackCounts].filter(([k]) => k && !tracks.includes(k)).map(([label, value]) => ({ label, value })),
+    ...(trackCounts.get("") ? [{ label: "No track yet", value: trackCounts.get("") ?? 0 }] : []),
+  ];
   const byStatus = Object.fromEntries(stats.registration.map((r) => [r.label, r.value]));
   const ring = [
     { label: "Approved", value: byStatus.approved ?? 0, color: STATUS_COLORS.approved },
@@ -155,8 +163,8 @@ async function Overview({ session, tz, superAdmin }: { session: Session; tz: str
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <Card>
+      <div className={cx("mt-6 grid gap-6", tracks.length ? "xl:grid-cols-2 2xl:grid-cols-[1.5fr_1fr_1fr]" : "xl:grid-cols-[1.4fr_1fr]")}>
+        <Card className={tracks.length ? "xl:col-span-2 2xl:col-span-1" : undefined}>
           <CardTitle description="New teams per day, last 30 days. Hover a bar for the exact number.">Registrations over time</CardTitle>
           <ColumnChart data={daily} label="Team registrations per day, last 30 days" unit="teams" />
         </Card>
@@ -164,6 +172,12 @@ async function Overview({ session, tz, superAdmin }: { session: Session; tz: str
           <CardTitle>Registration status</CardTitle>
           <RingChart segments={ring} total={stats.teams} totalLabel="Teams" />
         </Card>
+        {tracks.length > 0 && (
+          <Card>
+            <CardTitle description="Teams per track (rejected teams not counted).">Team distribution</CardTitle>
+            <ShareBars items={distribution} />
+          </Card>
+        )}
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.6fr_1fr]">
@@ -171,13 +185,14 @@ async function Overview({ session, tz, superAdmin }: { session: Session; tz: str
           <CardTitle actions={<LinkButton href="/staff/teams" variant="secondary" size="sm">View all</LinkButton>}>Recent registrations</CardTitle>
           {!recent?.length ? <p className="text-sm text-muted">No teams yet.</p> : (
             <Table caption="The five most recent team registrations">
-              <thead><tr><Th>Team</Th><Th>Leader</Th><Th>Members</Th><Th>Status</Th><Th>Registered</Th></tr></thead>
+              <thead><tr><Th>Team</Th><Th>Leader</Th><Th>Members</Th>{tracks.length > 0 && <Th>Track</Th>}<Th>Status</Th><Th>Registered</Th></tr></thead>
               <tbody>
                 {recent.map((t) => (
                   <tr key={t.id}>
                     <Td><Link href={`/staff/teams/${t.id}`} className="font-bold text-grass hover:underline">{t.name}</Link><span className="block font-mono text-xs text-muted">{t.team_code}</span></Td>
                     <Td>{t.participants.find((m) => m.role === "leader")?.full_name ?? "—"}</Td>
                     <Td className="tabular-nums">{t.participants.length}</Td>
+                    {tracks.length > 0 && <Td className="whitespace-nowrap">{t.track ?? <span className="text-muted">—</span>}</Td>}
                     <Td><RegistrationBadge status={t.status} /></Td>
                     <Td className="whitespace-nowrap text-ink-soft">{formatDateTime(t.created_at, tz)}</Td>
                   </tr>

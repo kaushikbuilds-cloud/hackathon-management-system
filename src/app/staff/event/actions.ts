@@ -28,6 +28,13 @@ const schema = z
   })
   .refine((d) => d.max_team_size >= d.min_team_size, { path: ["max_team_size"], message: "Must be ≥ minimum size" });
 
+/** One track per line (or comma-separated); trimmed, de-duplicated, at most 20 of up to 60 characters. */
+function parseTracks(raw: string): string[] {
+  const seen = new Set<string>();
+  return raw.split(/[\n,]/).map((t) => t.trim().replace(/\s+/g, " ").slice(0, 60))
+    .filter((t) => t && !seen.has(t.toLowerCase()) && seen.add(t.toLowerCase())).slice(0, 20);
+}
+
 export async function saveEvent(_prev: EventFormState, formData: FormData): Promise<EventFormState> {
   const session = await requirePermission("manage_event");
   const raw = Object.fromEntries(
@@ -67,6 +74,7 @@ export async function saveEvent(_prev: EventFormState, formData: FormData): Prom
     tagline: d.tagline || null, description: d.description || null, organizer_name: d.organizer_name || null, venue: d.venue || null,
     contact_email: d.contact_email || null, contact_phone: d.contact_phone || null, support_instructions: d.support_instructions || null,
     portal_id_cards: formData.get("portal_id_cards") === "on",
+    tracks: parseTracks(str(formData, "tracks", 3000)),
     ...dates,
   };
 

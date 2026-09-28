@@ -49,7 +49,7 @@ export async function teamCredentials(memberEmail: string): Promise<{ teamCode: 
 }
 
 /** Registers a two-member team through the public form (names must be letters only). */
-export async function registerTeam(page: Page, teamName: string, members: [string, string][], opts: { slug?: string; phones?: string[]; expectOk?: boolean } = {}) {
+export async function registerTeam(page: Page, teamName: string, members: [string, string][], opts: { slug?: string; phones?: string[]; track?: string; expectOk?: boolean } = {}) {
   await page.goto(`/register/${opts.slug ?? FORM_SLUG}`);
   await page.getByLabel("Team name").fill(teamName);
   await page.getByLabel("College / institution").fill("Test College");
@@ -62,6 +62,8 @@ export async function registerTeam(page: Page, teamName: string, members: [strin
     await card.getByLabel("Department").fill("CSE");
     await card.getByLabel("Academic year").fill("2nd Year");
   }
+  const builtInTrack = page.getByLabel(/^Track/);
+  if (await builtInTrack.count()) await (opts.track ? builtInTrack.selectOption({ label: opts.track }) : builtInTrack.selectOption({ index: 1 }));
   const track = page.getByLabel(/Which track/);
   if (await track.count()) await track.selectOption({ index: 1 });
   await page.getByRole("button", { name: "Submit registration" }).click();
