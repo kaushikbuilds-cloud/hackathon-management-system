@@ -11,7 +11,6 @@ const STATE_UI: Record<VerifyResult["state"], { tone: "green" | "amber" | "red";
   already_checked_in: { tone: "amber", title: "Already checked in" },
   revoked: { tone: "red", title: "QR code revoked" },
   invalid: { tone: "red", title: "Invalid QR code" },
-  ended: { tone: "red", title: "Hackathon has ended" },
 };
 
 // "Mark present on scan" preference, remembered per device.
@@ -251,7 +250,6 @@ export function QrScanner({ initialToken }: { initialToken?: string }) {
               <Alert tone={ui.tone} title={ui.title}>
                 {(result.state === "invalid" || result.state === "revoked") &&
                   "Do not check this person in. Send them to the help desk with a photo ID so the organisers can verify their registration."}
-                {result.state === "ended" && "ID cards stop working when the hackathon ends. Only the platform owner can reopen it."}
               </Alert>
               {result.participant && result.team && (
                 <div className="rounded-md border-2 border-line bg-paper p-4">

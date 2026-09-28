@@ -88,10 +88,11 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
     }
   }
 
-  // Phone numbers must be unique across all teams (the database enforces it too).
+  // Phone numbers must be unique across the teams of this hackathon (the database enforces it too);
+  // the same person may register for other hackathons.
   const phoneKeys = payload.members.map((m) => phoneKey(m.phone)).filter((k): k is string => Boolean(k));
   if (phoneKeys.length) {
-    const { data: taken } = await service.from("participants").select("phone_key").in("phone_key", phoneKeys).limit(1);
+    const { data: taken } = await service.from("participants").select("phone_key").eq("hackathon_id", form.hackathon_id).in("phone_key", phoneKeys).limit(1);
     if (taken?.length) {
       const i = payload.members.findIndex((m) => phoneKey(m.phone) === taken[0].phone_key);
       return {

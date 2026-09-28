@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { audit } from "@/lib/audit";
-import { getSession, hasClosedLogin } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -11,13 +11,12 @@ export async function POST(request: NextRequest) {
   return NextResponse.redirect(new URL("/login", request.nextUrl.origin), { status: 303 });
 }
 
-/** Only for team and shop logins whose hackathon has ended (requireSession sends them here). */
+/** Only for shop logins whose hackathon has ended (requireVendor sends them here). */
 export async function GET(request: NextRequest) {
-  if (await hasClosedLogin()) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    await supabase.auth.signOut();
-    await audit(null, "auth.sign_out", { type: "profiles", id: user?.id }, { reason: "hackathon_ended" });
+  const session = await getSession();
+  if (session?.profile.role === "vendor" && request.nextUrl.searchParams.get("reason") === "shop_ended") {
+    await (await createClient()).auth.signOut();
+    await audit(session, "auth.sign_out", { type: "profiles", id: session.userId }, { reason: "shop_login_ended" });
   }
-  return NextResponse.redirect(new URL("/login?error=ended", request.nextUrl.origin), { status: 303 });
+  return NextResponse.redirect(new URL("/login?error=shop_ended", request.nextUrl.origin), { status: 303 });
 }
