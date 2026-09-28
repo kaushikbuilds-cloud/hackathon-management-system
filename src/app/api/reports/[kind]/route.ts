@@ -3,7 +3,7 @@ import { contentDisposition, guardApi } from "@/lib/api";
 import { audit } from "@/lib/audit";
 import { toCsv } from "@/lib/domain/csv";
 import { createClient } from "@/lib/supabase/server";
-import type { Permission } from "@/lib/types";
+import type { LeaderboardRow, Permission } from "@/lib/types";
 
 type Report = { requirement: "super_admin" | Permission; build: (sb: Awaited<ReturnType<typeof createClient>>) => Promise<{ headers: string[]; rows: unknown[][] }> };
 
@@ -67,6 +67,24 @@ const REPORTS: Record<string, Report> = {
       return {
         headers: ["Time", "Status", "Team name", "Members", "Error"],
         rows: (data ?? []).map((s) => [s.created_at, s.status, s.payload?.team_name, s.payload?.member_count, s.errors?.message ?? s.errors?.code ?? ""]),
+      };
+    },
+  },
+  judging: {
+    requirement: "manage_judging",
+    async build(sb) {
+      const [{ data: criteria }, { data: board }] = await Promise.all([
+        sb.from("judging_criteria").select("id, name, max_points").order("sort_order").order("created_at"),
+        sb.rpc("judging_leaderboard"),
+      ]) as [{ data: { id: string; name: string; max_points: number }[] | null }, { data: LeaderboardRow[] | null }];
+      const crit = criteria ?? [];
+      let rank = 0;
+      return {
+        headers: ["Rank", "Team ID", "Team name", "Track", "College", "Judges", "Average score", "Out of", ...crit.map((c) => `${c.name} (avg of ${c.max_points})`), "Award"],
+        rows: (board ?? []).map((r) => [
+          r.avg_total !== null ? ++rank : "", r.team_code, r.team_name, r.track ?? "", r.college ?? "", r.judges, r.avg_total ?? "",
+          crit.reduce((n, c) => n + c.max_points, 0), ...crit.map((c) => r.criteria?.[c.id] ?? ""), r.award ?? "",
+        ]),
       };
     },
   },

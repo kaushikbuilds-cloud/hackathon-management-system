@@ -7,7 +7,7 @@ import { UUID, flash, str } from "@/lib/actions";
 import { audit } from "@/lib/audit";
 import { can, isSuperAdmin, requireHackathon, requireStaff, type Session } from "@/lib/auth";
 import { createInvitation, revokeInvitation } from "@/lib/invitations";
-import { sanitizeGrants } from "@/lib/permissions";
+import { canGrant, sanitizeGrants } from "@/lib/permissions";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { Invitation, Profile } from "@/lib/types";
 
@@ -95,7 +95,7 @@ export async function updateStaffPermissions(profileId: string, formData: FormDa
   const { data: current } = await service.from("staff_permissions").select("permission").eq("profile_id", profileId).returns<{ permission: string }[]>();
   const have = new Set((current ?? []).map((r) => r.permission));
   // A non-super granter can only add/remove permissions they hold themselves.
-  const controllable = (p: string) => granter.isSuperAdmin || granter.permissions.has(p as never);
+  const controllable = (p: string) => canGrant(p, granter);
   const toRemove = [...have].filter((p) => controllable(p) && !wanted.includes(p as never));
   const toAdd = wanted.filter((p) => !have.has(p));
   if (toRemove.length) await service.from("staff_permissions").delete().eq("profile_id", profileId).in("permission", toRemove);

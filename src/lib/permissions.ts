@@ -20,6 +20,8 @@ export const PERMISSIONS = [
   { key: "manage_all_support", label: "All support requests", description: "See, assign and handle every support request.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
   { key: "view_reports", label: "Reports & exports", description: "Dashboard statistics and CSV exports.", grantableTo: ["admin"], defaultFor: ["admin"] },
   { key: "manage_food", label: "Food orders", description: "Manage food shops and menus, and handle orders at the counter.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
+  { key: "judge_teams", label: "Judge: score teams", description: "Score approved teams on the judging criteria (sees only own scores).", grantableTo: ["admin", "official"], defaultFor: [] },
+  { key: "manage_judging", label: "Judging setup & results", description: "Set criteria, open or close judging, see every score and the leaderboard.", grantableTo: ["admin"], defaultFor: ["admin"] },
 ] as const satisfies readonly { key: string; label: string; description: string; grantableTo: readonly AppRole[]; defaultFor: readonly AppRole[] }[];
 
 export type Permission = (typeof PERMISSIONS)[number]["key"];
@@ -43,6 +45,14 @@ export function permissionLabel(key: string): string {
 }
 
 /**
+ * Whether the granter may hand out `permission`: the Super Admin always, others
+ * only what they hold themselves; whoever runs judging may also appoint judges.
+ */
+export function canGrant(permission: string, granter: { isSuperAdmin: boolean; permissions: ReadonlySet<string> }): boolean {
+  return granter.isSuperAdmin || granter.permissions.has(permission) || (permission === "judge_teams" && granter.permissions.has("manage_judging"));
+}
+
+/**
  * Filters requested grants to those valid for the invitee's role and, unless
  * the granter is the Super Admin, to permissions the granter holds — nobody
  * can hand out access they do not have.
@@ -54,6 +64,6 @@ export function sanitizeGrants(
 ): Permission[] {
   const allowed = new Set(grantableTo(inviteeRole).map((p) => p.key as string));
   return [...new Set(requested)].filter(
-    (k): k is Permission => isPermission(k) && allowed.has(k) && (granter.isSuperAdmin || granter.permissions.has(k)),
+    (k): k is Permission => isPermission(k) && allowed.has(k) && canGrant(k, granter),
   );
 }

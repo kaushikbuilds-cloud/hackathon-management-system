@@ -26,6 +26,8 @@ export function staffNav(session: Session): NavItem[] {
     { href: "/staff/food", group: "On the day", label: "Food Orders", icon: "food", show: ev(can(session, "manage_food")) },
     { href: "/staff/announcements", group: "On the day", label: official ? "Announcements & Instructions" : "Announcements & Schedule", icon: "megaphone", show: inEvent },
     { href: "/staff/faq", group: "On the day", label: "FAQ", icon: "help", show: ev(can(session, "publish_announcements")) },
+    { href: "/staff/judging", group: "On the day", label: "Judging", icon: "trophy", show: ev(canAny(session, ["judge_teams", "manage_judging"])) },
+    { href: "/staff/judging/results", group: "On the day", label: "Judging Results", icon: "chart", show: ev(can(session, "manage_judging")) },
     { href: "/staff/support", group: "On the day", label: official ? "Assigned Help Desk" : "Support Requests", icon: "help", show: inEvent },
     { href: "/staff/users/admins", group: "Management", label: "User Management", icon: "shield", show: ev(sa) },
     { href: "/staff/users/officials", group: "Management", label: "Officials Management", icon: "users", show: ev(!sa && can(session, "manage_officials")) },

@@ -1,5 +1,5 @@
 import { Checkbox } from "@/components/ui";
-import { grantableTo, type Permission } from "@/lib/permissions";
+import { canGrant, grantableTo, type Permission } from "@/lib/permissions";
 
 /**
  * Permission checkboxes for a staff role. Permissions the granter does not
@@ -13,7 +13,7 @@ export function PermissionCheckboxes({ role, checked, granter }: {
   return (
     <div className="grid gap-2 sm:grid-cols-2">
       {grantableTo(role).map((p) => {
-        const allowed = granter.isSuperAdmin || granter.permissions.has(p.key);
+        const allowed = canGrant(p.key, granter);
         return (
           <Checkbox key={p.key} name="permissions" value={p.key} label={p.label} hint={allowed ? p.description : `${p.description} (you don't hold this permission)`}
             defaultChecked={checked.has(p.key)} disabled={!allowed} />

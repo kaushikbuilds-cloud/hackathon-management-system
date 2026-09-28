@@ -118,6 +118,7 @@ const QUICK_ACTIONS: { href: string; label: string; icon: IconName; tone: string
   { href: "/staff/attendance", label: "Scan ID cards", icon: "qr", tone: "bg-sky-tint text-sky-ink", show: (s) => can(s, "record_attendance") },
   { href: "/staff/id-cards", label: "Generate ID cards", icon: "idcard", tone: "bg-brand-tint text-brand", show: (s) => can(s, "generate_pdf") || can(s, "manage_event") },
   { href: "/staff/announcements", label: "Post announcement", icon: "megaphone", tone: "bg-warn-tint text-warn", show: (s) => can(s, "publish_announcements") },
+  { href: "/staff/judging/results", label: "Judging results", icon: "trophy", tone: "bg-warn-tint text-warn", show: (s) => can(s, "manage_judging") },
   { href: "/staff/reports", label: "View reports", icon: "chart", tone: "bg-ok-tint text-ok", show: (s) => can(s, "view_reports") },
   { href: "/staff/event", label: "Event settings", icon: "settings", tone: "bg-paper-2 text-ink-soft", show: (s) => can(s, "manage_event") },
 ];

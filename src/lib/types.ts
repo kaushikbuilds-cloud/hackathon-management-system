@@ -11,6 +11,8 @@ export type Hackathon = {
   tagline: string | null;
   /** Tracks teams choose from when registering (empty = no tracks). */
   tracks: string[];
+  /** Judges can submit scores only while this is on. */
+  judging_open?: boolean;
   description: string | null;
   logo_path: string | null;
   organizer_name: string | null;
@@ -333,4 +335,34 @@ export type Faq = {
   sort_order: number;
   created_at: string;
   updated_at: string;
+};
+
+export type JudgingCriterion = {
+  id: string;
+  hackathon_id: string;
+  name: string;
+  description: string | null;
+  max_points: number;
+  sort_order: number;
+};
+
+export type JudgeScore = {
+  id: string;
+  team_id: string;
+  judge_id: string;
+  scores: Record<string, number>;
+  comment: string | null;
+  updated_at: string;
+};
+
+export type LeaderboardRow = {
+  team_id: string;
+  team_code: string;
+  team_name: string;
+  track: string | null;
+  college: string | null;
+  award: string | null;
+  judges: number;
+  avg_total: number | null;
+  criteria: Record<string, number>;
 };
