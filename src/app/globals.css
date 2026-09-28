@@ -64,6 +64,25 @@ html {
 body {
   background-color: var(--color-paper);
   color: var(--color-ink);
+  /* Pages never pan sideways on phones; wide tables scroll inside their own box. */
+  overflow-x: clip;
+}
+
+/* Fieldsets default to their content's width; let them shrink like other boxes. */
+fieldset {
+  min-width: 0;
+}
+
+input[type="file"] {
+  max-width: 100%;
+}
+
+/* Grid columns may shrink below their content (wide tables scroll in their own box).
+   In the base layer, so an explicit min-w-* utility still wins. */
+@layer base {
+  .grid > * {
+    min-width: 0;
+  }
 }
 
 /* The pixel-art night landscape, fixed behind everything and dimmed for reading. */

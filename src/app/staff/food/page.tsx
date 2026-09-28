@@ -46,7 +46,7 @@ export default async function FoodOrdersPage(props: PageProps<"/staff/food">) {
           </nav>
           <div className="mb-6 flex flex-wrap gap-3">
             {(shop ? [shop] : shops).map((s) => (
-              <form key={s.id} action={setShopOpen.bind(null, s.id, !s.is_open)} className="flex items-center gap-2 rounded-md border-2 border-line bg-surface px-3 py-2 shadow-brutal-sm">
+              <form key={s.id} action={setShopOpen.bind(null, s.id, !s.is_open)} className="flex max-w-full flex-wrap items-center gap-2 rounded-md border-2 border-line bg-surface px-3 py-2 shadow-brutal-sm">
                 <span className="font-bold text-ink">{s.name}</span>
                 <Badge tone={s.is_open ? "green" : "neutral"}>{s.is_open ? "Taking orders" : "Closed"}</Badge>
                 <Badge tone={s.is_free ? "violet" : "amber"}>{s.is_free ? "Free" : "Paid at counter"}</Badge>

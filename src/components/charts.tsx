@@ -42,7 +42,7 @@ export function ColumnChart({ data, label, unit }: { data: { label: string; valu
           </ul>
         </div>
       </div>
-      <div className="mt-1 flex gap-[2px] pl-10 text-xs text-muted" aria-hidden="true">
+      <div className="mt-1 flex gap-[2px] overflow-hidden pl-10 text-xs text-muted" aria-hidden="true">
         {data.map((d, i) => <span key={d.label} className="flex-1 overflow-visible whitespace-nowrap">{i % every === 0 ? d.label : ""}</span>)}
       </div>
       <table className="sr-only">

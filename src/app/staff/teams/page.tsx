@@ -184,7 +184,7 @@ function TeamRows({ team: t, open, members, canPdf, toggleHref }: { team: TeamOv
             {members.length === 0 ? (
               <p className="py-3 text-sm text-muted">No members.</p>
             ) : (
-              <div className="overflow-x-auto rounded-lg border-2 border-line">
+              <div className="relative overflow-x-auto rounded-lg border-2 border-line">
                 <table className="min-w-full text-sm">
                   <caption className="sr-only">Members of {t.name}</caption>
                   <thead>

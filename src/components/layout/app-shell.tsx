@@ -39,24 +39,24 @@ export function AppShell({ portalName, eventName, nav, root, user, unread = 0, n
     <div className="min-h-screen lg:grid lg:grid-cols-[18rem_1fr]">
       <aside className="hidden border-r-4 border-line bg-surface/90 px-3 py-4 lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">{sidebar}</aside>
       <div className="min-w-0">
-        <header className="panel sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b-4 border-line px-4 lg:px-8">
+        <header className="panel sticky top-0 z-20 flex h-16 items-center justify-between gap-2 border-b-4 border-line px-3 sm:px-4 lg:px-8">
           <details className="relative lg:hidden">
-            <summary className="font-pixel bevel flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-md border-2 border-line bg-pop px-3 text-sm">
+            <summary className="font-pixel bevel flex min-h-11 shrink-0 cursor-pointer list-none items-center gap-2 rounded-md border-2 border-line bg-pop px-3 text-sm">
               <Icon name="menu" className="size-4" /> Menu
             </summary>
             <div className="absolute top-14 left-0 z-30 max-h-[80vh] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto rounded-md border-2 border-line bg-surface p-3 shadow-brutal-lg">{sidebar}</div>
           </details>
           <p className="font-pixel hidden text-lg text-ink [text-shadow:2px_2px_0_var(--color-line)] lg:block">{portalName}</p>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             {notificationsHref && (
-              <Link href={notificationsHref} aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"} className="font-pixel relative inline-flex min-h-11 items-center gap-2 rounded-md border-2 border-line bg-paper-2 px-3 text-sm text-ink bevel hover:bg-line-soft">
+              <Link href={notificationsHref} aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"} className="font-pixel relative inline-flex shrink-0 min-h-11 items-center gap-2 rounded-md border-2 border-line bg-paper-2 px-3 text-sm text-ink bevel hover:bg-line-soft">
                 <Icon name="bell" className="size-5" />
                 <span className="hidden sm:inline">Notifications</span>
                 {unread > 0 && <span className="grid min-w-6 place-items-center rounded-sm border-2 border-line bg-pink px-1 text-xs font-bold" aria-hidden="true">{unread}</span>}
               </Link>
             )}
-            <div className="flex items-center gap-2 rounded-md border-2 border-line bg-paper-2 py-1 pr-3 pl-1 bevel">
-              <span className="grid size-9 place-items-center rounded-sm border-2 border-line bg-cobalt" aria-hidden="true"><PixelIcon name="person" className="size-7" /></span>
+            <div className="flex min-w-0 items-center gap-2 rounded-md border-2 border-line bg-paper-2 py-1 pr-2 pl-1 bevel sm:pr-3">
+              <span className="grid size-9 shrink-0 place-items-center rounded-sm border-2 border-line bg-cobalt" aria-hidden="true"><PixelIcon name="person" className="size-7" /></span>
               <span className="min-w-0 leading-tight">
                 <span className="block max-w-24 truncate text-sm font-bold text-ink sm:max-w-40">{user.name}</span>
                 <span className="font-pixel block text-xs text-muted">{user.roleLabel}</span>

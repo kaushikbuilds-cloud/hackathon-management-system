@@ -49,7 +49,7 @@ export default async function HackathonDetailPage(props: PageProps<"/staff/hacka
         <Stat label="Checked in" value={stats?.present ?? 0} tone="green" />
         <Stat label="Open support" value={stats?.open_support ?? 0} tone="amber" />
       </div>
-      <div className="grid gap-6 2xl:grid-cols-[1fr_26rem]">
+      <div className="grid gap-6 2xl:grid-cols-[1fr_26rem] [&>*]:min-w-0">
         <div className="space-y-6">
           <Card>
             <CardTitle>Details</CardTitle>

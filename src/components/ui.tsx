@@ -231,7 +231,7 @@ export function DescriptionList({ items }: { items: { label: string; value: Reac
 // ---------------------------------------------------------------------------
 export function Table({ children, caption }: { children: ReactNode; caption?: string }) {
   return (
-    <div className="overflow-x-auto rounded-md border-2 border-line bg-surface shadow-brutal">
+    <div className="relative overflow-x-auto rounded-md border-2 border-line bg-surface shadow-brutal">
       <table className="min-w-full divide-y-2 divide-line text-sm [&_tbody>tr]:border-b [&_tbody>tr]:border-line-soft [&_tbody>tr:nth-child(even)]:bg-paper-2/40 [&_tbody>tr:hover]:bg-paper-2">
         {caption && <caption className="sr-only">{caption}</caption>}
         {children}
