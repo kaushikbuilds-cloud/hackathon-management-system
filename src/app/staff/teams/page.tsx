@@ -44,15 +44,15 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
   if (pdf) query = query.eq("pdf_status", pdf);
   if (attendance) query = query.eq("attendance_state", attendance);
   if (payment) query = query.eq("payment_status", payment);
-  if (college) query = query.eq("college", college);
+  // Colleges are grouped by a spelling-insensitive key, so "RIT", "R.I.T." and "rit " are one college.
+  const { data: collegeRows } = await supabase.from("teams").select("college").not("college", "is", null).limit(10000).returns<{ college: string }[]>();
+  const colleges = groupColleges((collegeRows ?? []).map((r) => r.college));
+  const selectedCollege = college ? colleges.find((c) => c.key === collegeKey(college)) : undefined;
+  if (college) query = selectedCollege ? query.in("college", selectedCollege.variants) : query.eq("college", college);
   if (track) query = query.eq("track", track);
   query = query.order(sort, { ascending: dir === "asc" }).order("team_code").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
-  const [{ data: teams, count, error }, { data: collegeRows }] = await Promise.all([
-    query.returns<TeamOverview[]>(),
-    supabase.from("teams").select("college").not("college", "is", null).order("college").returns<{ college: string }[]>(),
-  ]);
-  const colleges = [...new Set((collegeRows ?? []).map((r) => r.college))];
+  const { data: teams, count, error } = await query.returns<TeamOverview[]>();
 
   const expandedMembers = expand && teams?.some((t) => t.id === expand)
     ? (await supabase.from("participant_overview").select("*").eq("team_id", expand).order("role").order("participant_code").returns<ParticipantOverview[]>()).data ?? []
@@ -79,11 +79,11 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
       />
       <Flash notice={sp.notice} error={sp.error} />
       <Card className="mb-4 p-4">
-        <form className={`grid gap-3 md:grid-cols-3 ${showTrack ? "xl:grid-cols-[2fr_repeat(6,1fr)_auto]" : "xl:grid-cols-[2fr_repeat(5,1fr)_auto]"}`} role="search" aria-label="Filter teams">
+        <form key={JSON.stringify([q, status, college, attendance, payment, pdf, track])} className={`grid gap-3 md:grid-cols-3 ${showTrack ? "xl:grid-cols-[2fr_repeat(6,1fr)_auto]" : "xl:grid-cols-[2fr_repeat(5,1fr)_auto]"}`} role="search" aria-label="Filter teams">
           <label className="sr-only" htmlFor="q">Search</label>
           <input id="q" name="q" defaultValue={param(sp, "q")} placeholder="Search team, Team ID, leader, college, participant ID…" className={inputClass} />
           <FilterSelect name="status" label="Status" value={status} options={[["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["flagged", "Flagged"]]} />
-          <FilterSelect name="college" label="College" value={college} options={colleges.map((c) => [c, c])} />
+          <FilterSelect name="college" label="College" value={selectedCollege?.key ?? college} options={colleges.map((c) => [c.key, `${c.name} (${c.count})`])} />
           {showTrack && <FilterSelect name="track" label="Track" value={track} options={tracks.map((t) => [t, t])} />}
           <FilterSelect name="attendance" label="Attendance" value={attendance} options={[["none", "None present"], ["partial", "Partially present"], ["full", "All present"]]} />
           <FilterSelect name="payment" label="Payment" value={payment} options={[["submitted", "To verify"], ["verified", "Paid"], ["rejected", "Rejected"], ["not_required", "No fee"]]} />
@@ -94,6 +94,28 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
           </div>
         </form>
       </Card>
+
+      {colleges.length > 1 && (
+        <nav aria-label="Teams by college" className="mb-4">
+          <ul className="flex gap-2 overflow-x-auto pb-1">
+            <li className="shrink-0">
+              <Link href={hrefWith("/staff/teams", sp, { college: null, page: null, expand: null })} aria-current={!college ? "true" : undefined}
+                className={collegeChip(!college)}>All colleges <span className="tabular-nums opacity-80">{colleges.reduce((n, c) => n + c.count, 0)}</span></Link>
+            </li>
+            {colleges.map((c) => {
+              const active = selectedCollege?.key === c.key;
+              return (
+                <li key={c.key} className="shrink-0">
+                  <Link href={hrefWith("/staff/teams", sp, { college: active ? null : c.key, page: null, expand: null })} aria-current={active ? "true" : undefined}
+                    className={collegeChip(active)} title={c.variants.length > 1 ? `Also written as: ${c.variants.filter((v) => v !== c.name).join(", ")}` : undefined}>
+                    {c.name} <span className="tabular-nums opacity-80">{c.count}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      )}
 
       {error ? (
         <EmptyState title="Could not load teams">{error.message}</EmptyState>
@@ -134,6 +156,38 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
       )}
     </>
   );
+}
+
+/** Spelling-insensitive key: letters and digits only, lower case ("R.I.T. " → "rit"). */
+function collegeKey(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+/** One entry per college: the most common spelling, every spelling seen, and the team count; biggest first. */
+function groupColleges(names: string[]) {
+  const groups = new Map<string, { key: string; spellings: Map<string, number>; count: number }>();
+  for (const raw of names) {
+    const name = raw.trim().replace(/\s+/g, " ");
+    const key = collegeKey(name);
+    if (!key) continue;
+    const g = groups.get(key) ?? { key, spellings: new Map(), count: 0 };
+    g.count++;
+    g.spellings.set(raw, (g.spellings.get(raw) ?? 0) + 1);
+    groups.set(key, g);
+  }
+  return [...groups.values()]
+    .map((g) => {
+      const variants = [...g.spellings.keys()];
+      const name = [...g.spellings].sort((a, b) => b[1] - a[1])[0][0].trim().replace(/\s+/g, " ");
+      return { key: g.key, name, variants, count: g.count };
+    })
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+function collegeChip(active: boolean) {
+  return `inline-flex min-h-9 items-center gap-2 rounded-full border px-3 text-sm font-medium whitespace-nowrap transition-colors ${
+    active ? "border-brand bg-brand text-white" : "border-line-strong bg-surface text-ink-soft hover:border-brand/40 hover:text-ink"
+  }`;
 }
 
 function FilterSelect({ name, label, value, options }: { name: string; label: string; value?: string; options: string[][] }) {

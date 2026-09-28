@@ -49,10 +49,10 @@ export async function teamCredentials(memberEmail: string): Promise<{ teamCode: 
 }
 
 /** Registers a two-member team through the public form (names must be letters only). */
-export async function registerTeam(page: Page, teamName: string, members: [string, string][], opts: { slug?: string; phones?: string[]; track?: string; expectOk?: boolean } = {}) {
+export async function registerTeam(page: Page, teamName: string, members: [string, string][], opts: { slug?: string; phones?: string[]; track?: string; college?: string; expectOk?: boolean } = {}) {
   await page.goto(`/register/${opts.slug ?? FORM_SLUG}`);
   await page.getByLabel("Team name").fill(teamName);
-  await page.getByLabel("College / institution").fill("Test College");
+  await page.getByLabel("College / institution").fill(opts.college ?? "Test College");
   const phoneBase = String(Date.now()).slice(-7);
   for (const [i, [name, email]] of members.entries()) {
     const card = page.locator("section").filter({ has: page.getByRole("heading", { name: new RegExp(`^Member ${i + 1}`) }) });
