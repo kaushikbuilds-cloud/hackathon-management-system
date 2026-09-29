@@ -19,6 +19,9 @@ export default async function PortalHome(props: PageProps<"/portal">) {
   const { team, roster, me, isLeader, members } = data;
   const tz = hackathon?.timezone ?? "UTC";
   const cards = Boolean(hackathon?.portal_id_cards);
+  const { data: chosenPs } = team.problem_statement_id
+    ? await (await createClient()).from("problem_statements").select("code, title").eq("id", team.problem_statement_id).maybeSingle<{ code: string; title: string }>()
+    : { data: null };
   const projectDue = team.status === "approved" && projectsOpen(hackathon)
     && !(await (await createClient()).from("project_submissions").select("team_id", { count: "exact", head: true }).eq("team_id", team.id)).count;
 
@@ -59,6 +62,7 @@ export default async function PortalHome(props: PageProps<"/portal">) {
             <DescriptionList items={[
               { label: "Team ID", value: <span className="font-mono">{team.team_code}</span> },
               ...(team.track ? [{ label: "Track", value: team.track }] : []),
+              ...(chosenPs ? [{ label: "Problem statement", value: `${chosenPs.code} · ${chosenPs.title}` }] : []),
               { label: "Registration status", value: <RegistrationBadge status={team.status} /> },
               ...((team.payment_status ?? "not_required") !== "not_required" ? [{
                 label: "Registration fee",

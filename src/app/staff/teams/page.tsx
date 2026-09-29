@@ -27,6 +27,11 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
   const payment = pickEnum(param(sp, "payment"), ["not_required", "submitted", "verified", "rejected"] as const);
   const college = param(sp, "college").slice(0, 150);
   const tracks = (await getHackathon())?.tracks ?? [];
+  const { data: statementRows } = await supabase.from("problem_statements").select("id, code, title").order("sort_order").order("code").returns<{ id: string; code: string; title: string }[]>();
+  const statements = statementRows ?? [];
+  const psCode = new Map(statements.map((s) => [s.id, s.code]));
+  const ps = param(sp, "ps");
+  const psFilter = ps === "none" || statements.some((s) => s.id === ps) ? ps : "";
   const track = tracks.includes(param(sp, "track")) ? param(sp, "track") : "";
   const sort = pickEnum(param(sp, "sort"), SORTS) ?? "created_at";
   const dir = param(sp, "dir") === "asc" ? "asc" : param(sp, "dir") === "desc" ? "desc" : sort === "created_at" ? "desc" : "asc";
@@ -50,6 +55,8 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
   const selectedCollege = college ? colleges.find((c) => c.key === collegeKey(college)) : undefined;
   if (college) query = selectedCollege ? query.in("college", selectedCollege.variants) : query.eq("college", college);
   if (track) query = query.eq("track", track);
+  if (psFilter === "none") query = query.is("problem_statement_id", null);
+  else if (psFilter) query = query.eq("problem_statement_id", psFilter);
   query = query.order(sort, { ascending: dir === "asc" }).order("team_code").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   const { data: teams, count, error } = await query.returns<TeamOverview[]>();
@@ -67,7 +74,8 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
       {sort === key && <span aria-hidden="true">{dir === "asc" ? "▲" : "▼"}</span>}
     </Link>
   );
-  const hasFilters = Boolean(q || status || pdf || attendance || college || payment || track);
+  const hasFilters = Boolean(q || status || pdf || attendance || college || payment || track || psFilter);
+  const showPs = statements.length > 0;
   const showTrack = tracks.length > 0;
 
   return (
@@ -79,12 +87,13 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
       />
       <Flash notice={sp.notice} error={sp.error} />
       <Card className="mb-4 p-4">
-        <form key={JSON.stringify([q, status, college, attendance, payment, pdf, track])} className={`grid gap-3 md:grid-cols-3 ${showTrack ? "xl:grid-cols-[2fr_repeat(6,1fr)_auto]" : "xl:grid-cols-[2fr_repeat(5,1fr)_auto]"}`} role="search" aria-label="Filter teams">
+        <form key={JSON.stringify([q, status, college, attendance, payment, pdf, track, psFilter])} className={`grid gap-3 md:grid-cols-3 ${showTrack && showPs ? "xl:grid-cols-[2fr_repeat(7,1fr)_auto]" : showTrack || showPs ? "xl:grid-cols-[2fr_repeat(6,1fr)_auto]" : "xl:grid-cols-[2fr_repeat(5,1fr)_auto]"}`} role="search" aria-label="Filter teams">
           <label className="sr-only" htmlFor="q">Search</label>
           <input id="q" name="q" defaultValue={param(sp, "q")} placeholder="Search team, Team ID, leader, college, participant ID…" className={inputClass} />
           <FilterSelect name="status" label="Status" value={status} options={[["pending", "Pending"], ["approved", "Approved"], ["rejected", "Rejected"], ["flagged", "Flagged"]]} />
           <FilterSelect name="college" label="College" value={selectedCollege?.key ?? college} options={colleges.map((c) => [c.key, `${c.name} (${c.count})`])} />
           {showTrack && <FilterSelect name="track" label="Track" value={track} options={tracks.map((t) => [t, t])} />}
+          {showPs && <FilterSelect name="ps" label="Problem" value={psFilter} options={[["none", "Not chosen"], ...statements.map((s) => [s.id, `${s.code} · ${s.title.slice(0, 40)}`])]} />}
           <FilterSelect name="attendance" label="Attendance" value={attendance} options={[["none", "None present"], ["partial", "Partially present"], ["full", "All present"]]} />
           <FilterSelect name="payment" label="Payment" value={payment} options={[["submitted", "To verify"], ["verified", "Paid"], ["rejected", "Rejected"], ["not_required", "No fee"]]} />
           <FilterSelect name="pdf" label="PDF" value={pdf} options={[["not_generated", "Not generated"], ["generated", "Generated"], ["outdated", "Outdated"], ["failed", "Failed"]]} />
@@ -135,6 +144,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
                 <Th>{sortLabel("member_count", "Members")}</Th>
                 <Th>{sortLabel("college", "College")}</Th>
                 {showTrack && <Th>Track</Th>}
+                {showPs && <Th>Problem</Th>}
                 <Th>Registration</Th>
                 <Th>Payment</Th>
                 <Th>Attendance</Th>
@@ -145,7 +155,7 @@ export default async function TeamsPage(props: PageProps<"/staff/teams">) {
               {teams.map((t) => {
                 const open = expand === t.id;
                 return (
-                  <TeamRows key={t.id} team={t} open={open} members={open ? expandedMembers : []} canPdf={canPdf} showTrack={showTrack}
+                  <TeamRows key={t.id} team={t} open={open} members={open ? expandedMembers : []} canPdf={canPdf} showTrack={showTrack} psCode={showPs ? psCode : null}
                     toggleHref={hrefWith("/staff/teams", sp, { expand: open ? null : t.id })} />
                 );
               })}
@@ -202,7 +212,7 @@ function FilterSelect({ name, label, value, options }: { name: string; label: st
   );
 }
 
-function TeamRows({ team: t, open, members, canPdf, showTrack, toggleHref }: { team: TeamOverview; open: boolean; members: ParticipantOverview[]; canPdf: boolean; showTrack: boolean; toggleHref: string }) {
+function TeamRows({ team: t, open, members, canPdf, showTrack, psCode, toggleHref }: { team: TeamOverview; open: boolean; members: ParticipantOverview[]; canPdf: boolean; showTrack: boolean; psCode: Map<string, string> | null; toggleHref: string }) {
   return (
     <>
       <tr className={open ? "bg-paper" : "hover:bg-paper"}>
@@ -220,6 +230,7 @@ function TeamRows({ team: t, open, members, canPdf, showTrack, toggleHref }: { t
         <Td className="tabular-nums">{t.member_count}</Td>
         <Td className="max-w-48 truncate" title={t.college ?? ""}>{t.college ?? "—"}</Td>
         {showTrack && <Td className="whitespace-nowrap">{t.track ? <Badge tone="violet">{t.track}</Badge> : <span className="text-muted">—</span>}</Td>}
+        {psCode && <Td className="whitespace-nowrap">{t.problem_statement_id && psCode.get(t.problem_statement_id) ? <Badge tone="blue">{psCode.get(t.problem_statement_id)}</Badge> : <span className="text-muted">—</span>}</Td>}
         <Td><RegistrationBadge status={t.status} /></Td>
         <Td><PaymentBadge status={t.payment_status ?? "not_required"} /></Td>
         <Td><TeamAttendance state={t.attendance_state} present={t.present_count} total={t.member_count} /></Td>
@@ -242,7 +253,7 @@ function TeamRows({ team: t, open, members, canPdf, showTrack, toggleHref }: { t
       </tr>
       {open && (
         <tr id={`members-${t.id}`} className="bg-paper">
-          <td colSpan={showTrack ? 11 : 10} className="px-3 pb-4">
+          <td colSpan={10 + (showTrack ? 1 : 0) + (psCode ? 1 : 0)} className="px-3 pb-4">
             {members.length === 0 ? (
               <p className="py-3 text-sm text-muted">No members.</p>
             ) : (

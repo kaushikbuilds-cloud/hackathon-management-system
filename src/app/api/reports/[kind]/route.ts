@@ -11,10 +11,14 @@ const REPORTS: Record<string, Report> = {
   teams: {
     requirement: "view_reports",
     async build(sb) {
-      const { data } = await sb.from("team_overview").select("*").order("team_code");
+      const [{ data }, { data: ps }] = await Promise.all([
+        sb.from("team_overview").select("*").order("team_code"),
+        sb.from("problem_statements").select("id, code"),
+      ]);
+      const psCode = new Map((ps ?? []).map((p: { id: string; code: string }) => [p.id, p.code]));
       return {
-        headers: ["Team ID", "Team name", "College", "Track", "Leader", "Leader email", "Members", "Present", "Registration status", "Payment status", "Fee amount", "UPI transaction ID", "PDF status", "Registered at"],
-        rows: (data ?? []).map((t) => [t.team_code, t.name, t.college, t.track ?? "", t.leader_name, t.leader_email, t.member_count, t.present_count, t.status, t.payment_status, t.payment_amount, t.payment_utr, t.pdf_status, t.created_at]),
+        headers: ["Team ID", "Team name", "College", "Track", "Problem statement", "Leader", "Leader email", "Members", "Present", "Registration status", "Payment status", "Fee amount", "UPI transaction ID", "PDF status", "Registered at"],
+        rows: (data ?? []).map((t) => [t.team_code, t.name, t.college, t.track ?? "", (t.problem_statement_id && psCode.get(t.problem_statement_id)) ?? "", t.leader_name, t.leader_email, t.member_count, t.present_count, t.status, t.payment_status, t.payment_amount, t.payment_utr, t.pdf_status, t.created_at]),
       };
     },
   },

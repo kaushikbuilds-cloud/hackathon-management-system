@@ -16,6 +16,8 @@ export type Hackathon = {
   /** Teams can submit their project while this is on (and before the deadline). */
   projects_open?: boolean;
   projects_deadline?: string | null;
+  /** Teams can pick a problem statement while this is on. */
+  ps_selection_open?: boolean;
   description: string | null;
   logo_path: string | null;
   organizer_name: string | null;
@@ -121,6 +123,7 @@ export type Team = {
   name: string;
   college: string | null;
   track: string | null;
+  problem_statement_id?: string | null;
   status: RegistrationStatus;
   status_reason: string | null;
   pdf_status: PdfStatus;
@@ -145,6 +148,7 @@ export type TeamOverview = {
   name: string;
   college: string | null;
   track?: string | null;
+  problem_statement_id?: string | null;
   status: RegistrationStatus;
   pdf_status: PdfStatus;
   created_at: string;
@@ -382,4 +386,18 @@ export type ProjectSubmission = {
   submitted_by: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type ProblemStatement = {
+  id: string;
+  hackathon_id: string;
+  code: string;
+  title: string;
+  description: string;
+  track: string | null;
+  max_teams: number | null;
+  attachment_path: string | null;
+  is_published: boolean;
+  sort_order: number;
+  created_at: string;
 };

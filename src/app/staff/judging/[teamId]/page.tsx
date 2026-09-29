@@ -30,6 +30,8 @@ export default async function ScoreTeamPage(props: PageProps<"/staff/judging/[te
     ? await createServiceClient().from("registration_forms").select("custom_questions").eq("id", team.form_id).maybeSingle<Pick<RegistrationForm, "custom_questions">>()
     : { data: null };
   const { data: project } = await createServiceClient().from("project_submissions").select("*").eq("team_id", team.id).eq("hackathon_id", session.hackathonId).maybeSingle<ProjectSubmission>();
+  const { data: teamPs } = await createServiceClient().from("teams").select("problem_statements(code, title)").eq("id", team.id).maybeSingle<{ problem_statements: { code: string; title: string } | null }>();
+  const statement = teamPs?.problem_statements ?? null;
   const answers = resolveCustomQuestions(form?.custom_questions ?? []).map((q) => ({ label: q.label, value: team.custom_answers?.[q.id] || "—" }));
   const open = Boolean(hackathon?.judging_open);
 
@@ -75,6 +77,7 @@ export default async function ScoreTeamPage(props: PageProps<"/staff/judging/[te
           <CardTitle>About the team</CardTitle>
           <DescriptionList items={[
             ...(team.track ? [{ label: "Track", value: team.track }] : []),
+            ...(statement ? [{ label: "Problem statement", value: `${statement.code} · ${statement.title}` }] : []),
             { label: "College", value: team.college },
             ...answers,
           ]} />

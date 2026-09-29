@@ -17,6 +17,7 @@ export function staffNav(session: Session): NavItem[] {
     { href: "/staff/event", group: "Event", label: sa ? "Hackathon / Event Setup" : "Event Setup", icon: "settings", show: ev(can(session, "manage_event")) },
     { href: "/staff/brand", group: "Event", label: "Brand Kit", icon: "palette", show: ev(can(session, "manage_event")) },
     { href: "/staff/forms", group: "Event", label: sa ? "Registration Management" : "Form Builder & Submissions", icon: "form", show: ev(can(session, "manage_registrations")) },
+    { href: "/staff/problem-statements", group: "Event", label: "Problem Statements", icon: "trophy", show: ev(canAny(session, ["manage_event", "view_participants"])) },
     { href: "/staff/teams", group: "Event", label: sa ? "Teams & Participants" : "Team Management", icon: "table", show: ev(canAny(session, ["view_participants", "edit_registrations", "manage_registrations"])) },
     { href: "/staff/participants", group: "Event", label: "Participant Management", icon: "user", show: ev(!sa && can(session, "view_participants")) },
     { href: "/staff/id-cards", group: "Event", label: sa ? "ID Card Management" : "ID Card / PDF Generation", icon: "idcard", show: ev(canAny(session, ["generate_pdf", "manage_event"])) },

@@ -36,6 +36,8 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";
 
+  const { data: statements } = await supabase.from("problem_statements").select("id, code, title").order("sort_order").order("code").returns<{ id: string; code: string; title: string }[]>();
+  const chosenPs = (statements ?? []).find((s) => s.id === team.problem_statement_id);
   const { data: project } = await supabase.from("project_submissions").select("*").eq("team_id", id).maybeSingle<ProjectSubmission>();
   const [{ data: members }, { data: jobs }, { data: accounts }] = await Promise.all([
     supabase.from("participant_overview").select("*").eq("team_id", id).order("role").order("participant_code").returns<ParticipantOverview[]>(),
@@ -79,6 +81,7 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
               { label: "Registration status", value: <span className="inline-flex items-center gap-2"><RegistrationBadge status={team.status} />{team.status_reason && <span className="text-muted">— {team.status_reason}</span>}</span> },
               { label: "College", value: team.college },
               ...((hackathon?.tracks ?? []).length || team.track ? [{ label: "Track", value: team.track ?? "Not chosen" }] : []),
+              ...((statements ?? []).length ? [{ label: "Problem statement", value: chosenPs ? `${chosenPs.code} · ${chosenPs.title}` : "Not chosen" }] : []),
               { label: "ID card PDF", value: <PdfBadge status={team.pdf_status} /> },
               { label: "Registered", value: formatDateTime(team.created_at, tz) },
               { label: "Last updated", value: formatDateTime(team.updated_at, tz) },
@@ -94,6 +97,11 @@ export default async function TeamDetailPage(props: PageProps<"/staff/teams/[id]
                 {(hackathon?.tracks ?? []).length > 0 && (
                   <SelectField label="Track" name="track" defaultValue={team.track ?? ""}
                     options={[{ value: "", label: "Not chosen" }, ...(hackathon?.tracks ?? []).map((t) => ({ value: t, label: t }))]} />
+                )}
+                {(statements ?? []).length > 0 && (
+                  <SelectField label="Problem statement" name="problem_statement_id" defaultValue={team.problem_statement_id ?? ""} className="sm:col-span-2"
+                    hint="Staff can set it even when a statement is full or selection is closed."
+                    options={[{ value: "", label: "Not chosen" }, ...(statements ?? []).map((s) => ({ value: s.id, label: `${s.code} · ${s.title}` }))]} />
                 )}
                 <div className="sm:col-span-2"><SubmitButton size="sm">Save changes</SubmitButton></div>
               </form>

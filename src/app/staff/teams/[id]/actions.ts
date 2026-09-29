@@ -28,7 +28,15 @@ export async function updateTeam(teamId: string, formData: FormData) {
   const parsed = teamSchema.safeParse({ name: str(formData, "name"), college: str(formData, "college") });
   if (!parsed.success) flash(teamPath(teamId), { error: parsed.error.issues[0].message });
   const supabase = await createClient();
-  const update: { name: string; college: string | null; track?: string | null } = { name: parsed.data.name, college: parsed.data.college || null };
+  const update: { name: string; college: string | null; track?: string | null; problem_statement_id?: string | null } = { name: parsed.data.name, college: parsed.data.college || null };
+  if (formData.has("problem_statement_id")) {
+    const psId = str(formData, "problem_statement_id", 40);
+    if (psId) {
+      const { data: ps } = await supabase.from("problem_statements").select("id").eq("id", psId).eq("hackathon_id", session.hackathonId).maybeSingle();
+      if (!ps) flash(teamPath(teamId), { error: "Choose one of this hackathon's problem statements." });
+    }
+    update.problem_statement_id = psId || null;
+  }
   if (formData.has("track")) {
     // Only one of the hackathon's tracks (or none).
     const { data: h } = await supabase.from("hackathons").select("tracks").eq("id", session.hackathonId).maybeSingle<{ tracks: string[] }>();

@@ -6,7 +6,7 @@ import { brandingUrls, formAvailability, getHackathonBySlug } from "@/lib/data/e
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatTime } from "@/lib/format";
 import { formatEventDates } from "@/lib/pdf/id-cards";
-import type { Faq, RegistrationForm, ScheduleItem } from "@/lib/types";
+import type { Faq, ProblemStatement, RegistrationForm, ScheduleItem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -20,11 +20,12 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
   const hackathon = await getHackathonBySlug((await props.params).slug);
   if (!hackathon || hackathon.status === "archived") notFound();
   const supabase = await createClient();
-  const [{ data: forms }, { data: schedule }, { data: faqs }] = await Promise.all([
+  const [{ data: forms }, { data: schedule }, { data: faqs }, { data: statements }] = await Promise.all([
     supabase.from("registration_forms").select("*").eq("hackathon_id", hackathon.id).eq("status", "published").order("published_at", { ascending: false }).returns<RegistrationForm[]>(),
     supabase.from("event_schedule").select("*").eq("hackathon_id", hackathon.id).eq("visibility", "public").order("starts_at").limit(20).returns<ScheduleItem[]>(),
     supabase.from("hackathon_faqs").select("*").eq("hackathon_id", hackathon.id).eq("is_published", true).eq("audience", "public")
       .order("sort_order").order("created_at").returns<Faq[]>(),
+    supabase.from("problem_statements").select("*").eq("hackathon_id", hackathon.id).eq("is_published", true).order("sort_order").order("code").returns<ProblemStatement[]>(),
   ]);
   const form = forms?.[0];
   const availability = form ? formAvailability(form) : { open: false };
@@ -68,6 +69,21 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
           </div>
         )}
       </section>
+      {statements && statements.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-20" aria-labelledby="ps-heading">
+          <h2 id="ps-heading" className="mb-4 text-xl font-semibold text-ink">Problem statements</h2>
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {statements.map((ps) => (
+              <li key={ps.id} className="panel rounded-lg border border-line p-4">
+                <p className="flex flex-wrap gap-2 text-xs font-semibold"><span className="rounded-full bg-brand-tint px-2 py-0.5 text-brand-hover">{ps.code}</span>{ps.track && <span className="rounded-full bg-sky-tint px-2 py-0.5 text-sky-ink">{ps.track}</span>}</p>
+                <p className="mt-2 font-semibold text-ink">{ps.title}</p>
+                {ps.description && <p className="mt-1 line-clamp-4 text-sm text-ink-soft">{ps.description}</p>}
+                {ps.attachment_path && <a href={`/api/problem-statements/${ps.id}/file`} className="mt-2 inline-block text-sm font-medium text-grass hover:underline">Read the full brief (PDF)</a>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {schedule && schedule.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-20" aria-labelledby="schedule-heading">
           <h2 id="schedule-heading" className="mb-4 text-xl font-semibold text-ink">Schedule</h2>

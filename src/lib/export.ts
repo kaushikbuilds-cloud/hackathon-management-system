@@ -50,8 +50,8 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
     all("profiles", hackathonId, "id, full_name, email, role, status, team_id, shop_id, participant_id, last_sign_in_at, created_at"),
     all("id_card_jobs", hackathonId),
   ]);
-  const [projects, criteria, scores] = await Promise.all([
-    all("project_submissions", hackathonId), all("judging_criteria", hackathonId), all("judge_scores", hackathonId),
+  const [projects, criteria, scores, statements] = await Promise.all([
+    all("project_submissions", hackathonId), all("judging_criteria", hackathonId), all("judge_scores", hackathonId), all("problem_statements", hackathonId),
   ]);
   const teamCode = new Map(teams.map((t) => [t.id as string, t.team_code as string]));
   const partCode = new Map(participants.map((p) => [p.id as string, p.participant_code as string]));
@@ -84,6 +84,9 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
   files["data/registration_submissions.csv"] = csv(submissions);
   files["data/staff_and_logins.csv"] = csv(staff);
   files["data/audit_log.csv"] = csv(audit);
+  files["data/problem_statements.csv"] = csv(statements.map((ps) => ({
+    ...ps, teams: teams.filter((t) => t.problem_statement_id === ps.id).map((t) => t.team_code).join(" "),
+  })));
   files["data/projects.csv"] = csv(projects.map((p) => ({ team_code: teamCode.get(p.team_id as string), ...p })));
   files["data/judging_criteria.csv"] = csv(criteria);
   files["data/judge_scores.csv"] = csv(scores.map((sc) => ({
@@ -105,6 +108,7 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
   for (const p of projects) grab(BUCKETS.projectFiles, p.slides_path, `files/project-slides/${teamCode.get(p.team_id as string) ?? p.team_id}_slides.pdf`);
   for (const p of participants) grab(BUCKETS.photos, p.photo_path, `files/photos/${p.participant_code}${extOf(String(p.photo_path ?? ""))}`);
   for (const r of support) grab(BUCKETS.attachments, r.attachment_path, `files/support-attachments/${String(r.id).slice(0, 8)}_${safeName(String(r.subject ?? ""))}${extOf(String(r.attachment_path ?? ""))}`);
+  for (const ps of statements) grab(BUCKETS.projectFiles, ps.attachment_path, `files/problem-statements/${ps.code}.pdf`);
   grab(BUCKETS.branding, h.logo_path, `files/branding/hackathon-logo${extOf(h.logo_path ?? "")}`);
   grab(BUCKETS.branding, h.organizer_logo_path, `files/branding/organiser-logo${extOf(h.organizer_logo_path ?? "")}`);
   grab(BUCKETS.branding, h.cert_signature1_path, `files/branding/signature-1${extOf(h.cert_signature1_path ?? "")}`);
