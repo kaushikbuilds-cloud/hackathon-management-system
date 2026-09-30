@@ -85,4 +85,8 @@ jobs:
           else
             gh release create android-app --title "HackGround OS Android app" --notes "$notes" --target "$GITHUB_SHA" --latest=false
           fi
+          # Asset names are case-insensitive on GitHub, so remove an older spelling first.
+          for a in $(gh release view android-app --json assets -q '.assets[].name'); do
+            if [ "${a,,}" = "hackgroundos.apk" ] && [ "$a" != "HackGroundOS.apk" ]; then gh release delete-asset android-app "$a" --yes; fi
+          done
           gh release upload android-app HackGroundOS.apk --clobber
