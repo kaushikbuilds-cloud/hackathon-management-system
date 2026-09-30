@@ -75,3 +75,21 @@ export function publicUrl(bucket: string, path: string | null | undefined): stri
   if (!path) return null;
   return createServiceClient().storage.from(bucket).getPublicUrl(path).data.publicUrl;
 }
+
+/**
+ * Certificate signatures are private (only the server reads them to draw
+ * certificates). Older uploads sit in the public branding bucket, so reads fall
+ * back to it until the signature is uploaded again.
+ */
+export const SIGNATURE_BUCKET = BUCKETS.photos;
+
+export async function downloadSignature(path: string | null | undefined): Promise<Uint8Array | null> {
+  return (await downloadObject(SIGNATURE_BUCKET, path)) ?? (await downloadObject(BUCKETS.branding, path));
+}
+
+/** Deletes a replaced signature, including an older public copy. */
+export async function removeSignature(path: string | null | undefined) {
+  if (!path) return;
+  const storage = createServiceClient().storage;
+  await Promise.all([storage.from(SIGNATURE_BUCKET).remove([path]), storage.from(BUCKETS.branding).remove([path])]);
+}

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { UUID, bool, dbErrorMessage, flash, str } from "@/lib/actions";
 import { requirePermission } from "@/lib/auth";
-import { BUCKETS, uploadObject, validateUpload } from "@/lib/storage";
+import { SIGNATURE_BUCKET, removeSignature, uploadObject, validateUpload } from "@/lib/storage";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 const PATH = "/staff/certificates";
@@ -16,19 +16,26 @@ export async function saveCertificateSettings(formData: FormData) {
     cert_signatory2_name: str(formData, "sig2_name", 80) || null, cert_signatory2_title: str(formData, "sig2_title", 80) || null,
     cert_note: str(formData, "note", 200) || null,
   };
+  const { data: current } = await createServiceClient().from("hackathons").select("cert_signature1_path, cert_signature2_path").eq("id", session.hackathonId)
+    .single<{ cert_signature1_path: string | null; cert_signature2_path: string | null }>();
+  const replaced: string[] = [];
   for (const n of [1, 2] as const) {
-    if (bool(formData, `remove_sig${n}`)) update[`cert_signature${n}_path`] = null;
+    const old = current?.[`cert_signature${n}_path`] ?? null;
+    if (bool(formData, `remove_sig${n}`)) { update[`cert_signature${n}_path`] = null; if (old) replaced.push(old); }
     const file = formData.get(`sig${n}_image`);
     if (file instanceof File && file.size > 0) {
       const check = await validateUpload(file, ["image/png", "image/jpeg"], 2 * 1024 * 1024);
       if (!check.ok) flash(PATH, { error: `Signature ${n}: ${check.error}` });
-      const path = `${session.hackathonId}/signature-${n}-${Date.now()}.${check.extension}`;
-      await uploadObject(BUCKETS.branding, path, check.bytes, check.contentType);
+      // Private: only the server reads signatures, to draw certificates.
+      const path = `${session.hackathonId}/signatures/signature-${n}-${Date.now()}.${check.extension}`;
+      await uploadObject(SIGNATURE_BUCKET, path, check.bytes, check.contentType);
       update[`cert_signature${n}_path`] = path;
+      if (old) replaced.push(old);
     }
   }
   const { error } = await (await createClient()).from("hackathons").update(update).eq("id", session.hackathonId);
   if (error) flash(PATH, { error: dbErrorMessage(error) });
+  await Promise.all(replaced.map(removeSignature));
   revalidatePath(PATH);
   flash(PATH, { notice: "Certificate details saved. Preview one to check it." });
 }

@@ -1,6 +1,6 @@
 import "server-only";
 import { generateCertificatesPdf, type CertificateEvent, type CertificatePerson } from "@/lib/pdf/certificates";
-import { BUCKETS, downloadObject } from "@/lib/storage";
+import { BUCKETS, downloadObject, downloadSignature } from "@/lib/storage";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { Hackathon } from "@/lib/types";
 
@@ -16,7 +16,7 @@ export type Recipient = CertificatePerson & { participantId: string; teamId: str
 export async function certificateEvent(h: Hackathon & CertificateSettings): Promise<CertificateEvent> {
   const [logo, organizerLogo, sig1, sig2] = await Promise.all([
     downloadObject(BUCKETS.branding, h.logo_path), downloadObject(BUCKETS.branding, h.organizer_logo_path),
-    downloadObject(BUCKETS.branding, h.cert_signature1_path), downloadObject(BUCKETS.branding, h.cert_signature2_path),
+    downloadSignature(h.cert_signature1_path), downloadSignature(h.cert_signature2_path),
   ]);
   return {
     name: h.name, organizerName: h.organizer_name, venue: h.venue, startsAt: h.starts_at, endsAt: h.ends_at, timezone: h.timezone,

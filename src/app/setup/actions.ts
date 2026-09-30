@@ -8,14 +8,10 @@ import { checkPasswordStrength } from "@/lib/domain/password";
 import { settings } from "@/lib/env";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
+import { superAdminExists } from "@/lib/setup";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 export type SetupState = { error?: string };
-
-export async function superAdminExists(): Promise<boolean> {
-  const { count } = await createServiceClient().from("profiles").select("id", { count: "exact", head: true }).eq("role", "super_admin");
-  return (count ?? 0) > 0;
-}
 
 function tokenMatches(given: string): boolean {
   const expected = settings.setupToken;

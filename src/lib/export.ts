@@ -1,7 +1,7 @@
 import "server-only";
 import { certificateEvent, certificateFiles, certificateRecipients, type CertificateSettings } from "@/lib/certificates";
 import { toCsv } from "@/lib/domain/csv";
-import { BUCKETS, downloadObject, uploadObject } from "@/lib/storage";
+import { BUCKETS, downloadObject, downloadSignature, uploadObject } from "@/lib/storage";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { Hackathon } from "@/lib/types";
 import { safeName } from "@/lib/zip";
@@ -111,8 +111,10 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
   for (const ps of statements) grab(BUCKETS.projectFiles, ps.attachment_path, `files/problem-statements/${ps.code}.pdf`);
   grab(BUCKETS.branding, h.logo_path, `files/branding/hackathon-logo${extOf(h.logo_path ?? "")}`);
   grab(BUCKETS.branding, h.organizer_logo_path, `files/branding/organiser-logo${extOf(h.organizer_logo_path ?? "")}`);
-  grab(BUCKETS.branding, h.cert_signature1_path, `files/branding/signature-1${extOf(h.cert_signature1_path ?? "")}`);
-  grab(BUCKETS.branding, h.cert_signature2_path, `files/branding/signature-2${extOf(h.cert_signature2_path ?? "")}`);
+  for (const n of [1, 2] as const) {
+    const path = h[`cert_signature${n}_path`];
+    if (path) fetches.push(downloadSignature(path).then((bytes) => { if (bytes) files[`files/branding/signature-${n}${extOf(path)}`] = bytes; }));
+  }
   await Promise.all(fetches);
 
   const people = await certificateRecipients(hackathonId);

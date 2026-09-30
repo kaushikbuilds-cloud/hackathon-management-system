@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { Alert } from "@/components/ui";
 import { settings } from "@/lib/env";
-import { superAdminExists } from "./actions";
+import { superAdminExists } from "@/lib/setup";
 import { SetupForm } from "./setup-form";
 
 export const metadata: Metadata = { title: "Initial setup", robots: { index: false } };
