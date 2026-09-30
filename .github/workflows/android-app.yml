@@ -1,4 +1,4 @@
-# Builds the HackgroundOS Android app (mobile/) and publishes the APK on the
+# Builds the HackGround OS Android app (mobile/) and publishes the APK on the
 # "android-app" release, so organisers can share one download link.
 name: Android app
 
@@ -67,22 +67,22 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew --no-daemon assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/HackgroundOS.apk"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/HackGroundOS.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HackgroundOS-apk
-          path: HackgroundOS.apk
+          name: HackGroundOS-apk
+          path: HackGroundOS.apk
 
       - name: Publish on the android-app release
         env:
           GH_TOKEN: ${{ github.token }}
         working-directory: .
         run: |
-          notes="HackgroundOS app for food shops and attendance takers. Version 1.0.${{ github.run_number }} (built from ${GITHUB_SHA::7})."
+          notes="HackGround OS app for food shops and attendance takers. Version 1.0.${{ github.run_number }} (built from ${GITHUB_SHA::7})."
           if gh release view android-app >/dev/null 2>&1; then
             gh release edit android-app --notes "$notes" --target "$GITHUB_SHA"
           else
-            gh release create android-app --title "HackgroundOS Android app" --notes "$notes" --target "$GITHUB_SHA" --latest=false
+            gh release create android-app --title "HackGround OS Android app" --notes "$notes" --target "$GITHUB_SHA" --latest=false
           fi
-          gh release upload android-app HackgroundOS.apk --clobber
+          gh release upload android-app HackGroundOS.apk --clobber

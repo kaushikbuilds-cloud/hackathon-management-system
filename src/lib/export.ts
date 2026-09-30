@@ -123,7 +123,7 @@ export async function buildHackathonExport(hackathonId: string): Promise<{ name:
 
   const count = (prefix: string) => Object.keys(files).filter((k) => k.startsWith(prefix)).length;
   files["README.txt"] = [
-    `${h.name}: full data export from HackgroundOS`,
+    `${h.name}: full data export from HackGround OS`,
     `Exported: ${new Date().toISOString()}   Status: ${h.status}${h.ended_at ? ` (ended ${h.ended_at})` : ""}`,
     "",
     `Teams: ${teams.length}   Participants: ${participants.length}   Check-ins: ${attendance.filter((a) => a.status === "present").length}`,

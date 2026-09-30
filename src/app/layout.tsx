@@ -1,3 +1,4 @@
+import { NativeSplash } from "@/components/native-splash";
 import { PLATFORM } from "@/lib/platform";
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         {children}
+        <NativeSplash />
       </body>
     </html>
   );

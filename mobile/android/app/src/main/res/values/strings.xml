@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">HackgroundOS</string>
-    <string name="title_activity_main">HackgroundOS</string>
+    <string name="app_name">HackGround OS</string>
+    <string name="title_activity_main">HackGround OS</string>
     <string name="package_name">app.hackathonbase.staff</string>
     <string name="custom_url_scheme">app.hackathonbase.staff</string>
 </resources>

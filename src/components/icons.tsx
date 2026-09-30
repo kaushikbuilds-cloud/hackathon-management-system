@@ -59,14 +59,8 @@ export function Icon({ name, title, className, ...props }: { name: IconName; tit
   );
 }
 
-/** The HackgroundOS mark: a code-bracket block with a lime notch. */
+/** The HackGround OS mark: the violet "H" (same art as the app icon). */
 export function LogoMark({ className = "size-9" }: { className?: string }) {
-  return (
-    <span className={`${className} grid shrink-0 place-items-center rounded-lg bg-brand text-white shadow-brutal-sm`} aria-hidden="true">
-      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M8 7l-5 5 5 5M16 7l5 5-5 5" />
-        <path d="M13.5 5l-3 14" stroke="#a5b4fc" />
-      </svg>
-    </span>
-  );
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/brand-mark.png" alt="" aria-hidden="true" width={96} height={96} className={`${className} shrink-0 rounded-lg shadow-brutal-sm`} />;
 }

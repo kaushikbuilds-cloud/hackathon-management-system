@@ -1,6 +1,6 @@
 /** Platform-level branding and contact (the product, not any one hackathon). */
 export const PLATFORM = {
-  name: process.env.NEXT_PUBLIC_PLATFORM_NAME || "HackgroundOS",
+  name: process.env.NEXT_PUBLIC_PLATFORM_NAME || "HackGround OS",
   contactEmail: process.env.NEXT_PUBLIC_PLATFORM_CONTACT_EMAIL || "kaushik.builds@gmail.com",
 };
 

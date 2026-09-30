@@ -1,6 +1,6 @@
 {
   "appId": "app.hackathonbase.staff",
-  "appName": "HackgroundOS",
+  "appName": "HackGround OS",
   "webDir": "www",
   "appendUserAgent": "HackathonBaseApp/1",
   "server": {
@@ -13,7 +13,7 @@
     "captureInput": true
   },
   "plugins": {
-    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#F8FAFC", "showSpinner": false },
+    "SplashScreen": { "launchShowDuration": 10000, "launchAutoHide": true, "launchFadeOutDuration": 300, "backgroundColor": "#0D0F1C", "showSpinner": false },
     "StatusBar": { "overlaysWebView": false, "style": "LIGHT", "backgroundColor": "#F8FAFC" }
   }
 }

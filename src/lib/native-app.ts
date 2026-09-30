@@ -1,5 +1,5 @@
 /**
- * The HackgroundOS Android app (mobile/) opens this site full-screen and
+ * The HackGround OS Android app (mobile/) opens this site full-screen and
  * injects `window.Capacitor` with its native plugins. These helpers are safe
  * to call in any browser: outside the app they report "not available".
  */
@@ -8,7 +8,7 @@
 export const APP_USER_AGENT = "HackathonBaseApp";
 
 /** The latest APK, published by .github/workflows/android-app.yml. */
-export const APP_DOWNLOAD_URL = "https://github.com/kaushikbuilds-cloud/hackathon-management-system/releases/download/android-app/HackgroundOS.apk";
+export const APP_DOWNLOAD_URL = "https://github.com/kaushikbuilds-cloud/hackathon-management-system/releases/download/android-app/HackGroundOS.apk";
 
 type Barcode = { rawValue?: string; displayValue?: string };
 type BarcodeScannerPlugin = {

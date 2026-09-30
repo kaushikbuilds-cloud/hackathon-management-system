@@ -152,7 +152,7 @@ export async function generateCertificatesPdf(ev: CertificateEvent, people: Cert
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   doc.setTitle(`${ev.name} certificates`);
-  doc.setCreator("HackgroundOS");
+  doc.setCreator("HackGround OS");
   const standard: Fonts = {
     regular: await doc.embedFont(StandardFonts.Helvetica),
     semibold: await doc.embedFont(StandardFonts.HelveticaBold),
