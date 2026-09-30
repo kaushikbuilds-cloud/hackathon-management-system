@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
     "mobile/**",
+    "desktop/**",
+    "promo-video/**",
   ]),
 ]);
 

@@ -1,0 +1,15 @@
+{
+  "name": "hackgroundos-promo",
+  "private": true,
+  "description": "HackGround OS product video (Remotion).",
+  "scripts": {
+    "studio": "node scripts/soundtrack.cjs && remotion studio src/index.ts",
+    "render": "node scripts/soundtrack.cjs && remotion render src/index.ts Promo out/HackGroundOS-promo.mp4 --codec h264 --crf 18"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.530",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.530"
+  }
+}
