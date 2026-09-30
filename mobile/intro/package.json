@@ -1,0 +1,16 @@
+{
+  "name": "hackgroundos-intro",
+  "private": true,
+  "description": "The app-open animation (Remotion). Renders mobile/android/app/src/main/res/raw/intro.mp4.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Intro ../android/app/src/main/res/raw/intro.mp4 --codec h264 --crf 20",
+    "preview": "remotion render src/index.ts Intro out/intro.gif --codec gif --scale 0.5 --every-nth-frame 2"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.530",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.530"
+  }
+}

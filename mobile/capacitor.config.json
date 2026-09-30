@@ -13,7 +13,7 @@
     "captureInput": true
   },
   "plugins": {
-    "SplashScreen": { "launchShowDuration": 10000, "launchAutoHide": true, "launchFadeOutDuration": 300, "backgroundColor": "#0D0F1C", "showSpinner": false },
+    "SplashScreen": { "launchShowDuration": 0, "launchAutoHide": true, "backgroundColor": "#0D0F1C", "showSpinner": false },
     "StatusBar": { "overlaysWebView": false, "style": "LIGHT", "backgroundColor": "#F8FAFC" }
   }
 }
