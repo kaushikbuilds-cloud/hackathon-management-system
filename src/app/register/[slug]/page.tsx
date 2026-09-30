@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PublicShell } from "@/components/layout/public-shell";
 import { Alert, Card } from "@/components/ui";
-import { formAvailability, getHackathonById } from "@/lib/data/event";
+import { formAvailability, getHackathonById, hackathonEnded } from "@/lib/data/event";
 import { resolveCustomQuestions, resolveFieldConfig } from "@/lib/domain/registration";
 import { formatDateTime } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +29,9 @@ export default async function RegisterPage(props: PageProps<"/register/[slug]">)
   const form = await loadForm(slug);
   if (!form) notFound();
   const hackathon = await getHackathonById(form.hackathon_id);
-  const availability = formAvailability(form);
+  const availability = hackathonEnded(hackathon)
+    ? { open: false as const, reason: `${hackathon?.name ?? "This hackathon"} has ended, so registration is closed.` }
+    : formAvailability(form);
   const isPreview = form.status !== "published";
   const tz = hackathon?.timezone ?? "UTC";
 

@@ -33,6 +33,11 @@ export function brandingUrls(h: Hackathon | null) {
 
 export type FormAvailability = { open: boolean; reason?: string };
 
+/** Ended (or archived) hackathons take no more registrations or new forms. */
+export function hackathonEnded(h: Pick<Hackathon, "status"> | null | undefined): boolean {
+  return h?.status === "completed" || h?.status === "archived";
+}
+
 export function formAvailability(form: Pick<RegistrationForm, "status" | "opens_at" | "closes_at">, now = new Date()): FormAvailability {
   if (form.status === "draft") return { open: false, reason: "This registration form has not been published yet." };
   if (form.status === "closed") return { open: false, reason: "Registration is closed." };

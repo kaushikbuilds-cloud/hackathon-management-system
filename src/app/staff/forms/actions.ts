@@ -5,17 +5,20 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { UUID, bool, dbErrorMessage, flash, str } from "@/lib/actions";
 import { requirePermission } from "@/lib/auth";
-import { getHackathon } from "@/lib/data/event";
+import { getHackathon, hackathonEnded } from "@/lib/data/event";
 import { OPTIONAL_MEMBER_FIELDS, customQuestionSchema, type CustomQuestion, type FieldConfig } from "@/lib/domain/registration";
 import { fromLocalInput } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 const slugSchema = z.string().trim().toLowerCase().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Slug may contain lowercase letters, numbers and single hyphens").max(60);
 
+const ENDED = (name: string) => `${name} has ended. To take registrations for a new hackathon, open it first (Super Admin → Hackathons → Open).`;
+
 export async function createForm(formData: FormData) {
   await requirePermission("manage_registrations");
   const hackathon = await getHackathon();
   if (!hackathon) flash("/staff/forms", { error: "Configure the event first." });
+  if (hackathonEnded(hackathon)) flash("/staff/forms/new", { error: ENDED(hackathon.name) });
   const title = str(formData, "title", 150);
   const slug = slugSchema.safeParse(str(formData, "slug", 60));
   if (title.length < 2) flash("/staff/forms/new", { error: "Title is required." });
@@ -118,9 +121,13 @@ export async function updateForm(formId: string, formData: FormData) {
 export async function setFormStatus(formId: string, status: "draft" | "published" | "closed") {
   if (!UUID.test(formId)) throw new Error("Invalid id");
   await requirePermission("manage_registrations");
+  const back = `/staff/forms/${formId}`;
+  if (status === "published") {
+    const hackathon = await getHackathon();
+    if (hackathonEnded(hackathon)) flash(back, { error: ENDED(hackathon!.name) });
+  }
   const supabase = await createClient();
   const { error } = await supabase.from("registration_forms").update({ status }).eq("id", formId);
-  const back = `/staff/forms/${formId}`;
   if (error) flash(back, { error: dbErrorMessage(error) });
   revalidatePath("/");
   flash(back, { notice: status === "published" ? "Form published. Share the public URL." : status === "closed" ? "Form closed. No further submissions are accepted." : "Form unpublished (draft)." });

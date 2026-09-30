@@ -75,7 +75,9 @@ export async function createHackathon(_prev: CreateHackathonState, formData: For
     hackathon_id: h.id, version: 1, name: "Default card", is_active: true, config: DEFAULT_TEMPLATE_CONFIG, created_by: session.userId,
   });
   await audit({ ...session, hackathonId: h.id }, "hackathon.created", { type: "hackathons", id: h.id }, { name: h.name, slug: h.slug });
-  revalidatePath("/staff/hackathons");
+  // Work in the new hackathon from now on, so its forms and settings don't land in the previous one.
+  (await cookies()).set(HACKATHON_COOKIE, h.id, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
+  revalidatePath("/staff", "layout");
 
   if (!d.admin_email) return { hackathon: h };
   const invited = await inviteAdmin(session, h.id, d.admin_name, d.admin_email);

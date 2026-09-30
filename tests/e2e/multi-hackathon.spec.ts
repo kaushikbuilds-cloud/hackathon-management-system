@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import pg from "pg";
 import { creds, openHackathon, signIn } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
@@ -30,6 +31,26 @@ test("the Super Admin creates a hackathon and invites its Admin", async ({ page 
   const link = page.locator("p.font-mono").filter({ hasText: "/invite/" });
   adminLink = (await link.innerText()).trim();
   await expect(page.getByRole("table", { name: "Hackathons" })).toContainText(hackName);
+
+  // The Super Admin now works in the new hackathon, so a new form belongs to it (not the previous one).
+  await page.goto("/staff/forms/new");
+  await expect(page.getByText(`For ${hackName}`)).toBeVisible();
+});
+
+test("an ended hackathon's form takes no more registrations", async ({ page }) => {
+  test.skip(!process.env.E2E_DATABASE_URL, "Needs E2E_DATABASE_URL.");
+  const pool = new pg.Pool({ connectionString: process.env.E2E_DATABASE_URL });
+  const slug = `ended-form-${run}`;
+  await pool.query(`with h as (insert into hackathons (name, status) values ($1, 'completed') returning id)
+    insert into registration_forms (hackathon_id, slug, title, status, min_team_size, max_team_size) select id, $2, 'Old form', 'published', 2, 4 from h`, [`Ended Hack ${run}`, slug]);
+  try {
+    await page.goto(`/register/${slug}`);
+    await expect(page.getByText(`Ended Hack ${run} has ended, so registration is closed.`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Submit registration" })).toHaveCount(0);
+  } finally {
+    await pool.query("delete from hackathons where name = $1", [`Ended Hack ${run}`]);
+    await pool.end();
+  }
 });
 
 test("the new Admin activates and sees only their own, empty hackathon", async ({ page }) => {

@@ -17,7 +17,7 @@ export function CreateHackathonForm() {
       {state.hackathon && (
         <div className="mb-4 space-y-3">
           <Alert tone="green" title={`${state.hackathon.name} created`}>
-            Public page: <Link className="underline" href={`/h/${state.hackathon.slug}`}>/h/{state.hackathon.slug}</Link>. It stays in &quot;Setting up&quot; until you mark it Active.
+            Public page: <Link className="underline" href={`/h/${state.hackathon.slug}`}>/h/{state.hackathon.slug}</Link>. It stays in &quot;Setting up&quot; until you mark it Active. You are now working in this hackathon: its forms, teams and settings are what you see in the staff pages.
           </Alert>
           {state.invite && (
             <InviteLink link={state.invite.link} email={state.invite.email} name={state.invite.name} expiresAt={state.invite.expiresAt} purpose="account activation" eventName={state.hackathon.name} />

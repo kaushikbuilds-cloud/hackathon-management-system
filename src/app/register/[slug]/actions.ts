@@ -9,7 +9,8 @@ import { rateLimit } from "@/lib/rate-limit";
 import {
   buildRegistrationSchema, flattenIssues, registrationDraftFromFormData, type RegistrationDraft,
 } from "@/lib/domain/registration";
-import type { RegistrationForm } from "@/lib/types";
+import { hackathonEnded } from "@/lib/data/event";
+import type { Hackathon, RegistrationForm } from "@/lib/types";
 
 export type RegisterState = {
   status: "idle" | "error" | "success";
@@ -51,7 +52,10 @@ export async function registerTeam(slug: string, _prev: RegisterState, formData:
   if (!form) return { nonce: randomUUID(), status: "error", values, track, message: "This registration form is not accepting submissions." };
 
   // Track: required when the hackathon has tracks, and must be one of them.
-  const { data: hk } = await supabase.from("hackathons").select("tracks").eq("id", form.hackathon_id).maybeSingle<{ tracks: string[] | null }>();
+  const { data: hk } = await supabase.from("hackathons").select("tracks, status, name").eq("id", form.hackathon_id).maybeSingle<{ tracks: string[] | null; status: string; name: string }>();
+  if (hackathonEnded(hk as { status: Hackathon["status"] } | null)) {
+    return { nonce: randomUUID(), status: "error", values, track, message: `${hk?.name ?? "This hackathon"} has ended, so registration is closed.` };
+  }
   const tracks = hk?.tracks ?? [];
   const trackError = tracks.length > 0 && !tracks.includes(track) ? "Choose your team's track." : null;
 
