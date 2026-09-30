@@ -18,7 +18,10 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
-        <!-- Android 12+: the app icon on the logo's dark navy while the site loads. -->
+        <!-- Android 12+: the animated H on the logo's dark navy while the site loads. -->
         <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <!-- The animated H (mobile/scripts/splash-animation.cjs); it keeps pulsing until the site is ready. -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_animated</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
     </style>
 </resources>
