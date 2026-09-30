@@ -18,6 +18,9 @@ export type Hackathon = {
   projects_deadline?: string | null;
   /** Teams can pick a problem statement while this is on. */
   ps_selection_open?: boolean;
+  /** Winners are shown on the public results page while this is on. */
+  results_published?: boolean;
+  results_published_at?: string | null;
   description: string | null;
   logo_path: string | null;
   organizer_name: string | null;
@@ -124,6 +127,8 @@ export type Team = {
   college: string | null;
   track: string | null;
   problem_statement_id?: string | null;
+  /** Given by the judging managers (Winner, Best Design, ...). */
+  award?: string | null;
   status: RegistrationStatus;
   status_reason: string | null;
   pdf_status: PdfStatus;
@@ -401,3 +406,22 @@ export type ProblemStatement = {
   sort_order: number;
   created_at: string;
 };
+
+/** What public_results() returns for the public results page. */
+export type PublicResults =
+  | { published: false }
+  | {
+      published: true;
+      published_at: string | null;
+      team_count: number;
+      participant_count: number;
+      winners: {
+        award: string;
+        team_name: string;
+        college: string | null;
+        track: string | null;
+        members: string[];
+        statement: { code: string; title: string } | null;
+        project: { title: string; description: string; repo_url: string; demo_url: string | null; video_url: string | null } | null;
+      }[];
+    };

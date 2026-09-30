@@ -8,7 +8,7 @@ import { param, type SearchParams } from "@/lib/data/query";
 import { loadCriteria, maxTotal } from "@/lib/judging";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { JudgingCriterion, LeaderboardRow } from "@/lib/types";
-import { deleteCriterion, saveCriterion, setAward, setJudgingOpen } from "../actions";
+import { deleteCriterion, saveCriterion, setAward, setJudgingOpen, setResultsPublished } from "../actions";
 
 export const metadata: Metadata = { title: "Judging Results" };
 
@@ -36,6 +36,8 @@ export default async function JudgingResultsPage(props: PageProps<"/staff/judgin
   const teamCount = (board ?? []).length;
   const open = Boolean(hackathon?.judging_open);
   const top = maxTotal(criteria);
+  const published = Boolean(hackathon?.results_published);
+  const awarded = (board ?? []).filter((r) => r.award).length;
   let rank = 0;
 
   return (
@@ -59,6 +61,25 @@ export default async function JudgingResultsPage(props: PageProps<"/staff/judgin
           ? <Alert tone="green" title="Judging is open">Judges can score teams and change their scores.</Alert>
           : <Alert tone="blue" title="Judging is closed">{criteria.length ? "Open judging when your judges are ready. Scores are locked while it's closed." : "Add at least one criterion, then open judging."}</Alert>}
       </div>
+      <Card className="mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="flex flex-wrap items-center gap-2 text-base font-semibold text-ink">
+              Public results <Badge tone={published ? "green" : "neutral"}>{published ? "Published" : "Not published"}</Badge>
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              {published
+                ? <>Anyone can see the {awarded} award-winning {awarded === 1 ? "team" : "teams"} on the <Link href={`/h/${hackathon?.slug}/results`} className="font-medium text-grass hover:underline">results page</Link>. Scores stay private.</>
+                : `Give awards in the leaderboard below, then publish. Only teams with an award are shown, with their members, project and links. Scores stay private.${awarded ? ` ${awarded} ${awarded === 1 ? "team has" : "teams have"} an award.` : ""}`}
+            </p>
+          </div>
+          <form action={setResultsPublished.bind(null, !published)}>
+            {published
+              ? <ConfirmSubmit variant="secondary" message="Hide the results from the public page?">Hide results</ConfirmSubmit>
+              : <ConfirmSubmit message={`Publish the results? ${awarded} award-winning ${awarded === 1 ? "team" : "teams"} will be shown publicly${hackathon?.results_published_at ? "" : " and every approved team will be notified"}.`} disabled={awarded === 0}>Publish results</ConfirmSubmit>}
+          </form>
+        </div>
+      </Card>
 
       <div className="flex flex-col gap-6">
       <div className={cx("grid gap-6 lg:grid-cols-2", criteria.length ? "order-2" : "order-1")}>

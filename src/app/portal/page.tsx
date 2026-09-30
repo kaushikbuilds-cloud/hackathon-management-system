@@ -46,6 +46,15 @@ export default async function PortalHome(props: PageProps<"/portal">) {
           <LinkButton href="/portal/project">Submit project</LinkButton>
         </div>
       )}
+      {hackathon?.results_published && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/20 bg-brand-tint p-4">
+          <div>
+            <p className="font-semibold text-ink">{team.award && team.status === "approved" ? `Congratulations! Your team won: ${team.award}` : "The results are out"}</p>
+            <p className="text-sm text-ink-soft">See the winners and their projects on the results page.</p>
+          </div>
+          <LinkButton href={`/h/${hackathon.slug}/results`} variant="secondary">See results</LinkButton>
+        </div>
+      )}
       {hackathon?.status === "completed" && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-pop p-5 shadow-brutal">
           <div>

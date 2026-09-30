@@ -84,3 +84,31 @@ export async function setAward(teamId: string, formData: FormData) {
   revalidatePath("/staff/certificates");
   flash(RESULTS, { notice: award ? `Award saved: ${award}.` : "Award removed." });
 }
+
+/** Show (or hide) the winners on the public results page; the first time, every approved team is notified. */
+export async function setResultsPublished(publish: boolean) {
+  const session = await requirePermission("manage_judging");
+  const service = createServiceClient(session.userId);
+  const { data: h } = await service.from("hackathons").select("slug, results_published_at").eq("id", session.hackathonId).single<{ slug: string; results_published_at: string | null }>();
+  if (publish) {
+    const { count } = await service.from("teams").select("id", { count: "exact", head: true }).eq("hackathon_id", session.hackathonId).eq("status", "approved").not("award", "is", null);
+    if (!count) flash(RESULTS, { error: "Give at least one team an award before publishing the results." });
+  }
+  const first = publish && !h?.results_published_at;
+  const { error } = await service.from("hackathons")
+    .update({ results_published: publish, ...(first ? { results_published_at: new Date().toISOString() } : {}) })
+    .eq("id", session.hackathonId);
+  if (error) flash(RESULTS, { error: dbErrorMessage(error) });
+  if (first && h) {
+    const { data: teams } = await service.from("teams").select("id").eq("hackathon_id", session.hackathonId).eq("status", "approved").returns<{ id: string }[]>();
+    if (teams?.length) {
+      await service.from("notifications").insert(teams.map((t) => ({
+        team_id: t.id, title: "Results are out", body: "The winners have been announced. Thank you for taking part!", link: `/h/${h.slug}/results`,
+      })));
+    }
+  }
+  await audit(session, publish ? "results.published" : "results.hidden", { type: "hackathons", id: session.hackathonId });
+  revalidatePath(RESULTS);
+  if (h) revalidatePath(`/h/${h.slug}`, "layout");
+  flash(RESULTS, { notice: publish ? `Results are public${first ? " and teams were notified" : ""}.` : "Results are hidden from the public page." });
+}

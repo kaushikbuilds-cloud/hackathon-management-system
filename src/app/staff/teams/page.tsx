@@ -188,10 +188,17 @@ function groupColleges(names: string[]) {
   return [...groups.values()]
     .map((g) => {
       const variants = [...g.spellings.keys()];
-      const name = [...g.spellings].sort((a, b) => b[1] - a[1])[0][0].trim().replace(/\s+/g, " ");
+      // Ties go to the tidiest spelling, then alphabetical, so the label doesn't depend on row order.
+      const name = [...g.spellings].sort((a, b) => b[1] - a[1] || messiness(a[0]) - messiness(b[0]) || a[0].localeCompare(b[0]))[0][0].trim().replace(/\s+/g, " ");
       return { key: g.key, name, variants, count: g.count };
     })
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
+/** Higher for spellings with stray punctuation, extra spaces or no capitals ("  rit. " vs "RIT"). */
+function messiness(raw: string) {
+  const name = raw.trim();
+  return (name.match(/[^\p{L}\p{N} &()'-]/gu)?.length ?? 0) + (raw !== name || /\s{2,}/.test(name) ? 1 : 0) + (name === name.toLowerCase() ? 1 : 0);
 }
 
 function collegeChip(active: boolean) {

@@ -34,6 +34,14 @@ export default async function EventPage(props: PageProps<"/h/[slug]">) {
 
   return (
     <PublicShell hackathon={hackathon}>
+      {hackathon.results_published && (
+        <div className="border-b border-line bg-pop">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <p className="font-semibold">The results are out! See the winning teams and their projects.</p>
+            <LinkButton href={`/h/${hackathon.slug}/results`} size="sm">See results</LinkButton>
+          </div>
+        </div>
+      )}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:py-24">
         {(
           <div className="grid items-center gap-10 lg:grid-cols-[1.4fr_1fr]">
