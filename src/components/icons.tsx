@@ -59,7 +59,7 @@ export function Icon({ name, title, className, ...props }: { name: IconName; tit
   );
 }
 
-/** The HackathonBase mark: a code-bracket block with a lime notch. */
+/** The HackgroundOS mark: a code-bracket block with a lime notch. */
 export function LogoMark({ className = "size-9" }: { className?: string }) {
   return (
     <span className={`${className} grid shrink-0 place-items-center rounded-lg bg-brand text-white shadow-brutal-sm`} aria-hidden="true">

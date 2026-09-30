@@ -655,8 +655,8 @@ export async function generateTeamIdCardsPdf(input: CardInput): Promise<Generate
 
   doc.setTitle(`${input.team.name} (${input.team.teamCode}) — ID Cards`);
   doc.setSubject(`${input.event.name} participant ID cards, template v${input.templateVersion}`);
-  doc.setCreator("HackathonBase");
-  doc.setProducer("HackathonBase (pdf-lib)");
+  doc.setCreator("HackgroundOS");
+  doc.setProducer("HackgroundOS (pdf-lib)");
   doc.setCreationDate(new Date());
 
   const out = await doc.save();

@@ -1,8 +1,8 @@
 {
-  "name": "hackathonbase-app",
+  "name": "hackgroundos-app",
   "private": true,
   "version": "1.0.0",
-  "description": "Android app for food shops and attendance takers: opens HackathonBase full-screen with a native QR scanner.",
+  "description": "Android app for food shops and attendance takers: opens HackgroundOS full-screen with a native QR scanner.",
   "scripts": {
     "sync": "cap sync android"
   },

@@ -1,10 +1,10 @@
 {
   "appId": "app.hackathonbase.staff",
-  "appName": "HackathonBase",
+  "appName": "HackgroundOS",
   "webDir": "www",
   "appendUserAgent": "HackathonBaseApp/1",
   "server": {
-    "url": "https://hackathonbase.vercel.app",
+    "url": "https://hackgroundos.vercel.app",
     "errorPath": "offline.html",
     "androidScheme": "https"
   },

@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": contentDisposition("attachment", `HackathonBase_report_${shiftMonth(month, -(REPORT_MONTHS - 1))}_to_${month}.csv`),
+      "Content-Disposition": contentDisposition("attachment", `HackgroundOS_report_${shiftMonth(month, -(REPORT_MONTHS - 1))}_to_${month}.csv`),
       "Cache-Control": "no-store",
     },
   });
