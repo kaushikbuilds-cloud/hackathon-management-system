@@ -1,0 +1,33 @@
+{
+  "name": "hackgroundos-desktop",
+  "productName": "HackGround OS",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HackGround OS for Windows: opens the site in its own window, with the intro on launch.",
+  "author": "HackGround OS",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis portable --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.5.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "app.hackgroundos.desktop",
+    "productName": "HackGround OS",
+    "files": ["main.js", "pages/**", "assets/**", "build/icon.png"],
+    "directories": { "output": "dist" },
+    "win": { "icon": "build/icon.ico", "target": ["nsis", "portable"] },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "HackGround OS",
+      "artifactName": "HackGroundOS-Setup.${ext}"
+    },
+    "portable": { "artifactName": "HackGroundOS-Portable.${ext}" }
+  }
+}

@@ -7,6 +7,9 @@
 /** Added to the app's user agent (mobile/capacitor.config.json). */
 export const APP_USER_AGENT = "HackathonBaseApp";
 
+/** The Windows installer, published by .github/workflows/desktop-app.yml. */
+export const WINDOWS_DOWNLOAD_URL = "https://github.com/kaushikbuilds-cloud/hackathon-management-system/releases/download/desktop-app/HackGroundOS-Setup.exe";
+
 /** The latest APK, published by .github/workflows/android-app.yml. */
 export const APP_DOWNLOAD_URL = "https://github.com/kaushikbuilds-cloud/hackathon-management-system/releases/download/android-app/HackGroundOS.apk";
 

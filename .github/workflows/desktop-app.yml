@@ -1,0 +1,62 @@
+# Builds the HackGround OS Windows app (desktop/) and publishes the installer
+# and the portable .exe on the "desktop-app" release.
+name: Windows app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/desktop-app.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build installer and portable .exe
+        env:
+          # No code-signing certificate: Windows shows "More info → Run anyway" the first time.
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npx electron-builder --win nsis portable --publish never --config.buildVersion="1.0.${{ github.run_number }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HackGroundOS-windows
+          path: |
+            desktop/dist/HackGroundOS-Setup.exe
+            desktop/dist/HackGroundOS-Portable.exe
+
+      - name: Publish on the "desktop-app" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        working-directory: .
+        run: |
+          notes="HackGround OS for Windows. HackGroundOS-Setup.exe installs it with a desktop shortcut; HackGroundOS-Portable.exe runs without installing. Version 1.0.${{ github.run_number }} (built from ${GITHUB_SHA::7})."
+          if gh release view desktop-app >/dev/null 2>&1; then
+            gh release edit desktop-app --notes "$notes" --target "$GITHUB_SHA"
+          else
+            gh release create desktop-app --title "HackGround OS for Windows" --notes "$notes" --target "$GITHUB_SHA" --latest=false
+          fi
+          gh release upload desktop-app desktop/dist/HackGroundOS-Setup.exe desktop/dist/HackGroundOS-Portable.exe --clobber

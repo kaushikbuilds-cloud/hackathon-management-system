@@ -30,8 +30,14 @@ test("the app opens on sign-in, not the landing page", async ({ browser }) => {
   const page = await context.newPage();
   await page.goto("/");
   await expect(page).toHaveURL(/\/login$/);
-  await expect(page.getByText("Get the Android app")).toHaveCount(0);
+  await expect(page.getByText("Get the app:")).toHaveCount(0);
   await context.close();
+});
+
+test("in a normal browser, sign-in links to the Android and Windows apps", async ({ page }) => {
+  await page.goto("/login");
+  await expect(page.getByRole("link", { name: "Android" })).toHaveAttribute("href", /android-app\/HackGroundOS\.apk$/);
+  await expect(page.getByRole("link", { name: "Windows" })).toHaveAttribute("href", /desktop-app\/HackGroundOS-Setup\.exe$/);
 });
 
 test("in the app, Scan ID card uses the phone scanner and reopens it after each check-in", async ({ browser, page }) => {

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; media-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+  <title>HackGround OS</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0D0F1C; overflow: hidden; -webkit-app-region: drag; }
+    video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  </style>
+</head>
+<body>
+  <!-- Made with Remotion (mobile/intro, composition IntroWide). -->
+  <video id="intro" src="../assets/intro.mp4" autoplay muted playsinline></video>
+  <script>
+    // The main process watches the title to know the intro has finished.
+    const v = document.getElementById("intro");
+    const done = () => { document.title = "done"; };
+    v.addEventListener("ended", done);
+    v.addEventListener("error", done);
+  </script>
+</body>
+</html>
