@@ -13,6 +13,7 @@ const NAV: NavItem[] = [
   { href: "/portal/problem-statement", label: "Problem Statement", icon: "trophy" },
   { href: "/portal/project", label: "Project", icon: "form" },
   { href: "/portal/food", label: "Food", icon: "food" },
+  { href: "/portal/mentor", label: "Mentor Help", icon: "mentor" },
   { href: "/portal/support", label: "Help & Support", icon: "help" },
   { href: "/portal/profile", label: "Profile & Security", icon: "user" },
 ];

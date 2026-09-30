@@ -18,6 +18,8 @@ export type Hackathon = {
   projects_deadline?: string | null;
   /** Teams can pick a problem statement while this is on. */
   ps_selection_open?: boolean;
+  /** Teams can ask for a mentor while this is on. */
+  mentor_desk_open?: boolean;
   /** Winners are shown on the public results page while this is on. */
   results_published?: boolean;
   results_published_at?: string | null;
@@ -425,3 +427,19 @@ export type PublicResults =
         project: { title: string; description: string; repo_url: string; demo_url: string | null; video_url: string | null } | null;
       }[];
     };
+
+export type MentorRequestStatus = "waiting" | "helping" | "done" | "cancelled";
+export type MentorRequest = {
+  id: string;
+  hackathon_id: string;
+  team_id: string;
+  topic: string;
+  details: string;
+  location: string | null;
+  status: MentorRequestStatus;
+  mentor_id: string | null;
+  created_by: string | null;
+  created_at: string;
+  claimed_at: string | null;
+  closed_at: string | null;
+};

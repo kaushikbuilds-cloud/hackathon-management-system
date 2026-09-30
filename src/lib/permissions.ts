@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   { key: "manage_food", label: "Food orders", description: "Manage food shops and menus, and handle orders at the counter.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
   { key: "judge_teams", label: "Judge: score teams", description: "Score approved teams on the judging criteria (sees only own scores).", grantableTo: ["admin", "official"], defaultFor: [] },
   { key: "manage_judging", label: "Judging setup & results", description: "Set criteria, open or close judging, see every score and the leaderboard.", grantableTo: ["admin"], defaultFor: ["admin"] },
+  { key: "mentor_teams", label: "Mentor: help teams", description: "See the mentor queue, take help requests from teams and mark them done.", grantableTo: ["admin", "official"], defaultFor: ["admin"] },
 ] as const satisfies readonly { key: string; label: string; description: string; grantableTo: readonly AppRole[]; defaultFor: readonly AppRole[] }[];
 
 export type Permission = (typeof PERMISSIONS)[number]["key"];

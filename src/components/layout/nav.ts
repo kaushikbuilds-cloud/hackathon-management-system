@@ -30,6 +30,7 @@ export function staffNav(session: Session): NavItem[] {
     { href: "/staff/projects", group: "On the day", label: "Projects", icon: "form", show: ev(canAny(session, ["view_participants", "manage_judging", "judge_teams", "manage_event"])) },
     { href: "/staff/judging", group: "On the day", label: "Judging", icon: "trophy", show: ev(canAny(session, ["judge_teams", "manage_judging"])) },
     { href: "/staff/judging/results", group: "On the day", label: "Judging Results", icon: "chart", show: ev(can(session, "manage_judging")) },
+    { href: "/staff/mentors", group: "On the day", label: "Mentor Desk", icon: "mentor", show: ev(can(session, "mentor_teams")) },
     { href: "/staff/support", group: "On the day", label: official ? "Assigned Help Desk" : "Support Requests", icon: "help", show: inEvent },
     { href: "/staff/users/admins", group: "Management", label: "User Management", icon: "shield", show: ev(sa) },
     { href: "/staff/users/officials", group: "Management", label: "Officials Management", icon: "users", show: ev(!sa && can(session, "manage_officials")) },
