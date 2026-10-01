@@ -74,7 +74,7 @@ test("an organiser signs up, pays with Razorpay and lands in their new hackathon
   await page.goto("/");
   await page.getByRole("link", { name: /Start your hackathon/ }).first().click();
   await expect(page).toHaveURL(/\/start$/);
-  await expect(page.getByText("₹2,999").first()).toBeVisible();
+  await expect(page.getByText("₹299").first()).toBeVisible();
   await page.getByLabel("Your name").fill("Olivia Organiser");
   await page.getByLabel(/^Email/).fill(email);
   await page.getByLabel(/^Password/).fill(password);
@@ -90,7 +90,7 @@ test("an organiser signs up, pays with Razorpay and lands in their new hackathon
   await page.goto("/staff");
   await expect(page).toHaveURL(/\/start\/pay$/);
 
-  await page.getByRole("button", { name: "Pay ₹2,999" }).click();
+  await page.getByRole("button", { name: "Pay ₹299" }).click();
   await expect(page).toHaveURL(/\/staff\?notice=/, { timeout: 20000 });
   await expect(page.getByText("Payment received. Your hackathon is ready")).toBeVisible();
   await expect(page.getByText(hackName).first()).toBeVisible();
@@ -117,14 +117,14 @@ test("the Super Admin sees the payment and sets the price", async ({ page }) => 
   await page.goto("/staff/payments");
   const row = page.getByRole("row").filter({ hasText: hackName });
   await expect(row).toContainText("Paid");
-  await expect(row).toContainText("₹2,999");
+  await expect(row).toContainText("₹299");
   await page.getByLabel("Price in ₹").fill("3499");
   await page.getByRole("button", { name: "Save price" }).click();
   await expect(page.getByText("Price saved.")).toBeVisible();
   await page.goto("/start");
   await expect(page.getByText("₹3,499").first()).toBeVisible();
   await page.goto("/staff/payments");
-  await page.getByLabel("Price in ₹").fill("2999");
+  await page.getByLabel("Price in ₹").fill("299");
   await page.getByRole("button", { name: "Save price" }).click();
   await expect(page.getByText("Price saved.")).toBeVisible();
 });

@@ -17,12 +17,12 @@ describe.skipIf(!enabled)("self-serve billing (database)", () => {
     await pool.query("delete from staff_permissions where profile_id = $1", [organiser]); // a fresh sign-up has none
     other = await createUser(pool, "admin");
     await pool.query(`insert into hackathon_orders (profile_id, email, organiser_name, organisation, hackathon_name, amount_paise, razorpay_order_id)
-      values ($1, 'org@billing.dev', 'Olivia', 'Riverside College', 'Paid Hack', 299900, 'order_db1')`, [organiser]);
+      values ($1, 'org@billing.dev', 'Olivia', 'Riverside College', 'Paid Hack', 29900, 'order_db1')`, [organiser]);
   });
   afterAll(async () => db?.drop());
 
   it("has a default price that anyone can read", async () => {
-    expect((await as(pool, null, async (c) => (await c.query("select hackathon_price_paise from platform_settings")).rows))[0].hackathon_price_paise).toBe(299900);
+    expect((await as(pool, null, async (c) => (await c.query("select hackathon_price_paise from platform_settings")).rows))[0].hackathon_price_paise).toBe(29900);
   });
 
   it("only the server can create a paid hackathon", async () => {

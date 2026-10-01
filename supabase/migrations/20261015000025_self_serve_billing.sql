@@ -4,12 +4,14 @@
 
 create table if not exists public.platform_settings (
   id                    boolean primary key default true check (id),
-  hackathon_price_paise integer not null default 299900 check (hackathon_price_paise between 100 and 100000000),
+  hackathon_price_paise integer not null default 29900 check (hackathon_price_paise between 100 and 100000000),
   currency              text not null default 'INR' check (currency = 'INR'),
   updated_at            timestamptz not null default now(),
   updated_by            uuid references public.profiles(id) on delete set null
 );
 insert into public.platform_settings (id) values (true) on conflict (id) do nothing;
+alter table public.platform_settings alter column hackathon_price_paise set default 29900;
+update public.platform_settings set hackathon_price_paise = 29900 where hackathon_price_paise = 299900;
 alter table public.platform_settings enable row level security;
 grant select on public.platform_settings to anon, authenticated;
 grant all on public.platform_settings to service_role;

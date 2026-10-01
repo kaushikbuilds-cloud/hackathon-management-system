@@ -13,7 +13,7 @@ export type HackathonOrder = {
 /** The price of one hackathon, in paise (set by the Super Admin). */
 export async function hackathonPricePaise(): Promise<number> {
   const { data } = await createServiceClient().from("platform_settings").select("hackathon_price_paise").eq("id", true).maybeSingle<{ hackathon_price_paise: number }>();
-  return data?.hackathon_price_paise ?? 299900;
+  return data?.hackathon_price_paise ?? 29900;
 }
 
 /** The organiser's open order at today's price (a new Razorpay order if the price changed or none exists). */
