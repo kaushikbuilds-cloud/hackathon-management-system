@@ -1,8 +1,8 @@
 # HackGround OS product video
 
-A 51-second 1080p product video made with [Remotion](https://remotion.dev), in the style of a SaaS launch video:
+A 56-second 1080p product video made with [Remotion](https://remotion.dev), in the style of a SaaS launch video:
 problem hook → logo reveal → registration → ID cards & QR check-in → live dashboard → food & mentor help →
-judging & results → certificates → web / Android / Windows → tagline → end card.
+judging & results → certificates → web / Android / Windows → sign up & pay ₹299 → tagline → end card.
 
 - `src/Promo.tsx`: the scenes and their timing (`S` = start frame of each scene, 30 fps).
 - `src/ui.tsx`: building blocks (blur-in words, typewriter, 3D-tilted screenshots, cursor, pill buttons, chips, phone frame).

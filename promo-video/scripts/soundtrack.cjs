@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const RATE = 44100, SECONDS = 51, N = RATE * SECONDS;
+const RATE = 44100, SECONDS = 56, N = RATE * SECONDS;
 const L = new Float32Array(N), R = new Float32Array(N);
 const BPM = 96, BEAT = 60 / BPM, BAR = BEAT * 4;
 const hz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
@@ -41,7 +41,7 @@ const click = (start) => add(start, 0.05, (t) => 0.25 * Math.exp(-t * 90) * Math
 const chime = (start) => { for (const [i, m] of [84, 88, 91, 96].entries()) pluck(start + i * 0.06, m, 0.06, i % 2 ? 0.3 : -0.3); };
 
 // Timing (seconds) from the video.
-const T = { logoHit: (165 + 22) / 30, cta: 285 / 30, register: 360 / 30, checkin: 480 / 30, dashboard: 630 / 30, onsite: 780 / 30, judging: 930 / 30, certs: 1080 / 30, devices: 1185 / 30, tagline: 1320 / 30, end: 1410 / 30 };
+const T = { logoHit: (165 + 22) / 30, cta: 285 / 30, register: 360 / 30, checkin: 480 / 30, dashboard: 630 / 30, onsite: 780 / 30, judging: 930 / 30, certs: 1080 / 30, devices: 1185 / 30, pricing: 1320 / 30, tagline: 1470 / 30, end: 1560 / 30 };
 
 // 1. Hook: low, uneasy drone and a riser into the logo hit.
 pad(0, T.logoHit + 0.3, [45, 52, 57], 0.045);
@@ -83,6 +83,9 @@ for (let bar = 0, t0 = T.devices; t0 < SECONDS - 1; bar++, t0 += BAR) {
   for (let e = 0; e < 8; e++) pluck(t0 + e * BEAT / 2, c[e % 3] + 24, 0.035, e % 2 ? 0.4 : -0.4);
   if (t0 < T.end) for (let b = 0; b < 4; b++) hat(t0 + b * BEAT + BEAT / 2, 0.03);
 }
+whoosh(T.pricing, 0.16);
+click(T.pricing + 88 / 30);
+chime(T.pricing + 96 / 30);
 chime(T.end + 0.2);
 
 // Master: fade out, soft limit, normalise, 16-bit WAV.

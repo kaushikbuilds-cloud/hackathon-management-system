@@ -4,8 +4,8 @@ import { HSIntro } from "./HSIntro";
 import { BlurWords, Backdrop, C, Chip, Cursor, FONT, Mark, Phone, Pill, SceneFade, Tilted, Typewriter, prog } from "./ui";
 
 /** Scene start frames (30 fps). */
-const S = { hook: 0, logo: 165, cta: 285, register: 360, checkin: 480, dashboard: 630, onsite: 780, judging: 930, certs: 1080, devices: 1185, tagline: 1320, end: 1410 };
-export const PROMO_FRAMES = 1530;
+const S = { hook: 0, logo: 165, cta: 285, register: 360, checkin: 480, dashboard: 630, onsite: 780, judging: 930, certs: 1080, devices: 1185, pricing: 1320, tagline: 1470, end: 1560 };
+export const PROMO_FRAMES = 1680;
 const len = (a: keyof typeof S, b: keyof typeof S | number) => (typeof b === "number" ? b : S[b]) - S[a];
 
 export const Promo = () => {
@@ -31,7 +31,8 @@ export const Promo = () => {
       <Sequence from={S.onsite} durationInFrames={len("onsite", "judging")}><OnSite /></Sequence>
       <Sequence from={S.judging} durationInFrames={len("judging", "certs")}><Judging /></Sequence>
       <Sequence from={S.certs} durationInFrames={len("certs", "devices")}><Certificates /></Sequence>
-      <Sequence from={S.devices} durationInFrames={len("devices", "tagline")}><Devices /></Sequence>
+      <Sequence from={S.devices} durationInFrames={len("devices", "pricing")}><Devices /></Sequence>
+      <Sequence from={S.pricing} durationInFrames={len("pricing", "tagline")}><Pricing /></Sequence>
       <Sequence from={S.tagline} durationInFrames={len("tagline", "end")}><Tagline /></Sequence>
       <Sequence from={S.end} durationInFrames={len("end", PROMO_FRAMES)}><EndCard /></Sequence>
     </AbsoluteFill>
@@ -275,7 +276,7 @@ function Devices() {
   const sp = (d: number) => spring({ frame: f - d, fps, config: { damping: 18, stiffness: 70 } });
   const [a, b, c] = [sp(14), sp(24), sp(34)];
   return (
-    <SceneFade dur={len("devices", "tagline")} inFrames={16}>
+    <SceneFade dur={len("devices", "pricing")} inFrames={16}>
       <Caption text="One platform. Every screen." dark={false} top={80} highlight={["Every", "screen."]} />
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", paddingTop: 170 }}>
         <div style={{ position: "relative", width: 1500, height: 720 }}>
@@ -308,7 +309,47 @@ function Devices() {
   );
 }
 
-/* 11. The promise. */
+/* 11. Self-serve: sign up, pay ₹299, start today. */
+function Pricing() {
+  const f = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const steps = [
+    { n: "1", title: "Create your account", body: "Name, email, college", at: 20 },
+    { n: "2", title: "Pay ₹299", body: "UPI, cards, net banking", at: 30 },
+    { n: "3", title: "Your hackathon is ready", body: "In under a minute", at: 40 },
+  ];
+  const paid = f >= 96;
+  return (
+    <SceneFade dur={len("pricing", "tagline")}>
+      <Caption text="Start today. ₹299 per hackathon." dark={false} top={110} highlight={["₹299"]} />
+      <AbsoluteFill style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 48, paddingTop: 120 }}>
+        {steps.map((st, i) => {
+          const a = spring({ frame: f - st.at, fps, config: { damping: 16, stiffness: 90 } });
+          const active = i === 0 ? f >= 66 : i === 1 ? paid : f >= 112;
+          return (
+            <div key={st.n} style={{ width: 460, padding: "40px 40px 44px", borderRadius: 32, background: "#fff", opacity: a, transform: `translateY(${(1 - a) * 90}px)`,
+              boxShadow: active ? "0 30px 80px -24px rgba(124,58,237,0.55), 0 0 0 2px rgba(124,58,237,0.35)" : "0 24px 60px -24px rgba(15,23,42,0.3), 0 0 0 1px rgba(15,23,42,0.06)" }}>
+              <div style={{ width: 64, height: 64, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700,
+                background: active ? "linear-gradient(135deg,#8B5CF6,#6366F1)" : "#EEF0FF", color: active ? "#fff" : C.violet }}>{active ? "✓" : st.n}</div>
+              <div style={{ marginTop: 26, fontSize: 40, fontWeight: 700, color: C.ink, letterSpacing: -1 }}>{st.title}</div>
+              <div style={{ marginTop: 8, fontSize: 26, color: "#64748B" }}>{st.body}</div>
+              {i === 1 && (
+                <div style={{ marginTop: 28, display: "inline-flex", padding: "16px 34px", borderRadius: 999, fontSize: 28, fontWeight: 700, color: "#fff",
+                  background: paid ? C.green : C.brand, transform: `scale(${f >= 90 && f < 96 ? 0.94 : 1})` }}>{paid ? "Paid ✓" : "Pay ₹299"}</div>
+              )}
+            </div>
+          );
+        })}
+      </AbsoluteFill>
+      <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-end", paddingBottom: 110 }}>
+        {f >= 116 && <Chip start={116} tone="violet" size={32}>🚀 InnovateX 2026 is live · open your dashboard</Chip>}
+      </AbsoluteFill>
+      <Cursor points={[{ f: 60, x: 1500, y: 950 }, { f: 88, x: 900, y: 760, click: true }, { f: 120, x: 930, y: 790 }]} />
+    </SceneFade>
+  );
+}
+
+/* 12. The promise. */
 function Tagline() {
   return (
     <SceneFade dur={len("tagline", "end")}>
@@ -319,7 +360,7 @@ function Tagline() {
   );
 }
 
-/* 12. End card. */
+/* 13. End card. */
 function EndCard() {
   const f = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -334,7 +375,10 @@ function EndCard() {
           </div>
         </div>
         <div style={{ opacity: prog(f, 24, 16), fontSize: 34, color: "#475569", fontWeight: 500 }}>Run your whole hackathon from one place.</div>
-        <div style={{ opacity: prog(f, 36, 16), transform: `translateY(${(1 - prog(f, 36, 16)) * 16}px)`, padding: "18px 40px", borderRadius: 999, background: C.ink, color: "#fff", fontSize: 32, fontWeight: 600 }}>hackgroundos.vercel.app</div>
+        <div style={{ opacity: prog(f, 36, 16), transform: `translateY(${(1 - prog(f, 36, 16)) * 16}px)`, display: "flex", alignItems: "center", gap: 20 }}>
+          <div style={{ padding: "18px 40px", borderRadius: 999, background: "linear-gradient(90deg,#7C5CF0,#4F46E5)", color: "#fff", fontSize: 32, fontWeight: 700, boxShadow: "0 20px 50px -16px rgba(79,70,229,0.7)" }}>Start your hackathon · ₹299</div>
+          <div style={{ padding: "18px 40px", borderRadius: 999, background: C.ink, color: "#fff", fontSize: 32, fontWeight: 600 }}>hackgroundos.vercel.app</div>
+        </div>
       </AbsoluteFill>
     </SceneFade>
   );
