@@ -5,7 +5,7 @@ import { ColumnChart, RingChart, STATUS_COLORS, ShareBars } from "@/components/c
 import { Countdown } from "@/components/countdown";
 import { Icon, type IconName } from "@/components/icons";
 import { RegistrationBadge } from "@/components/status";
-import { Badge, Card, CardTitle, DescriptionList, LinkButton, PageHeader, Stat, Table, Td, Th, buttonClass, cx } from "@/components/ui";
+import { Badge, Card, CardTitle, DescriptionList, Flash, LinkButton, PageHeader, Stat, Table, Td, Th, buttonClass, cx } from "@/components/ui";
 import { can, isSuperAdmin, portalName, requireStaff, type Session } from "@/lib/auth";
 import { getHackathon } from "@/lib/data/event";
 import { loadDashboardStats } from "@/lib/data/stats";
@@ -22,14 +22,16 @@ export const metadata: Metadata = { title: "Dashboard" };
 
 const SUPPORT_LABELS = Object.fromEntries(SUPPORT_STATUSES.map((s) => [s, supportStatusLabel(s)]));
 
-export default async function DashboardPage() {
+export default async function DashboardPage(props: PageProps<"/staff">) {
   const session = await requireStaff();
+  const sp = await props.searchParams;
   if (isSuperAdmin(session) && !session.hackathonId) return <PlatformDashboard />;
   const hackathon = await getHackathon();
   const tz = hackathon?.timezone ?? "UTC";
   return (
     <>
       <h1 className="sr-only">Dashboard</h1>
+      <Flash notice={sp.notice} error={sp.error} />
       <Hero session={session} hackathon={hackathon} tz={tz} />
       {can(session, "view_reports") ? <Overview session={session} tz={tz} superAdmin={isSuperAdmin(session)} tracks={hackathon?.tracks ?? []} /> : <WorkDashboard session={session} tz={tz} />}
     </>

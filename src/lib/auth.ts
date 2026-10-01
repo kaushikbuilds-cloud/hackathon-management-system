@@ -89,6 +89,8 @@ export async function requireSession(options: RequireOptions = {}): Promise<Sess
 export async function requireStaff(): Promise<Session> {
   const session = await requireSession();
   if (!isStaff(session)) redirect(homePathFor(session.profile.role));
+  // An organiser who signed up but hasn't paid yet has no hackathon.
+  if (session.profile.role === "admin" && !session.hackathonId) redirect("/start/pay");
   return session;
 }
 

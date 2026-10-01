@@ -4,7 +4,9 @@ import { PublicShell } from "@/components/layout/public-shell";
 import { Badge, LinkButton, buttonClass } from "@/components/ui";
 import { formAvailability } from "@/lib/data/event";
 import { formatEventDates } from "@/lib/pdf/id-cards";
+import { hackathonPricePaise } from "@/lib/billing";
 import { PLATFORM, hostRequestMailto } from "@/lib/platform";
+import { formatInr } from "@/lib/razorpay";
 import { createClient } from "@/lib/supabase/server";
 import type { Hackathon, RegistrationForm } from "@/lib/types";
 
@@ -20,7 +22,7 @@ const FEATURES: { title: string; body: string; icon: IconName; block: string }[]
 ];
 
 const STEPS = [
-  { n: "01", title: "Contact us", body: "Tell us about your event. We set up your hackathon and invite your organiser." },
+  { n: "01", title: "Sign up and pay", body: "Create your organiser account and pay once. Your hackathon is ready in under a minute." },
   { n: "02", title: "Share your form", body: "Build the registration form and share one link. Teams get their IDs instantly." },
   { n: "03", title: "Run the day", body: "Print ID cards, scan QR codes at the gate, and answer support from one dashboard." },
 ];
@@ -32,6 +34,7 @@ export default async function HomePage() {
     supabase.from("hackathons").select("*").in("status", ["active"]).order("starts_at", { ascending: true, nullsFirst: false }).returns<Hackathon[]>(),
     supabase.from("registration_forms").select("*").eq("status", "published").returns<RegistrationForm[]>(),
   ]);
+  const price = await hackathonPricePaise();
   const openForm = (h: Hackathon) => (forms ?? []).find((f) => f.hackathon_id === h.id && formAvailability(f).open);
 
   return (
@@ -50,9 +53,9 @@ export default async function HomePage() {
             Registration, unique IDs, print-ready ID cards, QR attendance, officials and a student portal, ready for your event.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <a href={hostRequestMailto()} className={buttonClass("primary", "md", "px-5 text-base")}>
-              Host your hackathon <Icon name="arrowRight" className="size-4" />
-            </a>
+            <LinkButton href="/start" className="px-5 text-base">
+              Start your hackathon <Icon name="arrowRight" className="size-4" />
+            </LinkButton>
             <LinkButton href="/login" variant="secondary" className="px-5 text-base">Sign in</LinkButton>
           </div>
         </div>
@@ -136,10 +139,11 @@ export default async function HomePage() {
         <div className="rounded-lg border border-line bg-brand p-6 text-white shadow-brutal-lg sm:p-10">
           <h2 id="host-heading" className="text-3xl font-bold sm:text-4xl">Want to conduct a hackathon?</h2>
           <p className="mt-3 max-w-2xl text-white">
-            Contact the platform admin to register and manage your hackathon. We set up your event and send your organiser an Admin
-            invitation. From there you build your form, invite your officials and run the event.
+            Sign up as the organiser, pay {formatInr(price)} per hackathon, and start building your registration form right away.
+            Then invite your officials and run the event. Questions first? Contact the admin.
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-4">
+            <LinkButton href="/start" variant="secondary" className="px-5 text-base">Start your hackathon · {formatInr(price)}</LinkButton>
             <a href={hostRequestMailto()} className={buttonClass("success", "md", "px-5 text-base")}>
               <Icon name="mail" className="size-5" /> Contact the admin
             </a>

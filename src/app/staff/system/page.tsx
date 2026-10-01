@@ -24,7 +24,7 @@ export default async function SystemSettingsPage() {
         <Card>
           <CardTitle>Security model</CardTitle>
           <ul className="list-disc space-y-1 pl-5 text-sm text-ink-soft">
-            <li>No public sign-up: staff join by single-use, expiring invitation; participants activate after registering.</li>
+            <li>Organisers sign up at /start and become Admin of their own hackathon only after paying (Razorpay); other staff join by single-use, expiring invitation; participants activate after registering.</li>
             <li>Only the Super Admin invites Admins; Admins cannot create Admins or raise their own access.</li>
             <li>Permissions are enforced on the server and by database row-level security.</li>
             <li>Suspended or deactivated accounts lose access immediately and their sessions are revoked.</li>

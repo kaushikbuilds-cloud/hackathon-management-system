@@ -187,6 +187,9 @@ npm run dev                          # http://localhost:3000
 | `SETUP_TOKEN` | – | Enables `/setup` to create the first Super Admin; remove after use |
 | `NEXT_PUBLIC_PLATFORM_CONTACT_EMAIL` | – | Where "Host your hackathon / Contact the admin" emails go (default kaushik.builds@gmail.com) |
 | `NEXT_PUBLIC_PLATFORM_NAME` | – | Platform name shown on public pages (default "HackGround OS") |
+| `RAZORPAY_KEY_ID` | for sign-up | Razorpay API key id (`rzp_test_…` or `rzp_live_…`). Without it, /start shows that payments aren't switched on. |
+| `RAZORPAY_KEY_SECRET` | for sign-up | Razorpay API key secret (server only). |
+| `RAZORPAY_WEBHOOK_SECRET` | recommended | Secret of the Razorpay webhook to `/api/razorpay/webhook` (events `payment.captured`, `order.paid`); completes purchases even if the organiser closes the page. |
 | `SIGNED_URL_TTL_SECONDS` | – | Signed download URL lifetime (default 300) |
 | `SEED_SUPER_ADMIN_EMAIL` / `SEED_SUPER_ADMIN_PASSWORD` | – | Used only by `npm run seed:users` |
 | `TEST_DATABASE_URL` | – | Postgres URL for `npm run test:db` (a throwaway server; each run creates and drops its own database) |
