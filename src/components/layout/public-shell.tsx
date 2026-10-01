@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { LogoMark } from "@/components/icons";
 import { buttonClass } from "@/components/ui";
 import { brandingUrls } from "@/lib/data/event";
-import { PLATFORM } from "@/lib/platform";
+import { LEGAL_LINKS, PLATFORM } from "@/lib/platform";
 import type { Hackathon } from "@/lib/types";
 
 /** Public page frame: a hackathon's branding, or the platform's when none is given. */
@@ -43,6 +43,14 @@ export function PublicShell({ children, hackathon = null }: { children: ReactNod
         ) : (
           <a className="font-semibold text-grass underline-offset-4 hover:underline" href={`mailto:${PLATFORM.contactEmail}`}>Host your hackathon with us</a>
         )}
+        {!hackathon && (
+          <nav aria-label="Policies" className="mx-auto mt-3 flex max-w-4xl flex-wrap justify-center gap-x-4 gap-y-1 px-4">
+            {LEGAL_LINKS.map((l) => (
+              <Link key={l.href} href={l.href} className="underline-offset-4 hover:text-ink hover:underline">{l.label}</Link>
+            ))}
+          </nav>
+        )}
+        {!hackathon && <p className="mt-2 text-xs">© 2026 {PLATFORM.name}, operated by {PLATFORM.legalName}.</p>}
       </footer>
     </div>
   );

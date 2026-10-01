@@ -3,7 +3,7 @@ export const PLATFORM = {
   name: process.env.NEXT_PUBLIC_PLATFORM_NAME || "HackGround OS",
   contactEmail: process.env.NEXT_PUBLIC_PLATFORM_CONTACT_EMAIL || "kaushik.builds@gmail.com",
   /** Business details shown on the Contact and policy pages (must match the payment gateway's KYC). */
-  legalName: process.env.NEXT_PUBLIC_BUSINESS_NAME || "HackGround OS",
+  legalName: process.env.NEXT_PUBLIC_BUSINESS_NAME || "Kaushik Sundaramoorthy",
   phone: process.env.NEXT_PUBLIC_BUSINESS_PHONE || "",
   address: process.env.NEXT_PUBLIC_BUSINESS_ADDRESS || "",
 };
