@@ -4,9 +4,9 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { audit } from "@/lib/audit";
 import { getSession } from "@/lib/auth";
-import { completePayment, openOrderFor } from "@/lib/billing";
+import { completePayment, openOrderFor, paymentMode, PAYMENT_ID_RE, type HackathonOrder } from "@/lib/billing";
 import { checkPasswordStrength } from "@/lib/domain/password";
-import { checkoutSignatureValid, razorpayConfig } from "@/lib/razorpay";
+import { checkoutSignatureValid } from "@/lib/razorpay";
 import { rateLimit } from "@/lib/rate-limit";
 import { clientIp } from "@/lib/request";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -25,7 +25,7 @@ const schema = z.object({
 export async function startHackathon(_prev: StartState, formData: FormData): Promise<StartState> {
   const raw = Object.fromEntries(["full_name", "email", "phone", "organisation", "hackathon_name"].map((k) => [k, String(formData.get(k) ?? "").slice(0, 300)]));
   const values = raw as Record<string, string>;
-  if (!razorpayConfig().enabled) return { error: "Online payment isn't set up yet. Please try again later or contact us.", values };
+  if ((await paymentMode()).mode === "off") return { error: "Online payment isn't set up yet. Please try again later or contact us.", values };
   if (!(await rateLimit("registration", `signup|${await clientIp()}`))) return { error: "Too many sign-ups from your network. Please wait a while and try again.", values };
   const parsed = schema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0].message, values };
@@ -81,4 +81,30 @@ export async function renameAndReorder(formData: FormData): Promise<void> {
     redirect(`/start/pay?error=${encodeURIComponent("Could not reach the payment provider. Please try again.")}`);
   }
   redirect("/start/pay");
+}
+
+/** Payment Page mode: the organiser sends the payment ID from their receipt; the Super Admin approves it. */
+export async function submitManualPayment(formData: FormData): Promise<void> {
+  const session = await getSession();
+  if (!session || session.profile.role !== "admin" || session.hackathonId) redirect("/staff");
+  const back = (q: string) => redirect(`/start/pay?${q}`);
+  const paymentId = String(formData.get("payment_id") ?? "").trim().slice(0, 40);
+  if (!PAYMENT_ID_RE.test(paymentId)) back(`error=${encodeURIComponent("Enter the Payment ID from your Razorpay receipt. It looks like pay_ followed by 14 letters and numbers.")}`);
+  if (!(await rateLimit("registration", `manual-pay|${session.userId}`))) back(`error=${encodeURIComponent("Too many tries. Please wait a while.")}`);
+  const service = createServiceClient();
+  const { data: order } = await service.from("hackathon_orders").select("*").eq("profile_id", session.userId).eq("status", "pending")
+    .order("created_at", { ascending: false }).limit(1).maybeSingle<HackathonOrder>();
+  if (!order) back(`error=${encodeURIComponent("We couldn't find your order. Reload the page and try again.")}`);
+  if (order!.razorpay_payment_id) back(`notice=${encodeURIComponent("We already have your payment ID. It's being checked.")}`);
+  const { error } = await service.from("hackathon_orders").update({ razorpay_payment_id: paymentId }).eq("id", order!.id).is("razorpay_payment_id", null);
+  if (error) back(`error=${encodeURIComponent(error.code === "23505" ? "This payment ID has already been used for another order." : "Could not save the payment ID. Please try again.")}`);
+  const { data: admins } = await service.from("profiles").select("id").eq("role", "super_admin");
+  if (admins?.length) {
+    await service.from("notifications").insert(admins.map((a: { id: string }) => ({
+      profile_id: a.id, title: "Payment to approve", link: "/staff/payments",
+      body: `${order!.organiser_name} (${order!.organisation}) paid for ${order!.hackathon_name}: ${paymentId}. Check it in Razorpay and approve.`,
+    })));
+  }
+  await audit(null, "billing.manual_payment_submitted", { type: "hackathon_orders", id: order!.id }, { payment: paymentId });
+  back(`notice=${encodeURIComponent("Thanks! We've received your payment ID. Your hackathon will be ready as soon as we confirm it, usually within a few hours.")}`);
 }

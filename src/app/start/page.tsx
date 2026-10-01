@@ -5,8 +5,8 @@ import { Icon } from "@/components/icons";
 import { PublicShell } from "@/components/layout/public-shell";
 import { Alert, Card, LinkButton } from "@/components/ui";
 import { getSession, homePathFor } from "@/lib/auth";
-import { hackathonPricePaise } from "@/lib/billing";
-import { formatInr, razorpayConfig } from "@/lib/razorpay";
+import { hackathonPricePaise, paymentMode } from "@/lib/billing";
+import { formatInr } from "@/lib/razorpay";
 import { StartForm } from "./start-form";
 
 export const metadata: Metadata = { title: "Start your hackathon", description: "Sign up, pay once and run your whole hackathon on HackGround OS." };
@@ -27,7 +27,7 @@ export default async function StartPage() {
   if (session?.profile.role === "admin" && !session.hackathonId) redirect("/start/pay");
   const price = await hackathonPricePaise();
   const priceLabel = formatInr(price);
-  const ready = razorpayConfig().enabled;
+  const ready = (await paymentMode()).mode !== "off";
 
   return (
     <PublicShell>
