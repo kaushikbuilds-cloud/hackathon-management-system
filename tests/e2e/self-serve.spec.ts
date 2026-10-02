@@ -20,10 +20,11 @@ const email = `organiser.${run}@e2e.test`;
 const password = `Organiser-${run}-Pass1!`;
 const hackName = `Self Serve Hack ${run}`;
 const orders = new Map<string, number>();
+const captured = new Set<string>();
 let api: Server;
 
 test.beforeAll(async () => {
-  // A stand-in for api.razorpay.com: creates orders and reports payments as captured.
+  // A stand-in for api.razorpay.com: creates orders; payments start "authorized" (manual-capture account) until captured.
   api = createServer((req, res) => {
     let body = "";
     req.on("data", (c) => (body += c));
@@ -35,10 +36,11 @@ test.beforeAll(async () => {
         orders.set(id, amount);
         return res.end(JSON.stringify({ id, amount, currency: "INR", status: "created" }));
       }
-      const m = req.url?.match(/^\/v1\/payments\/pay_(\w+)$/);
-      if (req.method === "GET" && m) {
+      const m = req.url?.match(/^\/v1\/payments\/pay_(\w+)(\/capture)?$/);
+      if (m && (req.method === "GET" || (req.method === "POST" && m[2]))) {
         const orderId = `order_${m[1]}`;
-        return res.end(JSON.stringify({ id: `pay_${m[1]}`, order_id: orderId, amount: orders.get(orderId) ?? 0, currency: "INR", status: "captured" }));
+        if (m[2]) captured.add(m[1]);
+        return res.end(JSON.stringify({ id: `pay_${m[1]}`, order_id: orderId, amount: orders.get(orderId) ?? 0, currency: "INR", status: captured.has(m[1]) ? "captured" : "authorized" }));
       }
       res.statusCode = 404;
       res.end(JSON.stringify({ error: { description: "not found" } }));
@@ -94,6 +96,7 @@ test("an organiser signs up, pays with Razorpay and lands in their new hackathon
   await expect(page).toHaveURL(/\/staff\?notice=/, { timeout: 20000 });
   await expect(page.getByText("Payment received. Your hackathon is ready")).toBeVisible();
   await expect(page.getByText(hackName).first()).toBeVisible();
+  expect(captured.size).toBe(1); // the authorized payment was collected
   // Full Admin access to their own hackathon.
   await page.goto("/staff/event");
   await expect(page.getByRole("heading", { name: /Event Setup/ })).toBeVisible();

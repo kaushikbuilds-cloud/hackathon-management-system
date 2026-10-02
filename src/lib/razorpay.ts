@@ -42,6 +42,11 @@ export function fetchRazorpayPayment(paymentId: string) {
   return api<RazorpayPayment>(`/payments/${encodeURIComponent(paymentId)}`);
 }
 
+/** Collect an authorized payment (accounts set to manual capture refund uncaptured payments after a few days). */
+export function captureRazorpayPayment(paymentId: string, amountPaise: number) {
+  return api<RazorpayPayment>(`/payments/${encodeURIComponent(paymentId)}/capture`, { method: "POST", body: JSON.stringify({ amount: amountPaise, currency: "INR" }) });
+}
+
 function sameHex(a: string, b: string) {
   const x = Buffer.from(a), y = Buffer.from(b);
   return x.length === y.length && timingSafeEqual(x, y);

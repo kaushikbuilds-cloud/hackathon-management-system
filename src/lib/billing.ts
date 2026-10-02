@@ -1,7 +1,7 @@
 import "server-only";
 import { audit } from "@/lib/audit";
 import { DEFAULT_TEMPLATE_CONFIG } from "@/lib/domain/template";
-import { createRazorpayOrder, fetchRazorpayPayment, razorpayConfig } from "@/lib/razorpay";
+import { captureRazorpayPayment, createRazorpayOrder, fetchRazorpayPayment, razorpayConfig, type RazorpayPayment } from "@/lib/razorpay";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export type HackathonOrder = {
@@ -68,7 +68,7 @@ export async function completePayment(razorpayOrderId: string, paymentId: string
   const { data: order } = await service.from("hackathon_orders").select("*").eq("razorpay_order_id", razorpayOrderId).maybeSingle<HackathonOrder>();
   if (!order) return { ok: false, error: "We couldn't find this order." };
   if (order.hackathon_id) return { ok: true, hackathonId: order.hackathon_id };
-  let payment;
+  let payment: RazorpayPayment;
   try {
     payment = await fetchRazorpayPayment(paymentId);
   } catch (e) {
@@ -76,6 +76,15 @@ export async function completePayment(razorpayOrderId: string, paymentId: string
   }
   if (payment.order_id !== razorpayOrderId || payment.amount !== order.amount_paise || payment.currency !== "INR" || !["authorized", "captured"].includes(payment.status)) {
     return { ok: false, error: "This payment doesn't match the order. If money was taken, contact us with the payment ID." };
+  }
+  if (payment.status === "authorized") {
+    // Held but not collected: capture it, or Razorpay refunds it after a few days.
+    try {
+      payment = await captureRazorpayPayment(paymentId, order.amount_paise);
+    } catch {
+      payment = await fetchRazorpayPayment(paymentId).catch(() => payment);
+    }
+    if (payment.status !== "captured") return { ok: false, error: "We couldn't collect this payment yet. Please try again in a minute, or contact us with the payment ID." };
   }
   const { data: hackathonId, error } = await service.rpc("provision_paid_hackathon", { p_razorpay_order: razorpayOrderId, p_payment: paymentId, p_template: DEFAULT_TEMPLATE_CONFIG });
   if (error || !hackathonId) return { ok: false, error: "Payment received, but the hackathon could not be created. We'll fix it; contact us with the payment ID." };
